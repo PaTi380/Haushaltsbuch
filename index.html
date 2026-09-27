@@ -1593,7 +1593,7 @@ async function exportExcel(){
   }catch(_){msg.textContent='Zum Erstellen braucht die Seite einmal Internet. Bitte erneut versuchen.';btn.disabled=false;return;}
   try{
     const V=window.VORLAGE;const bin=Uint8Array.from(atob(V.b64),c=>c.charCodeAt(0));const zip=await JSZip.loadAsync(bin);
-    const SF=V.sheets;const cache={};const get=async n=>cache[n]??=parseSheet(await zip.file(SF[n]).async('string'));
+    const SF=V.sheets;const cache={};const get=async n=>{if(cache[n])return cache[n];const f=SF[n]&&zip.file(SF[n]);if(!f)throw new Error('Blatt „'+n+'“ fehlt in der Vorlage');return cache[n]=parseSheet(await f.async('string'));};
     calcAll();
     // Monatsblöcke
     for(const sh of ['TILL','PATRICK','HAUS']){const X=await get(sh);let prevEtf=V.prevEtf[sh];
@@ -1610,7 +1610,7 @@ async function exportExcel(){
         if(cm.etf)prevEtf=cm.etf;}}
     useYm(month);
     // Grundbeträge
-    for(const it of S.grund.items){if(it.v==null||it.v==='')continue;const X=await get(it.sh);
+    for(const it of S.grund.items){if(it.v==null||it.v==='')continue;if(!it.sh||!it.c||typeof it.c!=='string'||!V.sheets[it.sh])continue;/* eigene Posten haben keine Excel-Zelle */const X=await get(it.sh);
       if(it.fmt==='date')setCell(X,it.c,{n:serial(it.v+'-01')});else if(it.fmt)setCell(X,it.c,{f:it.fmt.replace('{v}',String(+it.v))});else setCell(X,it.c,{n:+it.v});}
     // Strom
     {const X=await get('Strom');Object.entries(S.strom.m||{}).forEach(([ym,o])=>{const r=5+ymNum(ym)-ymNum('2027-01');if(r<5||r>41)return;setCell(X,'C'+r,{n:o.spar!=null?+o.spar:gn('s_pauschale',ym)});if(o.verbrauch!=null)setCell(X,'E'+r,{n:o.verbrauch});if(o.verg!=null)setCell(X,'F'+r,{n:o.verg});});}
