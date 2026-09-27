@@ -587,7 +587,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
-const APPV={nr:'1.8',datum:'27.09.2026'};/* Bei jeder neuen Version hochzählen */
+const APPV={nr:'1.9',datum:'27.09.2026'};/* Bei jeder neuen Version hochzählen */
 const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
@@ -653,6 +653,7 @@ function pauschUsed(blk,sh){return (blk?.C||[]).filter(x=>x.p&&!isPausch(x)).red
 function pauschBase(e,blk,sh){if(e.f){const v=evalF(e.f);if(isFinite(v))return v;}return +e.v||0;}
 function restNeg(blk,sh){const e=(blk?.K||[]).find(x=>x.f==='=RESTGEHALT');if(!e)return 0;const v=entryVal(e,blk,sh);return v<0?-v:0;}
 function sumG(blk,g,sh){return (blk?.[g]||[]).reduce((a,e)=>a+entryVal(e,blk,sh),0);}
+const bzu=(P,sh)=>!!(P?.zu||P?.[sh]?.zu);const bzuAm=(P,sh)=>P?.[sh]?.zuAm||P?.zuAm||'';
 function planStart(){return S.plan['2026-09']?'2026-09':PLAN0;}
 /* Monate nach dem letzten echten Plan (bis PLAN1) werden aus demselben Monat des Vorjahres fortgeschrieben, bis jemand sie ändert */
 let ING_END=null;
@@ -660,7 +661,7 @@ function fillVirtual(){const P=S.plan;Object.keys(P).forEach(k=>{if(P[k]?._virt)
   try{const g=GYM;GYM=null;ING_END=typeof ingRows==='function'?ingRows().at(-1)?.ym||null:null;GYM=g;}catch(_){ING_END=null;}
   for(let ym=PLAN0;ym<=PLAN1;ym=ymAdd(ym,1)){if(P[ym])continue;const mm=ym.slice(5),y=+ym.slice(0,4);let tpl=null;for(let yy=y-1;yy>=y-10&&!tpl;yy--)tpl=P[yy+'-'+mm];if(!tpl)continue;
     const d=structuredClone(tpl);delete d.zu;delete d.zuAm;
-    SH.forEach(sh=>{const b=d[sh];if(!b)return;delete b.snap;delete b.etfIst;delete b.gehIst;Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;
+    SH.forEach(sh=>{const b=d[sh];if(!b)return;delete b.snap;delete b.etfIst;delete b.zu;delete b.zuAm;delete b.gold;delete b.gehIst;Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;
       b[g]=b[g].filter(e=>e.l!==ABGL&&!(ING_END&&ym>ING_END&&/^gemeinschaftskredit$/i.test((e.l||'').trim())));
       b[g].forEach(e=>{delete e.fix;delete e.p;if(e.f)e.f=e.f.replace(/DATE\((\d+),(\d+),1\)/g,(_,yy,m)=>`DATE(${y},${m},1)`);else if(g==='E'&&/^giroausgleich$/i.test((e.l||'').trim())){e.f='=GIROAUSGLEICH';e.v=null;}});});});
     d._virt=true;P[ym]=d;}}
@@ -668,9 +669,9 @@ function fillVirtual(){const P=S.plan;Object.keys(P).forEach(k=>{if(P[k]?._virt)
 function stripCustom(d){SH.forEach(sh=>{const b=d?.[sh];if(!b)return;Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g]=b[g].filter(e=>!e._c);});});return d;}
 function injectCustom(){const P=S.plan;Object.values(P).forEach(stripCustom);const its=S.grund.items.filter(i=>i.cu);if(!its.length)return;
   const own=g=>g==='Till'?'TILL':g==='Patrick'?'PATRICK':'HAUS';
-  its.forEach(i=>{const c=i.cu;const sh=own(i.g);for(let ym=c.ab<PLAN0?(P['2026-09']?'2026-09':PLAN0):c.ab;ym<=PLAN1&&(!i.bis||ym<=i.bis);ym=ymAdd(ym,1)){const M=P[ym];if(!M||M.zu)continue;if(c.rh==='j'&&ym.slice(5)!==c.ab.slice(5))continue;
+  its.forEach(i=>{const c=i.cu;const sh=own(i.g);for(let ym=c.ab<PLAN0?(P['2026-09']?'2026-09':PLAN0):c.ab;ym<=PLAN1&&(!i.bis||ym<=i.bis);ym=ymAdd(ym,1)){const M=P[ym];if(!M||M.zu||M[sh]?.zu)continue;if(c.rh==='j'&&ym.slice(5)!==c.ab.slice(5))continue;
     const b=M[sh]=M[sh]||{};const g=sh==='HAUS'?'G':(c.art==='ein'?'E':'C');(b[g]=b[g]||[]).push({l:i.l,gk:i.k,_c:1,v:null});
-    if(sh!=='HAUS'&&c.an&&c.art!=='ein'){const o=own(c.an);if(o!=='HAUS'&&o!==sh){const bo=M[o]=M[o]||{};(bo.E=bo.E||[]).push({l:c.lg||`${i.l} (von ${i.g})`,gk:i.k,_c:1,v:null});}}}});}
+    if(sh!=='HAUS'&&c.an&&c.art!=='ein'){const o=own(c.an);if(o!=='HAUS'&&o!==sh&&!M[o]?.zu){const bo=M[o]=M[o]||{};(bo.E=bo.E||[]).push({l:c.lg||`${i.l} (von ${i.g})`,gk:i.k,_c:1,v:null});}}}});}
 function calcAll(){
   Object.values(S.plan).forEach(stripCustom);fillVirtual();injectCustom();varsReset();GYM=null;const VBASE=vars();
   const A=S.archiv||{};const P0=planStart();const pm=ymAdd(P0,-1);const sep=k=>(A[k]||{})[pm]||[0,0,0,0];
@@ -678,7 +679,7 @@ function calcAll(){
   const prev={TILL:{giro:sep('TILL')[0]||0,tg:sep('TILL')[1]||0,etf:eT,einz:eT},PATRICK:{giro:sep('PATRICK')[0]||0,tg:sep('PATRICK')[1]||0,etf:eP,einz:eP},HAUS:{k:sep('HAUS')[0]||0}};
   const out={};const GG=GOLD.reduce((a,g)=>a+g,0)/OZ,gpNow=gn('goldpreis');
   for(let ym=P0;ym<=PLAN1;ym=ymAdd(ym,1)){
-    const P=S.plan[ym]||{};const o={};const gold=GG*(P.zu&&P.gold>0?+P.gold:gpNow);useYm(ym);GIRO0[ym+'|TILL']=prev.TILL.giro;GIRO0[ym+'|PATRICK']=prev.PATRICK.giro;
+    const P=S.plan[ym]||{};const o={};const gold=GG*(P.TILL?.zu&&P.TILL.gold>0?+P.TILL.gold:P.zu&&P.gold>0?+P.gold:gpNow);useYm(ym);GIRO0[ym+'|TILL']=prev.TILL.giro;GIRO0[ym+'|PATRICK']=prev.PATRICK.giro;
     ['TILL','PATRICK'].forEach(sh=>{const b=P[sh]||{};const p=prev[sh];
       const c=sumG(b,'C',sh),e=sumG(b,'E',sh),rn=restNeg(b,sh),i=sumG(b,'I',sh)+rn,k=sumG(b,'K',sh)+rn;
       const etfE=(b.C||[]).find(x=>/^etf$/i.test((x.l||'').trim()));const rate=etfE?entryVal(etfE,b,sh):0;const ist=b.etfIst!=null&&b.etfIst!=='';const etf=ist?+b.etfIst:p.etf+rate;const einz=p.einz+rate;
@@ -748,8 +749,8 @@ function barChart(el,labels,vals,o={}){
 const kpi=(l,v,n,cls='')=>`<div class="card kpi"><span class="l">${l}</span><span class="v ${cls}">${v}</span><span class="n">${n||''}</span></div>`;
 const sign=v=>v<-0.005?'neg':v>0.005?'pos':'';
 /* ---------- Monatsnavigation ---------- */
-function mState(ym){const P=S.plan[ym];if(ym<planStart())return 'vor Planbeginn';if(!P)return 'kein Plan';if(P.zu)return '🔒 abgeschlossen';const fx=['TILL','PATRICK'].filter(sh=>fixInfo(sh,P[sh])?.fixed).length;const base=ym<CUR?'offen (vergangen)':ym===CUR?'laufender Monat':P._virt?'fortgeschrieben':'Planung';return fx===2?'📌 festgeschrieben · '+base:fx===1?'📌 teilweise festgeschrieben · '+base:base;}
-function renderMonthBar(){$$('.mtitle').forEach(e=>e.textContent=ymName(month));$$('.mstate').forEach(e=>{const t=mState(month);e.textContent=t;e.classList.toggle('fixed',t.startsWith('📌 fest'));e.classList.toggle('part',t.startsWith('📌 teil'));e.classList.toggle('zu',t.startsWith('🔒'));});const c=$('#m-close');if(c)c.textContent=S.plan[month]?.zu?'Abschluss aufheben':'Monat abschließen';}
+function mState(ym){const P=S.plan[ym];if(ym<planStart())return 'vor Planbeginn';if(!P)return 'kein Plan';if(P.zu||SH.every(sh=>P[sh]?.zu))return '🔒 abgeschlossen';{const cz=SH.filter(sh=>P[sh]?.zu).map(sh=>SHN[sh]);if(cz.length)return '🔒 '+cz.join(' + ')+' abgeschlossen';}const fx=['TILL','PATRICK'].filter(sh=>fixInfo(sh,P[sh])?.fixed).length;const base=ym<CUR?'offen (vergangen)':ym===CUR?'laufender Monat':P._virt?'fortgeschrieben':'Planung';return fx===2?'📌 festgeschrieben · '+base:fx===1?'📌 teilweise festgeschrieben · '+base:base;}
+function renderMonthBar(){$$('.mtitle').forEach(e=>e.textContent=ymName(month));$$('.mstate').forEach(e=>{const t=mState(month);e.textContent=t;e.classList.toggle('fixed',t.startsWith('📌 fest'));e.classList.toggle('part',t.startsWith('📌 teil'));e.classList.toggle('zu',t.startsWith('🔒'));});const c=$('#m-close');if(c)c.textContent=bzu(S.plan[month],mWho)?`Abschluss aufheben (${SHN[mWho]})`:`${SHN[mWho]} abschließen`;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-mnav]');if(!b)return;const n=ymAdd(month,+b.dataset.mnav);if(n<MIN_M||n>PLAN1)return;month=n;render();});
 
 /* ---------- Budget ---------- */
@@ -784,7 +785,7 @@ function rHeute(){
    ${H.dauer.length?`<div class="note">Nicht enthalten, weil per Dauerauftrag: ${H.dauer.map(([l,v])=>`${esc(l)} ${eur(v)}`).join(', ')}.</div>`:''}
    <details open style="margin-top:8px"><summary class="muted" style="cursor:pointer">Woraus sich der Betrag zusammensetzt</summary>${(S.plan[month]?.HAUS?.G||[]).filter(e=>!isDauer(e.l)).map(e=>`<div class="row"><span>${esc(e.l)}</span><span class="num">${eur(entryVal(e,S.plan[month].HAUS,'HAUS'))}</span></div>`).join('')}</details>`;
   const dl=(v,base)=>{if(base==null)return'';const d=v-base;return Math.abs(d)<0.005?'<small class="dlt ok">✓ wie geplant</small>':`<small class="dlt ${d<0?'neg':'pos'}">${d>0?'+':'−'}${eur(Math.abs(d))} seit Planung</small>`;};
-  const snapInfo=sh=>{const sn=S.plan[month]?.[sh]?.snap;if(S.plan[month]?.zu)return `<div class="note snapn">🔒 Monat abgeschlossen am ${dDE(S.plan[month].zuAm)}.</div>`;return sn?`<div class="note snapn">📌 Geplant am ${dDE(sn.am)}. Daneben siehst du, was sich seitdem geändert hat.</div>`:`<div class="note snapn">Noch nicht festgeschrieben. Nach der Monatsplanung im Reiter Monat beim Giroausgleich auf 📌 tippen, dann siehst du hier jede Abweichung.</div>`;};
+  const snapInfo=sh=>{const sn=S.plan[month]?.[sh]?.snap;if(bzu(S.plan[month],sh))return `<div class="note snapn">🔒 Abgeschlossen am ${dDE(bzuAm(S.plan[month],sh))}.</div>`;return sn?`<div class="note snapn">📌 Geplant am ${dDE(sn.am)}. Daneben siehst du, was sich seitdem geändert hat.</div>`:`<div class="note snapn">Noch nicht festgeschrieben. Nach der Monatsplanung im Reiter Monat beim Giroausgleich auf 📌 tippen, dann siehst du hier jede Abweichung.</div>`;};
   const box=(t,rows,color,sh,extra='')=>`<div class="card" style="border-top:3px solid ${color}"><h2>${t}</h2>${sh?snapInfo(sh):''}${rows.map(([l,v,b,base])=>`<div class="row"><span>${l}</span><span class="rv">${b?`<b class="num ${sign(v)}">${eur(v)}</b>`:`<span class="num ${v<0?'neg':''}">${eur(v)}</span>`}${dl(v,base)}</span></div>`).join('')}${extra}</div>`;
   const SN=sh=>S.plan[month]?.[sh]?.snap||{};
   const inv=(rows,tot)=>`<div class="goldsep">${rows.map(([l,v])=>`<div class="row"><span>${l}</span><span class="num">${eur(v)}</span></div>`).join('')}<div class="note" style="margin:2px 0 0">Anlagen, laufen im Hintergrund</div></div><div class="row" style="margin-top:8px"><span>Gesamt</span><b class="num ${sign(tot)}">${eur(tot)}</b></div>`;
@@ -832,7 +833,7 @@ function depotHTML(c,sh){const gain=c.etf-c.einz;let h=`<div class="dep"><div cl
   if(sh==='TILL'){h+=`<div class="row" style="margin-top:6px"><span>Gold <span class="muted">zu ${eur(gn('goldpreis'))} je Unze${gv('goldpreis')&&goldAm()?' · Stand '+dDE(goldAm())+(liveGold()?' (automatisch)':''):''}</span></span><b class="num">${eur(c.gold)}</b></div>`+goldList(goldRows());}
   return h+'</div>';}
 function fixInfo(sh,blk){const E=blk?.E||[];const i=E.findIndex(e=>GIROAUS.test((e.l||'').trim()));if(i<0)return null;const e=E[i];return {i,fixed:e.f!=='=GIROAUSGLEICH',am:e.fix||blk.snap?.am||null};}
-function fixBanner(sh,blk){if(sh==='HAUS'||!blk)return '';const f=fixInfo(sh,blk);if(!f)return '';const P=S.plan[month];if(P?.zu)return `<div class="fixb done">🔒 <div><b>Monat abgeschlossen</b><small>am ${dDE(P.zuAm)} · alle Beträge sind festgeschrieben</small></div></div>`;
+function fixBanner(sh,blk){if(!blk)return '';const P=S.plan[month];if(bzu(P,sh))return `<div class="fixb done">🔒 <div><b>${SHN[sh]}: Monat abgeschlossen</b><small>am ${dDE(bzuAm(P,sh))} · alle Beträge sind fest. Aufheben oben mit „Abschluss aufheben“.</small></div></div>`;if(sh==='HAUS')return '';const f=fixInfo(sh,blk);if(!f)return '';
   return f.fixed?`<div class="fixb on">📌 <div><b>Plan festgeschrieben</b><small>${f.am?'am '+dDE(f.am)+' · ':''}Giroausgleich ${eur(entryVal(blk.E[f.i],blk,sh))} ist fix. Abweichungen siehst du unten bei der Tendenz.</small></div><button type="button" class="btn sec sm" data-auto="${f.i}" title="Wieder automatisch rechnen lassen">↺ lösen</button></div>`
    :`<div class="fixb off">✏️ <div><b>Noch in Planung</b><small>Der Giroausgleich rechnet sich noch automatisch. Wenn alles passt und überwiesen ist: festschreiben.</small></div><button type="button" class="btn sm" data-fix="${f.i}">📌 Festschreiben</button></div>`;}
 function gehInfo(sh,blk){if(sh==='HAUS'||!blk)return'';useYm(month);const k=sh==='TILL'?'t_gehalt':'p_gehalt';const it=S.grund.items.find(i=>i.k===k);if(!it)return'';
@@ -841,7 +842,7 @@ function gehInfo(sh,blk){if(sh==='HAUS'||!blk)return'';useYm(month);const k=sh==
 function pauInfo(blk,sh){const pe=(blk.C||[]).find(isPausch);if(!pe)return'';const used=pauschUsed(blk,sh);if(!used)return'<div class="pinfo muted">Tipp: Ausgaben, die aus der Pauschale bezahlt werden (Restaurant, Klamotten …), mit <b>P</b> markieren. Dann werden sie von der Pauschale abgezogen und nicht doppelt gezählt.</div>';
   const base=pauschBase(pe,blk,sh);const rest=base-used;return `<div class="pinfo">Pauschale ${eur(base,0)}: davon ${eur(used)} ausgegeben (P) · ${rest>=0?`noch <b class="pos">${eur(rest)}</b> frei (steht unten bei „Pauschale“)`:`<b class="neg">${eur(-rest)} über der Pauschale</b>`}</div>`;}
 function rMonat(){
-  renderMonthBar();$$('#m-who button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.w===mWho));$$('#m-who button').forEach(b=>{const sh=b.dataset.w;const f=sh!=='HAUS'?fixInfo(sh,S.plan[month]?.[sh]):null;b.textContent=SHN[sh]+(f?.fixed||S.plan[month]?.zu&&sh!=='HAUS'?' 📌':'');});
+  renderMonthBar();$$('#m-who button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.w===mWho));$$('#m-who button').forEach(b=>{const sh=b.dataset.w;const f=sh!=='HAUS'?fixInfo(sh,S.plan[month]?.[sh]):null;b.textContent=SHN[sh]+(bzu(S.plan[month],sh)?' 🔒':f?.fixed?' 📌':'');});
   const P=S.plan[month];const el=$('#m-blocks');
   if(!P){el.innerHTML=`<div class="card muted">Für ${ymName(month)} gibt es keinen Plan. Der Plan läuft von Oktober 2026 bis ${ymName(PLAN1)}.</div>`;return;}
   const sh=mWho,blk=P[sh]||{};const c=CALC[month][sh];
@@ -878,12 +879,18 @@ $('#m-blocks').addEventListener('click',e=>{const pt=e.target.closest('[data-pau
   const lk=e.target.closest('[data-lock]');if(lk){const k=lk.dataset.lock;UNL.has(k)?UNL.delete(k):UNL.add(k);rMonat();if(UNL.has(k))setTimeout(()=>$(`#m-blocks [data-lock="${k}"]`)?.closest('.er')?.querySelector('.amt')?.focus(),30);return;}
   const d=e.target.closest('[data-del]');if(d){const r=d.closest('.er');if(!d.dataset.armed){d.dataset.armed=1;d.textContent='✓';d.style.color='var(--bad)';setTimeout(()=>{d.dataset.armed='';d.textContent='×';d.style.color='';},2500);return;}
     savePlan(month,x=>{const blk=x[mWho];const e0=blk[r.dataset.g][+r.dataset.i];if(e0&&e0.lk){Object.keys(blk).forEach(g=>{if(Array.isArray(blk[g]))blk[g]=blk[g].filter(e=>e.lk!==e0.lk);});}else blk[r.dataset.g].splice(+r.dataset.i,1);});}});
-$('#m-close').onclick=()=>{const P=S.plan[month];if(!P)return;
-  if(P.zu){savePlan(month,d=>{d.zu=false;SH.forEach(sh=>{const b=d[sh];if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g]=b[g].filter(e=>!e.cm);});});});return;}
-  const b=$('#m-close');if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Wirklich abschließen? Nochmal tippen';b.classList.add('danger');setTimeout(()=>{b.dataset.armed='';b.classList.remove('danger');renderMonthBar();},4000);return;}
-  b.dataset.armed='';b.classList.remove('danger');
-  const CST=[];useYm(month);SH.forEach(sh=>{const b=P[sh];if(!b)return;Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g].filter(e=>e._c).forEach(e=>CST.push([sh,g,{l:e.l,v:r2(entryVal(e,b,sh)),fest:true,cm:1}]));});});
-  savePlan(month,d=>{CST.forEach(([sh,g,e])=>{const b=d[sh]=d[sh]||{};(b[g]=b[g]||[]).push(e);});SH.forEach(sh=>{const b=d[sh];if(!b)return;Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;b[g].forEach(e=>{if(e.f){e.v=r2(isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));if(e.f==='=GIROAUSGLEICH')e.fix=TODAY;delete e.f;}});});});d.zu=true;d.zuAm=TODAY;d.gold=gn('goldpreis');});};
+$('#m-close').onclick=()=>{const P=S.plan[month];if(!P)return;const sh=mWho;
+  const stripCm=b=>{if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g]=b[g].filter(e=>!e.cm);});};
+  if(bzu(P,sh)){savePlan(month,d=>{if(d.zu){const am=d.zuAm;SH.forEach(x=>{if(x!==sh&&d[x]){d[x].zu=true;d[x].zuAm=d[x].zuAm||am;}});if(d.gold&&d.TILL&&sh!=='TILL')d.TILL.gold=d.TILL.gold||d.gold;delete d.zu;delete d.zuAm;delete d.gold;}
+    const b=d[sh];if(b){delete b.zu;delete b.zuAm;delete b.gold;stripCm(b);}});return;}
+  const bt=$('#m-close');if(!bt.dataset.armed){bt.dataset.armed='1';bt.textContent=`${SHN[sh]} wirklich abschließen? Nochmal tippen`;bt.classList.add('danger');setTimeout(()=>{bt.dataset.armed='';bt.classList.remove('danger');renderMonthBar();},4000);return;}
+  bt.dataset.armed='';bt.classList.remove('danger');
+  const CST=[];useYm(month);{const b=P[sh];if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g].filter(e=>e._c).forEach(e=>CST.push([g,{l:e.l,v:r2(entryVal(e,b,sh)),fest:true,cm:1}]));});}
+  savePlan(month,d=>{const b=d[sh]=d[sh]||{};CST.forEach(([g,e])=>{(b[g]=b[g]||[]).push(e);});
+    Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;b[g].forEach(e=>{if(e.f){e.v=r2(isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));if(e.f==='=GIROAUSGLEICH')e.fix=TODAY;delete e.f;}});});
+    b.zu=true;b.zuAm=TODAY;if(sh==='TILL')b.gold=gn('goldpreis');
+    if(SH.every(x=>d[x]?.zu)){d.zu=true;d.zuAm=TODAY;d.gold=d.TILL?.gold||gn('goldpreis');}});
+  flash('ok',`${SHN[sh]} für ${ymName(month)} abgeschlossen`);};
 
 /* ---------- Schnelleingabe ---------- */
 const BER={giro_aus:['C','Girokonto Ausgabe'],giro_ein:['E','Girokonto Eingang'],tg_raus:['I','vom Tagesgeld genommen'],tg_kauf:['I','vom Tagesgeld für einen Kauf (Tagesgeld → Giro → Ausgabe)'],tg_rein:['K','aufs Tagesgeld'],haus_ab:['G','Abbuchung Haushaltskonto'],haus_ein:['I','Einzahlung Haushaltskonto']};
@@ -1629,7 +1636,7 @@ async function exportExcel(){
     // Monatsblöcke
     for(const sh of ['TILL','PATRICK','HAUS']){const X=await get(sh);let prevEtf=V.prevEtf[sh];
       for(const [ym,cm] of Object.entries(V.cellmap[sh])){const P=S.plan[ym];const blk=P?.[sh];
-        if(blk){const zu=!!P.zu;useYm(ym);const VY=VARS,VB=baseVars();const differs=e=>{if(!e.f)return false;VARS=VB;const b0=entryVal(e,blk,sh);VARS=VY;const b1=entryVal(e,blk,sh);return Math.abs(b0-b1)>0.004;};
+        if(blk){const zu=!!(P.zu||blk.zu);useYm(ym);const VY=VARS,VB=baseVars();const differs=e=>{if(!e.f)return false;VARS=VB;const b0=entryVal(e,blk,sh);VARS=VY;const b1=entryVal(e,blk,sh);return Math.abs(b0-b1)>0.004;};
           for(const [g,info] of Object.entries(cm.groups)){const lc=info.label;for(let r=cm.first;r<=cm.last;r++){setCell(X,g+r,null);setCell(X,lc+r,null);}
             (blk[g]||[]).slice(0,15).forEach((e,i)=>{const r=cm.first+i;let val=null;if(e.f&&!zu&&(differs(e)||(isPausch(e)&&pauschUsed(blk,sh)>0))){setCell(X,g+r,{n:r2(entryVal(e,blk,sh))});if(e.l)setCell(X,lc+r,{s:e.l});return;}
               if(e.f==='=GIROAUSGLEICH'){setCell(X,g+r,{n:r2(entryVal(e,blk,sh))});if(e.l)setCell(X,lc+r,{s:e.l});return;}
