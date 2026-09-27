@@ -33,11 +33,16 @@
   /* Claude über eigenen API-Schlüssel (liegt geschützt in Firestore unter privat/ki) */
   async function kiCfg(){const s=await fs.doc('privat/ki').get();return s.exists?s.data():{};}
   async function ask(prompt,opts={}){const c=await kiCfg();if(!c.key)throw {code:'no_key',message:'Kein KI-Zugang eingerichtet (Einstellungen → KI-Zugang).'};
-    if(c.anbieter==='gemini'){const m=c.model||'gemini-3.8-flash';
-      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(m)+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':c.key},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:2500}})});
-      if(r.status===429)throw {code:'rate_limited'};if(r.status===400||r.status===403){let m2='';try{m2=(await r.json())?.error?.message||'';}catch(_){}throw {code:/key/i.test(m2)?'no_key':'api_error',message:/key/i.test(m2)?'Der Gemini-Schlüssel ist ungültig.':(m2||'Fehler '+r.status)};}
-      if(!r.ok){let m2='';try{m2=(await r.json())?.error?.message||'';}catch(_){}throw {code:'api_error',message:m2||('Fehler '+r.status)};}
-      const j=await r.json();return (j.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('');}
+    if(c.anbieter==='gemini'){/* Bei Überlastung (503/429) kurz warten und automatisch auf andere kostenlose Flash-Modelle ausweichen */
+      const first=c.model||'gemini-3.8-flash';const list=[first,...['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash'].filter(x=>x!==first)];let last=null;
+      for(let n=0;n<list.length;n++){const m=list[n];if(n)await new Promise(res=>setTimeout(res,800));
+        const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(m)+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':c.key},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:2500}})});
+        let m2='';if(!r.ok){try{m2=(await r.json())?.error?.message||'';}catch(_){}}
+        if(r.status===400||r.status===401||r.status===403){if(/key/i.test(m2))throw {code:'no_key',message:'Der Gemini-Schlüssel ist ungültig.'};if(r.status===400)throw {code:'api_error',message:m2||'Fehler 400'};}
+        if(r.status===503||r.status===429||r.status===500||r.status===404||r.status===403){last={code:r.status===429?'rate_limited':'api_error',message:'Gemini ist gerade überlastet. Bitte in ein paar Minuten nochmal versuchen.'};continue;}
+        if(!r.ok)throw {code:'api_error',message:m2||('Fehler '+r.status)};
+        const j=await r.json();return (j.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('');}
+      throw last||{code:'api_error',message:'Gemini ist gerade nicht erreichbar.'};}
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:c.model||'claude-sonnet-5',max_tokens:2500,messages:[{role:'user',content:prompt}]})});
     if(r.status===429||r.status===529)throw {code:'rate_limited'};if(r.status===401)throw {code:'no_key',message:'Der API-Schlüssel ist ungültig.'};
@@ -60,7 +65,7 @@
 
   /* Einstellungen: Claude-Zugang + Abmelden */
   document.addEventListener('DOMContentLoaded',()=>{const host=document.getElementById('app-sect')||document.getElementById('p-einst');if(!host||!OK)return;const c=document.createElement('div');c.className='card';c.id='ki-card';
-    const MODELS={claude:[['claude-sonnet-5','Claude Sonnet 5 (empfohlen, ca. 1 Cent je Anfrage)'],['claude-haiku-4-5-20251001','Claude Haiku 4.5 (günstiger)']],gemini:[['gemini-3.8-flash','Gemini 3.8 Flash'],['gemini-3.5-flash-lite','Gemini 3.5 Flash-Lite (schneller)']]};
+    const MODELS={claude:[['claude-sonnet-5','Claude Sonnet 5 (empfohlen, ca. 1 Cent je Anfrage)'],['claude-haiku-4-5-20251001','Claude Haiku 4.5 (günstiger)']],gemini:[['gemini-3.8-flash','Gemini 3.8 Flash (empfohlen)'],['gemini-3.7-flash','Gemini 3.7 Flash'],['gemini-3.6-flash','Gemini 3.6 Flash']]};
     c.innerHTML=`<div class="head"><h2>KI-Zugang</h2></div><div class="note" style="margin-top:0">Für „Schnell eintragen“, „Buchung auslesen“ und „Fragen & Was wäre, wenn …?“. Der Schlüssel liegt geschützt in eurer Datenbank (nur ihr zwei könnt ihn lesen), gilt für euch beide und steht nicht in der Sicherungsdatei.</div>
       <form class="form" id="f-ki" style="margin-top:8px" onsubmit="return false"><label>Anbieter<select id="ki-prov"><option value="claude">Claude (Anthropic)</option><option value="gemini">Gemini (Google)</option></select></label><label>Schlüssel<input id="ki-key" type="password" autocomplete="off" style="min-width:220px"></label><label>Modell<select id="ki-model"></select></label><button class="btn" id="ki-save">Speichern</button><button class="btn sec" id="ki-test">Testen</button></form>
       <div class="note" id="ki-help"></div><div class="note" id="ki-msg"></div>
