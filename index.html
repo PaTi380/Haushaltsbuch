@@ -360,6 +360,15 @@ details.row.goldsep{border-bottom:1px solid color-mix(in srgb,var(--gold) 30%,tr
 .grow.new{animation:gnew 2.5s ease}@keyframes gnew{0%,40%{background:color-mix(in srgb,var(--good) 22%,transparent)}100%{background:transparent}}
 @media (max-width:560px){.gcol .grow{grid-template-columns:1fr 118px}}
 .gsingle.ggold{margin-top:10px;padding:6px 10px 8px;border-radius:10px;background:color-mix(in srgb,var(--gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--gold) 40%,transparent)}.gsingle.ggold .grow{border-bottom:0}.gsingle.ggold .glab{color:color-mix(in srgb,var(--gold) 75%,var(--ink));font-weight:600}
+.appv{font-variant-numeric:tabular-nums;color:var(--mute)}
+.zettel{position:sticky;left:0;box-sizing:border-box;max-width:min(420px,calc(100vw - 72px))}
+.zettel .row{flex-wrap:wrap;gap:2px 10px}.zettel .row>span:first-child{flex:1 1 180px;min-width:0}
+.zettel .form label{min-width:0}.zettel .form input,.zettel .form select{max-width:100%}
+.zed{all:unset;cursor:pointer;border-bottom:1px dashed color-mix(in srgb,var(--ink) 30%,transparent);font-variant-numeric:tabular-nums}.zed.b{font-weight:700}.zed:hover{color:var(--acc);border-bottom-color:var(--acc)}
+.zman{color:var(--acc);font-weight:400}
+.zin{width:100px;text-align:right;padding:3px 6px;font:inherit}
+.zettel .row.sub{border-bottom:1px dashed var(--line)}.zettel .row.sub span{font-size:13px}
+.zhint{background:color-mix(in srgb,var(--warn) 10%,transparent);padding:6px 8px;border-radius:6px}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
@@ -369,7 +378,7 @@ body{margin:0;padding:0 16px}
 <script>(function(){var el=document.getElementById("intro");function go(){if(el.parentNode)el.remove();}el.onclick=go;setTimeout(go,2300);})();</script>
 <div class="wrap">
 <header>
-  <div><h1>Haushaltsbuch Till &amp; Patrick</h1><div class="sub"><span id="today"></span> · Alles an einem Ort · Excel auf Knopfdruck</div></div>
+  <div><h1>Haushaltsbuch Till &amp; Patrick</h1><div class="sub"><span id="today"></span> · Alles an einem Ort · <span class="appv" id="appv"></span></div></div>
   <div class="status" id="status"><span class="dot"></span><span>Verbinde …</span></div>
 </header>
 <nav role="tablist" id="nav"></nav>
@@ -543,7 +552,7 @@ body{margin:0;padding:0 16px}
     <label>Spartopf € fest<input type="number" step="0.5" data-k="urlFix"></label>
   </form></div>
   </div>
-  <div class="sect-h">App</div>
+  <div class="sect-h">App <span class="appv" id="appv2" style="text-transform:none;letter-spacing:0"></span></div>
   <div id="app-sect">
   <div class="card"><div class="head"><h2>Sicherung</h2></div>
     <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
@@ -578,6 +587,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
+const APPV={nr:'1.8',datum:'27.09.2026'};/* Bei jeder neuen Version hochzählen */
 const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
@@ -786,10 +796,10 @@ function rHeute(){
 
 function rFwNext(){const el=$('#h-fw');if(!el||typeof fwList!=='function')return;const R=FR();
   const L=fwList().filter(b=>b.ud>=TODAY).sort((a,b)=>a.ud.localeCompare(b.ud));if(!L.length){el.hidden=true;return;}el.hidden=false;const b=L[0];
-  const basis=b.barU===false?b.netto:b.ein;const spar=r2(basis*R.urlProz+R.urlFix);const tage=Math.round((Date.parse(b.ud)-Date.parse(TODAY))/864e5);
+  const spar=b.spar;const tage=Math.round((Date.parse(b.ud)-Date.parse(TODAY))/864e5);
   el.innerHTML=`<div class="head"><h2>Nächste Gutschrift Ferienwohnung</h2><span class="muted" style="font-size:12px">${tage===0?'heute':tage===1?'morgen':'in '+tage+' Tagen'}</span></div>
   <div class="fwn-top"><div><span class="fwn-d">${dDE(b.ud)}</span><span class="muted">${esc(b.p)} · ${dDE(b.a)}–${dDE(b.ab)} · ${gaeste(b)}</span></div><b class="num fwn-v">${eur(b.netto)}</b></div>
-  ${b.bar?`<div class="row"><span>zusätzlich bar vor Ort</span><span class="num">${eur(b.bar)}</span></div>`:''}
+  ${b.bar?`<div class="row"><span>zusätzlich bar vor Ort <small class="muted">${b.barM==='nein'?'(nicht aufs Urlaubskonto)':b.barM==='voll'?'(komplett aufs Urlaubskonto)':'(wird mit aufgeteilt)'}</small></span><span class="num">${eur(b.bar)}</span></div>`:''}
   <div class="fwn-split"><div class="fwn-h">Davon weiterleiten</div>
    <div class="fwn-r u"><span>🏖️ aufs <b>Urlaubskonto</b></span><b class="num">${eur(b.urlaub)}</b></div>
    <div class="fwn-r g"><span>🏛️ <b>Gästebeitrag</b> für die Gemeinde <small class="muted">${b.erw||0} Erw. × ${b.n} Nächte</small></span><b class="num">${eur(b.gb)}</b></div>
@@ -909,8 +919,8 @@ Mögliche Aktionen:
    - monat: der genannte Monat, sonst ${month}.
 3) Dauerhafte Änderung eines Grundbetrags (z. B. "Versicherung kostet ab jetzt 12 €", "mein Gehalt ist ab Februar 2027 2.900 €"): {"art":"grund","key":"key aus der Liste","wert":Zahl,"ab":"JJJJ-MM"|null}  – ab = Monat, ab dem der neue Wert gilt (bei einem Datum wie 2.2.2027 der Monat 2027-02); null = sofort für alle offenen Monate.
 Eine Überweisung von einem privaten Konto aufs gemeinsame Konto zum Ausgleich eines Topfs: NUR die budget-Aktion mit negativem Betrag und wer = der Überweisende (die App zieht es dann automatisch bei dessen Girokonto ab; keine zusätzliche eintrag-Aktion).
-4) Eine bestehende Ferienwohnungs-Buchung ändern (z. B. mehr Gäste, zusätzlich bar bezahlt, Abreise verschoben, storniert): {"art":"buchung","anreise":"JJJJ-MM-TT","plattform":"Booking.com"|"Airbnb"|"Privat","erwachsene":Zahl|null,"kinder":Zahl|null,"abreise":"JJJJ-MM-TT"|null,"bar":Zahl|null,"storniert":true|false,"bar_aufs_urlaubskonto":true|false|null,"notiz":"kurze Notiz"}
-   - bar_aufs_urlaubskonto=false, wenn der Barbetrag NICHT aufs Urlaubskonto gerechnet werden soll.
+4) Eine bestehende Ferienwohnungs-Buchung ändern (z. B. mehr Gäste, zusätzlich bar bezahlt, Abreise verschoben, storniert): {"art":"buchung","anreise":"JJJJ-MM-TT","plattform":"Booking.com"|"Airbnb"|"Privat","erwachsene":Zahl|null,"kinder":Zahl|null,"abreise":"JJJJ-MM-TT"|null,"bar":Zahl|null,"storniert":true|false,"bar_aufs_urlaubskonto":true|"voll"|false|null,"notiz":"kurze Notiz"}
+   - bar_aufs_urlaubskonto: true = Bargeld wie die Auszahlung aufteilen (Spartopf, Urlaubskonto); "voll" = Bargeld komplett aufs Urlaubskonto ohne Spartopf-Abzug; false, wenn der Barbetrag NICHT aufs Urlaubskonto gerechnet werden soll.
    - anreise und plattform genau aus der Buchungsliste oben. bar = Gesamtbetrag, der zusätzlich bar vor Ort gezahlt wird. Nur Felder füllen, die sich ändern, sonst null.
 5) Kreditwerte ändern (z. B. "Sparda-Restschuld um 1 € ändern", "Restschuld Sparda ist jetzt 318.000", "Mutter-Rate 900 €"): {"art":"kredit","feld":"feld aus der Kreditliste","wert":Zahl|null,"um":Zahl|null}  – wert = neuer Wert; um = Änderung um diesen Betrag (+ oder −), wenn nur eine Änderung genannt ist. "um 1 € ändern" ohne Richtung: um=-1 bei Restschuld (sinkt), sonst Rückfrage.
 6) Sondertilgung vormerken: {"art":"sondertilgung","kredit":"sparda"|"ing","monat":"JJJJ-MM","betrag":Zahl}
@@ -921,7 +931,7 @@ let qActs=[];
 function qDescribe(a){
   if(a.art==='budget')return +a.betrag<0?`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(-a.betrag)} ausgleichen (kommt wieder dazu)${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer)+(S.plan[month]?' (wird bei '+esc(a.wer)+' im Girokonto abgezogen)':''):''}`:`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(a.betrag)} abziehen${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer):''}`;
   if(a.art==='eintrag'){const b=BER[a.bereich];const verb=a.modus==='loeschen'?'löschen':a.modus==='aendern'?'ändern auf':'neu';return `${esc(a.person)} · ${ymShort(a.monat||month)} · ${b?b[1]:esc(a.bereich)}: „${esc(a.bezeichnung)}“ ${verb}${a.modus==='loeschen'?'':' '+eur(a.betrag)}${a.pauschale?' (aus der Pauschale)':''}`;}
-  if(a.art==='buchung'){const ch=[];if(a.storniert)ch.push('storniert');if(a.erwachsene!=null)ch.push(a.erwachsene+' Erwachsene');if(a.kinder!=null)ch.push(a.kinder+' Kinder');if(a.abreise)ch.push('Abreise '+dDE(a.abreise));if(a.bar!=null)ch.push(eur(a.bar)+' bar vor Ort');if(a.barUrlaub===false||a.bar_aufs_urlaubskonto===false)ch.push('Barbetrag nicht aufs Urlaubskonto');if(a.notiz)ch.push('Notiz: '+esc(a.notiz));return `Buchung ${esc(a.plattform||'')} ab ${dDE(a.anreise)}: ${ch.join(', ')||'keine Änderung'}`;}
+  if(a.art==='buchung'){const ch=[];if(a.storniert)ch.push('storniert');if(a.erwachsene!=null)ch.push(a.erwachsene+' Erwachsene');if(a.kinder!=null)ch.push(a.kinder+' Kinder');if(a.abreise)ch.push('Abreise '+dDE(a.abreise));if(a.bar!=null)ch.push(eur(a.bar)+' bar vor Ort');{const bu=a.barUrlaub??a.bar_aufs_urlaubskonto;if(bu===false)ch.push('Bargeld nicht aufs Urlaubskonto');else if(bu==='voll')ch.push('Bargeld komplett aufs Urlaubskonto');else if(bu===true)ch.push('Bargeld wie Auszahlung aufteilen');}if(a.notiz)ch.push('Notiz: '+esc(a.notiz));return `Buchung ${esc(a.plattform||'')} ab ${dDE(a.anreise)}: ${ch.join(', ')||'keine Änderung'}`;}
   if(a.art==='grund'){const it=S.grund.items.find(i=>i.k===a.key);return `Grundbetrag „${esc(it?.l||a.key)}“: ${it?eur(gv(a.key,a.ab||month))+' → ':''}${eur(a.wert)} ${a.ab?'ab '+ymName(a.ab):'(gilt ab sofort für alle offenen Monate)'}`;}
   if(a.art==='kredit'){const f=KFELDER.find(x=>x[0]===a.feld);const cur=String(a.feld||'').split('.').reduce((o,x)=>o?.[x],K());const nv=kNeu(a);return `${esc(f?f[1]:a.feld)}: ${fmtK2(a.feld,cur)} → <b>${fmtK2(a.feld,nv)}</b>`;}
   if(a.art==='sondertilgung')return `Sondertilgung ${a.kredit==='ing'?'ING':'Sparda'} ${ymName(a.monat)}: ${eur(a.betrag)}`;
@@ -980,17 +990,17 @@ const STORNO={'Airbnb':7,'Booking.com':5,'Privat':7};
 function airEstimate(netto){const R=FR();const alt=netto/(1-R.airAlt*(1+R.mwst)),neu=netto/(1-R.airNeu*(1+R.mwst));const d=x=>Math.abs(x-Math.round(x));return d(neu)<d(alt)?{gesamt:r2(Math.round(neu)),modell:'neu'}:{gesamt:r2(Math.round(alt)),modell:'alt'};}
 /* Buchung: {id,p,pRaw,a,ab,erw,sto,gb,H,I,J,K,src,gesamt?} – H/I/J wie Excel-Spalten */
 function fwD(b){const R=FR();const p=normPlat(b.p||b.pRaw);const n=nightsOf(b.a,b.ab);const netto=+b.J||0;let brutto=null,est=false,modell=null;
-  if(p==='Booking.com'){brutto=b.gesamt>0?+b.gesamt:(+b.H>0?r2((netto+R.kom*b.H)/(1-R.serv)):null);est=!(b.gesamt>0);}
+  if(p==='Booking.com'){brutto=b.gesamt>0?+b.gesamt:(+b.H>0?r2((netto+R.kom*b.H)/(1-R.serv)):null);est=false;}
   else if(p==='Airbnb'){if(+b.I>netto+0.5){brutto=+b.I;}else{const e=airEstimate(netto);brutto=e.gesamt;est=true;modell=e.modell;}if(!modell&&brutto)modell=(brutto-netto)/brutto>0.1?'neu':'alt';}
   else brutto=netto;
-  const gb=+b.gb||0;const bar=+b.bar||0;const ein=netto+bar;const barU=b.barUrlaub!==false;const basis=barU?ein:netto;const urlaub=r2(basis-basis*R.urlProz-R.urlFix-gb);const ud=p==='Booking.com'?dAdd(b.ab,2):p==='Airbnb'?dAdd(b.a,2):b.a;
+  const gb=+b.gb||0;const bar=+b.bar||0;const ein=netto+bar;const barM=b.barUrlaub===false?'nein':b.barUrlaub==='voll'?'voll':'teilen';const barU=barM!=='nein';const basis=barM==='teilen'?ein:netto;const spar=b.spO!=null&&b.spO!==''?+b.spO:r2(basis*R.urlProz+R.urlFix);const urlaub=b.uO!=null&&b.uO!==''?+b.uO:r2(basis-spar-gb+(barM==='voll'?bar:0));const ud=p==='Booking.com'?dAdd(b.ab,2):p==='Airbnb'?dAdd(b.a,2):b.a;
   const sto=(b.sto===''||b.sto==null)?STORNO[p]:+b.sto;const frist=dAdd(b.a,-(sto||0));
-  return {...b,p,n,netto,bar,ein,barU,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,sicher:TODAY>=frist,dac7:p==='Booking.com'?(+b.H||null):p==='Airbnb'?brutto:null};}
+  return {...b,p,n,netto,bar,ein,barU,barM,spar,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,sicher:TODAY>=frist,dac7:p==='Booking.com'?(+b.H||null):p==='Airbnb'?brutto:null};}
 function fwListAll(){return Object.entries(S.fewo).filter(([k])=>/^\d{4}$/.test(k)).flatMap(([,v])=>v||[]).filter(b=>b&&b.a).map(fwD).sort((a,b)=>a.a.localeCompare(b.a));}
 function fwList(){return fwListAll().filter(b=>!b.storniert);}
 function fwAlt(){return (S.fewo.alt||[]).map(x=>({...x,p:normPlat(x.p)}));}
 async function fwSaveAll(list){const ids=new Set(list.map(b=>b.id));list=[...list,...fwListAll().filter(b=>b.storniert&&!ids.has(b.id))];const g={};list.forEach(b=>{const y=b.a.slice(0,4);(g[y]??=[]).push(strip(b));});const years=new Set([...Object.keys(S.fewo).filter(k=>/^\d{4}$/.test(k)),...Object.keys(g)]);years.forEach(y=>S.fewo[y]=g[y]||[]);render();for(const y of years)await save('fewo/'+y,{b:g[y]||[]});}
-const strip=b=>{const o={};['id','p','pRaw','a','ab','erw','ki','sto','gb','H','I','J','K','src','gesamt','created','bar','notiz','barUrlaub','storniert','stornoAm'].forEach(k=>{if(b[k]!==undefined&&b[k]!==null&&b[k]!=='')o[k]=b[k];});return o;};
+const strip=b=>{const o={};['id','p','pRaw','a','ab','erw','ki','sto','gb','H','I','J','K','src','gesamt','created','bar','notiz','barUrlaub','storniert','stornoAm','bm','gbM','spO','uO'].forEach(k=>{if(b[k]!==undefined&&b[k]!==null&&b[k]!=='')o[k]=b[k];});return o;};
 function saveUrlaub(mut){const d=structuredClone(S.urlaub);d.e=d.e||[];mut(d);d.e.sort((a,b)=>(a.d||'').localeCompare(b.d||''));S.urlaub=d;render();return save('config/urlaub',d);}
 
 let fwImgs=[],fwYr=String(now.getFullYear());
@@ -1004,17 +1014,25 @@ function fwFromForm(){const R=FR();const p=$('#fw-p').value,a=$('#fw-a').value,a
   if(p==='Airbnb')return {p,a,ab,erw,ki,sto:sto===''?7:+sto,gb,H:0,I:ges>0?ges:0,J:bet};
   return {p,a,ab,erw,ki,sto:sto===''?7:+sto,gb,H:0,I:0,J:bet};}
 const gaeste=b=>`${b.erw??'?'} Erw.${+b.ki?' + '+b.ki+(+b.ki===1?' Kind':' Kinder'):''}`;
-function zettel(b,edit){const R=FR();const ein=b.ein??b.netto;const basis=b.barU===false?b.netto:ein;const spar=r2(basis*R.urlProz+R.urlFix);
-  return `<div class="zettel"><div class="row"><span>Gäste</span><span>${gaeste(b)}${+b.ki?' <span class="muted">(Gästebeitrag nur für Erwachsene)</span>':''}</span></div><div class="row"><span><b>Auszahlung</b> ${b.p==='Privat'?'vom Gast':'der Plattform'}</span><b class="num">${eur(b.netto)}</b></div>
-  ${b.bar?`<div class="row"><span><b>zusätzlich bar vor Ort</b></span><b class="num">${eur(b.bar)}</b></div><div class="row"><span>zusammen</span><b class="num">${eur(ein)}</b></div>${b.barU===false?'<div class="note">Barbetrag zählt nicht fürs Urlaubskonto.</div>':''}`:''}
-  <div class="row"><span>davon Gästebeitrag (${b.erw||0} Erw. × ${b.n} Nächte)</span><span class="num">${eur(b.gb)}</span></div>
-  <div class="row"><span>davon Spartopf (${Math.round(R.urlProz*100)} % + ${eur(R.urlFix,0)})</span><span class="num">${eur(spar)}</span></div>
-  <div class="row"><span><b>aufs Urlaubskonto</b> am ${dDE(b.ud)}</span><b class="num">${eur(b.urlaub)}</b></div>
-  ${b.brutto!=null&&b.p!=='Privat'?`<div class="row"><span class="muted">Brutto ${b.est?'(geschätzt) ':''}${eur(b.brutto)} · Gebühren ${eur(b.geb)}</span><span></span></div>`:''}
+const pct=x=>String(+(x*100).toFixed(1)).replace('.',',');
+function zettel(b,edit){const R=FR();const ein=b.ein??b.netto;const alt=!!b.ab&&b.ab<dAdd(TODAY,-14);const ed=edit&&!b.storniert&&b.id&&!alt;
+  const V=(f,v,bold,man)=>ed?`<button type="button" class="zed num${bold?' b':''}" data-zf="${f}" data-fid="${b.id}" data-v="${v!=null?num(v):''}" title="Tippen zum Ändern">${eur(v)}${man?' <small class="zman">✎</small>':''}</button>`:(bold?`<b class="num">${eur(v)}</b>`:`<span class="num">${eur(v)}</span>`);
+  const feeTxt=b.bm?'von dir eingetragen':b.p==='Booking.com'?`${pct(R.kom)} % Provision + ${pct(R.serv)} % Service`:b.modell==='alt'?`${pct(R.airAlt)} % + ${pct(R.mwst)} % MwSt`:`${pct(R.airNeu)} % + ${pct(R.mwst)} % MwSt`;
+  let hint='';if(!b.gbM&&b.gb>0&&b.n>0&&+b.erw>0){const k=Math.round(b.gb/(R.gb*b.n));if(k>0&&k<+b.erw&&Math.abs(k*R.gb*b.n-b.gb)<0.02)hint=`<div class="note zhint">Der Gästebeitrag passt zu <b>${k} Erwachsenen</b>. Ist jemand ein Kind? Dann unten Erwachsene ${k}, Kinder ${(+b.erw-k)+(+b.ki||0)} eintragen.</div>`;}
+  return `<div class="zettel"><div class="row"><span>Gäste</span><span>${gaeste(b)}${+b.ki?' <span class="muted">(Gästebeitrag nur für Erwachsene)</span>':''}</span></div>
+  ${b.brutto!=null&&b.p!=='Privat'?`<div class="row"><span><b>Brutto</b> ${b.p==='Booking.com'?'(Gesamtpreis)':'(vom Gast bezahlt)'}</span>${V('brutto',b.brutto,true,b.bm)}</div><div class="row sub"><span class="muted">− Gebühren <small>(${feeTxt})</small></span><span class="num muted">${eur(b.geb)}</span></div>`:''}
+  <div class="row"><span><b>Auszahlung</b> ${b.p==='Privat'?'vom Gast':'der Plattform'}</span>${V('J',b.netto,true)}</div>
+  ${b.bar?`<div class="row"><span><b>zusätzlich bar vor Ort</b></span><b class="num">${eur(b.bar)}</b></div><div class="row"><span>zusammen</span><b class="num">${eur(ein)}</b></div><div class="note">${b.barM==='nein'?'Bargeld bleibt außen vor (nicht aufs Urlaubskonto).':b.barM==='voll'?'Bargeld geht komplett aufs Urlaubskonto, ohne Spartopf-Abzug.':'Bargeld wird wie die Auszahlung aufgeteilt (Spartopf, Urlaubskonto).'}</div>`:''}
+  <div class="row"><span>davon Gästebeitrag (${b.erw||0} Erw. × ${b.n} Nächte)</span>${V('gb',b.gb,false,b.gbM)}</div>
+  <div class="row"><span>davon Spartopf (${Math.round(R.urlProz*100)} % + ${eur(R.urlFix,0)})</span>${V('spar',b.spar,false,b.spO!=null)}</div>
+  <div class="row"><span><b>aufs Urlaubskonto</b> am ${dDE(b.ud)}</span>${V('urlaub',b.urlaub,true,b.uO!=null)}</div>
+  ${hint}
   <div class="row"><span class="muted">Stornofrist ${b.sto} Tage: ${b.sicher?'<span class="ok">vorbei, Geld sicher</span>':'stornierbar bis '+dDE(b.frist)}</span><span></span></div>
+  ${ed?'<div class="note" style="margin:2px 0 0">Beträge antippen, um sie von Hand zu ändern (✎ = von Hand). Feld leeren = wieder automatisch.</div>':''}
+  ${edit&&alt&&!b.storniert?'<div class="note" style="margin:2px 0 0">🔒 Abreise liegt mehr als 2 Wochen zurück – diese Buchung ist abgeschlossen.</div>':''}
   ${b.notiz?`<div class="note">📝 ${esc(b.notiz)}</div>`:''}
   ${edit&&b.storniert?`<div class="note">Diese Buchung ist storniert und zählt nirgends mit. <button type="button" class="btn sec sm" data-fwreakt="${b.id}">Wieder aktivieren</button></div>`:''}
-  ${edit&&!b.storniert?`<form class="form fwedit" data-fid="${b.id}" style="margin-top:10px"><label>Erwachsene<input type="number" min="0" name="erw" value="${b.erw??''}" style="width:70px"></label><label>Kinder<input type="number" min="0" name="ki" value="${b.ki??''}" style="width:60px"></label><label>Abreise<input type="date" name="ab" value="${b.ab}"></label><label>bar vor Ort (€)<input inputmode="decimal" name="bar" value="${b.bar?num(b.bar):''}" style="width:90px"></label><label>Notiz<input name="notiz" value="${esc(b.notiz||'')}" style="width:150px"></label><label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" name="barUrlaub" ${b.barU!==false?'checked':''}> Bar aufs Urlaubskonto</label><button class="btn sec sm" type="submit">Ändern</button><button class="btn sec sm" type="button" data-fwstorno="${b.id}">Storniert</button></form>`:''}</div>`;}
+  ${ed?`<form class="form fwedit" data-fid="${b.id}" style="margin-top:10px"><label>Erwachsene<input type="number" min="0" name="erw" value="${b.erw??''}" style="width:70px"></label><label>Kinder<input type="number" min="0" name="ki" value="${b.ki??''}" style="width:60px"></label><label>Abreise<input type="date" name="ab" value="${b.ab}"></label><label>bar vor Ort (€)<input inputmode="decimal" name="bar" value="${b.bar?num(b.bar):''}" style="width:90px"></label><label>Notiz<input name="notiz" value="${esc(b.notiz||'')}" style="width:150px"></label><label>Bargeld<select name="barUrlaub"><option value="teilen" ${b.barM==='teilen'?'selected':''}>wie Auszahlung aufteilen</option><option value="voll" ${b.barM==='voll'?'selected':''}>komplett aufs Urlaubskonto</option><option value="nein" ${b.barM==='nein'?'selected':''}>nicht aufs Urlaubskonto</option></select></label><button class="btn sec sm" type="submit">Ändern</button><button class="btn sec sm" type="button" data-fwstorno="${b.id}">Storniert</button></form>`:''}</div>`;}
 function fwPreview(){fwLabels();{const R=FR();const a=$('#fw-a').value,ab=$('#fw-ab').value,g=+$('#fw-ges').value||0,e=+$('#fw-erw').value||0;const n=a&&ab?nightsOf(a,ab):0;$('#fw-bet').placeholder=$('#fw-p').value==='Booking.com'&&g>0&&n>0?'automatisch: '+num(r2(g-R.steuer*e*n)):'';}const i=fwFromForm();const el=$('#fw-prev');if(!i){el.innerHTML='<span class="muted">Sobald Daten und Beträge drin sind, siehst du hier den Auszahlungs-Zettel.</span>';return null;}const b=fwD(i);el.innerHTML=zettel(b);return i;}
 ['#fw-p','#fw-a','#fw-ab','#fw-erw','#fw-ges','#fw-bet','#fw-sto'].forEach(s=>$(s).addEventListener('input',fwPreview));
 $('#fw-p').addEventListener('change',()=>{fwStornoDefault(false);fwPreview();});$('#fw-sto').addEventListener('input',e=>{e.target.dataset.auto='0';});
@@ -1031,7 +1049,7 @@ Bestehende Buchungen (Anreise | Abreise | Plattform | Erwachsene | Kinder | Kont
 ${fwList().filter(b=>b.a>=dAdd(TODAY,-120)).map(b=>`${b.a} | ${b.ab} | ${b.p} | ${b.erw??''} | ${b.ki??''} | ${num(b.netto)} | ${b.bar?num(b.bar):''}`).join('\n')}
 
 Entscheide zuerst: Ist es eine NEUE Buchung oder eine ÄNDERUNG an einer bestehenden Buchung aus der Liste (z. B. mehr Gäste, bar bezahlt, Abreise verschoben, storniert)?
-Bei ÄNDERUNG antworte NUR mit JSON: {"art":"aenderung","anreise":"JJJJ-MM-TT aus der Liste","plattform":"wie in der Liste","erwachsene":Zahl|null,"kinder":Zahl|null,"abreise":"JJJJ-MM-TT"|null,"bar":Zahl|null,"storniert":true|false,"bar_aufs_urlaubskonto":true|false|null,"notiz":"kurze Notiz"}  (bar = Betrag, der zusätzlich bar vor Ort gezahlt wird; bar_aufs_urlaubskonto=false, wenn der Barbetrag NICHT aufs Urlaubskonto soll; nur geänderte Felder, sonst null. Setze jede Anweisung des Textes um, die zu einem dieser Felder passt.)
+Bei ÄNDERUNG antworte NUR mit JSON: {"art":"aenderung","anreise":"JJJJ-MM-TT aus der Liste","plattform":"wie in der Liste","erwachsene":Zahl|null,"kinder":Zahl|null,"abreise":"JJJJ-MM-TT"|null,"bar":Zahl|null,"storniert":true|false,"bar_aufs_urlaubskonto":true|"voll"|false|null,"notiz":"kurze Notiz"}  (bar = Betrag, der zusätzlich bar vor Ort gezahlt wird; bar_aufs_urlaubskonto: true = Bargeld wie die Auszahlung aufteilen (Spartopf, Urlaubskonto); "voll" = Bargeld komplett aufs Urlaubskonto ohne Spartopf-Abzug; false, wenn der Barbetrag NICHT aufs Urlaubskonto soll; nur geänderte Felder, sonst null. Setze jede Anweisung des Textes um, die zu einem dieser Felder passt.)
 Bei NEUER Buchung antworte wie folgt, mit "art":"neu".
 Du liest EINE Ferienwohnungs-Buchung aus (Screenshots oder kopierter Text) (Booking.com, Airbnb oder privat).
 Antworte NUR mit JSON: {"art":"neu","plattform":"Booking.com"|"Airbnb"|"Privat"|"unbekannt","anreise":"JJJJ-MM-TT"|null,"abreise":"JJJJ-MM-TT"|null,"erwachsene":Zahl|null,"kinder":Zahl|null,"gesamtpreis":Zahl|null,"kommissionspflichtig":Zahl|null,"auszahlung":Zahl|null,"gebuehr":Zahl|null,"storniert":true|false,"stornierbar":true|false|null,"unsicher":["feldname"],"hinweis":"ein kurzer Satz"}
@@ -1096,15 +1114,20 @@ async function fwUpdate(match,ch){const R=FR();const all=fwListAll();const b=all
   const old=fwD(b);let list;
   if(ch.storniert){list=all.map(x=>x.id===b.id?{...x,storniert:true,stornoAm:TODAY}:x);}
   else if(ch.reaktivieren){list=all.map(x=>{if(x.id!==b.id)return x;const y={...x};delete y.storniert;delete y.stornoAm;return y;});}
-  else{const nb={...b};if(ch.erw!=null&&ch.erw!=='')nb.erw=+ch.erw;if(ch.ki!=null&&ch.ki!=='')nb.ki=+ch.ki;if(ch.ab)nb.ab=ch.ab;if(ch.bar!==undefined)nb.bar=ch.bar==null||ch.bar===''?0:+ch.bar;if(ch.notiz!==undefined)nb.notiz=ch.notiz;if(ch.barUrlaub!=null)nb.barUrlaub=!!ch.barUrlaub;
-    if(ch.erw!=null||ch.ab)nb.gb=r2(R.gb*(+nb.erw||0)*nightsOf(nb.a,nb.ab));list=all.map(x=>x.id===b.id?nb:x);}
+  else{const nb={...b};if(ch.erw!=null&&ch.erw!=='')nb.erw=+ch.erw;if(ch.ki!=null&&ch.ki!=='')nb.ki=+ch.ki;if(ch.ab)nb.ab=ch.ab;if(ch.bar!==undefined)nb.bar=ch.bar==null||ch.bar===''?0:+ch.bar;if(ch.notiz!==undefined)nb.notiz=ch.notiz;if(ch.brutto!==undefined){const pl=normPlat(nb.p||nb.pRaw);if(ch.brutto==null){if(nb.bm){if(pl==='Booking.com')delete nb.gesamt;else if(pl==='Airbnb')nb.I=0;delete nb.bm;}}else{if(pl==='Booking.com')nb.gesamt=r2(ch.brutto);else if(pl==='Airbnb')nb.I=r2(ch.brutto);nb.bm=true;}}
+    if(ch.barUrlaub!=null)nb.barUrlaub=ch.barUrlaub==='voll'?'voll':ch.barUrlaub==='nein'?false:ch.barUrlaub==='teilen'?true:!!ch.barUrlaub;
+    if(ch.erw!=null||ch.ab){nb.gb=r2(R.gb*(+nb.erw||0)*nightsOf(nb.a,nb.ab));delete nb.gbM;}
+    if(ch.J!==undefined&&ch.J!=null)nb.J=r2(ch.J);
+    if(ch.gb!==undefined){if(ch.gb==null){nb.gb=r2(R.gb*(+nb.erw||0)*nightsOf(nb.a,nb.ab));delete nb.gbM;}else{nb.gb=r2(ch.gb);nb.gbM=true;}}
+    if(ch.spO!==undefined){if(ch.spO==null)delete nb.spO;else nb.spO=r2(ch.spO);}
+    if(ch.uO!==undefined){if(ch.uO==null)delete nb.uO;else nb.uO=r2(ch.uO);}list=all.map(x=>x.id===b.id?nb:x);}
   await fwSaveAll(list);const nw=ch.storniert?null:fwD(list.find(x=>x.id===b.id));
   await saveUrlaub(u=>{const i=u.e.findIndex(x=>x.fid===b.id||(!x.fid&&x.d===old.ud&&Math.abs((+x.b)-old.urlaub)<0.06));
     if(ch.storniert){if(i>=0)u.e.splice(i,1);return;}
     if(i>=0){u.e[i].d=nw.ud;u.e[i].b=nw.urlaub;u.e[i].fid=b.id;}else u.e.push({d:nw.ud,b:nw.urlaub,t:nw.p,fid:b.id});});
   return {old,nw};}
 $('#fw-table').addEventListener('submit',async e=>{const fm=e.target.closest('.fwedit');if(!fm)return;e.preventDefault();const d=Object.fromEntries(new FormData(fm));
-  await fwUpdate({id:fm.dataset.fid},{erw:d.erw,ki:d.ki,ab:d.ab,bar:parseNum(d.bar),notiz:d.notiz.trim(),barUrlaub:!!d.barUrlaub});});
+  await fwUpdate({id:fm.dataset.fid},{erw:d.erw,ki:d.ki,ab:d.ab,bar:parseNum(d.bar),notiz:d.notiz.trim(),barUrlaub:d.barUrlaub||'teilen'});});
 $('#fw-table').addEventListener('click',async e=>{const rk=e.target.closest('[data-fwreakt]');if(rk){e.stopPropagation();await fwUpdate({id:rk.dataset.fwreakt},{reaktivieren:true});return;}const s=e.target.closest('[data-fwstorno]');if(!s)return;e.stopPropagation();if(!s.dataset.armed){s.dataset.armed=1;s.textContent='Wirklich stornieren?';s.classList.add('danger');return;}
   await fwUpdate({id:s.dataset.fwstorno},{storniert:true});},true);
 
@@ -1113,6 +1136,14 @@ $('#fw-shotmsg').addEventListener('click',async e=>{if(e.target.id==='fw-chno'){
   const r=await fwUpdate({a:a.anreise,p:a.plattform},{erw:a.erwachsene,ki:a.kinder,ab:a.abreise,bar:a.bar==null?undefined:a.bar,notiz:a.notiz||undefined,storniert:a.storniert,barUrlaub:a.barUrlaub});
   if(r){$('#fw-text').value='';$('#fw-shotmsg').innerHTML=a.storniert?'<b class="pos">Buchung als storniert markiert.</b> Sie bleibt ausgegraut in der Liste, der Urlaubskonto-Eintrag ist entfernt.':`<b class="pos">Gespeichert.</b> Urlaubskonto jetzt ${eur(r.nw.urlaub)} (vorher ${eur(r.old.urlaub)}), Gästebeitrag ${eur(r.nw.gb)}.`;fwOpen=(fwList().find(b=>b.a===a.anreise)||{}).id||null;rFewo();}
   else $('#fw-shotmsg').innerHTML='<b class="neg">Diese Buchung habe ich nicht gefunden.</b> Bitte Anreisedatum prüfen.';});
+
+/* Zettel: Beträge antippen und von Hand ändern */
+$('#fw-table').addEventListener('click',e=>{const z=e.target.closest('.zed');if(!z)return;e.stopPropagation();const inp=document.createElement('input');inp.className='zin';inp.inputMode='decimal';inp.value=z.dataset.v;inp.dataset.zf=z.dataset.zf;inp.dataset.fid=z.dataset.fid;inp.dataset.orig=z.dataset.v;z.replaceWith(inp);inp.focus();inp.select();},true);
+async function zCommit(inp){if(inp.dataset.done)return;inp.dataset.done=1;const v=inp.value.trim();if(v===inp.dataset.orig){render();return;}const val=v===''?null:parseNum(v);if(v!==''&&val==null){render();return;}
+  const f=inp.dataset.zf;const map={brutto:'brutto',J:'J',gb:'gb',spar:'spO',urlaub:'uO'};if(f==='J'&&val==null){render();return;}
+  await fwUpdate({id:inp.dataset.fid},{[map[f]]:val});}
+$('#fw-table').addEventListener('keydown',e=>{if(!e.target.classList?.contains('zin'))return;if(e.key==='Enter'){e.preventDefault();zCommit(e.target);}if(e.key==='Escape'){e.target.dataset.done=1;render();}});
+$('#fw-table').addEventListener('focusout',e=>{if(e.target.classList?.contains('zin'))zCommit(e.target);});
 /* ---------- Kredite ---------- */
 const BANK={'2026-12':320595.22,'2027-12':316043.84,'2028-12':311299.48,'2029-12':306353.94,'2030-12':301198.71,'2031-12':295824.89,'2032-12':290223.22,'2043-12':210485.72,'2044-12':201265.45,'2045-12':191654.21,'2046-12':181635.43,'2047-12':171191.84,'2048-12':160305.41,'2049-12':148957.37,'2050-12':137128.15,'2051-12':124797.35,'2052-12':111943.68,'2053-03':108645.98};
 const K=()=>S.kredit||{sparda:{},bauspar:{},ing:{}};
@@ -1637,7 +1668,7 @@ window.__exportExcel=exportExcel;
 /* ---------- Einmalige Umstellungen ---------- */
 const SEP_PLAN={"TILL":{"C":[{"l":"Haus, sonst.","v":1368.21},{"l":"Pauschale","v":300},{"l":"Ioniq 6","v":512.71},{"l":"Ioniq 6 Tanken","v":80},{"l":"Kreditkarte","v":0},{"l":"ETF","v":100},{"l":"Sparen für Auto","v":50},{"l":"Whoop","v":150},{"l":"Strom Anteil Till","v":40},{"l":"Versicherungen","v":112.53}],"E":[{"l":"Giroausgleich","v":2300,"f":"=GIROAUSGLEICH"},{"l":"Rückgabe von Patrick","v":300}],"I":[{"l":"Whoop","v":530}],"K":[{"l":"Rest Gehalt","v":496.05,"f":"=RESTGEHALT"},{"l":"sonstiges","v":0},{"l":"sonstiges","v":null},{"l":"sonstiges","v":null}]},"PATRICK":{"C":[{"l":"Haus, sonst.","v":1368.21},{"l":"Pauschale","v":170},{"l":"Versicherungen","v":215.16},{"l":"Kreditkarte","v":50},{"l":"Strom Anteil Patrick","v":45},{"l":"ETF","v":50},{"l":"Rückgabe an Till","v":300},{"l":"Sparen für Auto","v":50}],"E":[{"l":"Giroausgleich","v":2248,"f":"=GIROAUSGLEICH"}],"I":[],"K":[{"l":"Rest Gehalt","v":300,"f":"=RESTGEHALT"},{"l":"sonstiges","v":null},{"l":"sonstiges","v":null},{"l":"sonstiges","v":null}]},"HAUS":{"G":[{"l":"Tilgung","v":1628},{"l":"Essen","v":350},{"l":"Internet","v":49.9},{"l":"sonstiges","v":235.97},{"l":"Risikolebensversicherung","v":28},{"l":"Rechtsschutzversicherung","v":41.93},{"l":"Heizölgeld","v":1000},{"l":"sonstiges","v":100}],"I":[{"l":"Anteil Patrick","v":1368.22},{"l":"Anteil Till","v":1368.22}],"notiz":"Nach Septemberanteil 1000€ für Öl zur Verfügung"}};
 let migRunning=false;
-async function migrate(){if(migRunning||!db)return;const M=S.einst?.mig||{};if(M.sep&&M.rueck&&M.pc&&M.gst)return;
+async function migrate(){if(migRunning||!db)return;const M=S.einst?.mig||{};if(M.sep&&M.rueck&&M.pc&&M.gst&&M.hlink)return;
   const real=Object.keys(S.plan).filter(k=>!S.plan[k]._virt);if(real.length<12||!S.grund.items.length)return;migRunning=true;
   try{const nm={...M};
     if(!M.sep){if(!S.plan['2026-09']){const d=structuredClone(SEP_PLAN);S.plan['2026-09']=d;await save('plan/2026-09',d);if(CUR==='2026-09')month=CUR;}nm.sep=1;}
@@ -1650,6 +1681,12 @@ async function migrate(){if(migRunning||!db)return;const M=S.einst?.mig||{};if(M
     if(!M.gst){/* Grundsteuer wird 4× im Jahr abgebucht (15.02., 15.05., 15.08., 15.11.); im Februar fehlte sie im Plan */
       for(const ym of Object.keys(S.plan).filter(k=>k.endsWith('-02')&&!S.plan[k]._virt&&!S.plan[k].zu).sort()){const G=S.plan[ym]?.HAUS?.G||[];if(!G.some(e=>/^grundsteuer/i.test((e.l||'').trim())))await savePlan(ym,d=>{const h=d.HAUS=d.HAUS||{};(h.G=h.G||[]).push({l:'Grundsteuer',f:'=Grundsteuer_jährlich/4',v:r2(gn('h_grundst')/4)});});}
       nm.gst=1;}
+    if(!M.hlink){/* Okt–Dez 2026 hatten aus der Excel feste Werte bei „Haus, sonst.“ und den Anteilen. Jetzt an die Grundbeträge koppeln (Differenz bleibt als fester Zuschlag), damit z. B. ein höheres Essen-Budget überall mitläuft */
+      const F={TILL:"='Dashboard (Patrick, Till)'!$C$19",PATRICK:"='Dashboard (Patrick, Till)'!$D$19"};
+      for(const ym of Object.keys(S.plan).filter(k=>!S.plan[k]._virt&&!S.plan[k].zu).sort()){const P=S.plan[ym];useYm(ym);const todo=[];
+        [['TILL','C',/^haus, sonst\.?$/i,F.TILL],['PATRICK','C',/^haus, sonst\.?$/i,F.PATRICK],['HAUS','I',/^anteil till$/i,F.TILL],['HAUS','I',/^anteil patrick$/i,F.PATRICK]].forEach(([sh,g,rx,f])=>{(P[sh]?.[g]||[]).forEach((e,i)=>{if(!e.f&&!e._c&&rx.test((e.l||'').trim())&&e.v!=null){const base=evalF(f);if(isFinite(base)){const off=Math.round((+e.v-base)*1000)/1000;todo.push([sh,g,i,Math.abs(off)<0.01?f:f+(off>0?'+':'')+off]);}}});});
+        if(todo.length)await savePlan(ym,d=>{todo.forEach(([sh,g,i,f])=>{const e=d[sh]?.[g]?.[i];if(e){e.f=f;}});});}
+      useYm(month);nm.hlink=1;}
     S.einst={...S.einst,mig:nm};await save('config/einstellungen',S.einst);render();
   }catch(err){console.error('Umstellung',err);}finally{migRunning=false;}}
 /* ---------- Tabs & Render ---------- */
@@ -1668,6 +1705,7 @@ const h0=(location.hash||'').slice(1);showTab(TABS.some(([k])=>k===h0)?h0:'heute
 const R={heute:rHeute,monat:rMonat,fewo:rFewo,kredite:rKredite,vermoegen:rVerm,bald:rBald,strom:rStrom,einst:rEinst};
 let raf;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{try{calcAll();R[tab]();if(tab!=='bald')try{rBald();}catch(_){}}catch(err){console.error(err);}});}
 let rt,lastW=innerWidth;addEventListener('resize',()=>{if(Math.abs(innerWidth-lastW)<40)return;/* Handy-Tastatur ändert nur die Höhe */lastW=innerWidth;const a=document.activeElement;if(a&&a.matches('input,textarea,select'))return;clearTimeout(rt);rt=setTimeout(render,150);});
+{const t=`Version ${APPV.nr} vom ${APPV.datum}`;$('#appv').textContent=t;$('#appv2').textContent='· '+t;}
 $('#today').textContent='Heute: '+now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 $('#undo').onclick=doUndo;
 render();
