@@ -59,7 +59,7 @@
     if(ch)await fs.doc('config/live').set(clean(nx));}catch(_){}}
 
   /* Einstellungen: Claude-Zugang + Abmelden */
-  document.addEventListener('DOMContentLoaded',()=>{const host=document.getElementById('p-einst');if(!host||!OK)return;const c=document.createElement('div');c.className='card';c.id='ki-card';
+  document.addEventListener('DOMContentLoaded',()=>{const host=document.getElementById('app-sect')||document.getElementById('p-einst');if(!host||!OK)return;const c=document.createElement('div');c.className='card';c.id='ki-card';
     const MODELS={claude:[['claude-sonnet-5','Claude Sonnet 5 (empfohlen, ca. 1 Cent je Anfrage)'],['claude-haiku-4-5-20251001','Claude Haiku 4.5 (günstiger)']],gemini:[['gemini-3.8-flash','Gemini 3.8 Flash'],['gemini-3.5-flash-lite','Gemini 3.5 Flash-Lite (schneller)']]};
     c.innerHTML=`<div class="head"><h2>KI-Zugang</h2></div><div class="note" style="margin-top:0">Für „Schnell eintragen“, „Buchung auslesen“ und „Fragen & Was wäre, wenn …?“. Der Schlüssel liegt geschützt in eurer Datenbank (nur ihr zwei könnt ihn lesen), gilt für euch beide und steht nicht in der Sicherungsdatei.</div>
       <form class="form" id="f-ki" style="margin-top:8px" onsubmit="return false"><label>Anbieter<select id="ki-prov"><option value="claude">Claude (Anthropic)</option><option value="gemini">Gemini (Google)</option></select></label><label>Schlüssel<input id="ki-key" type="password" autocomplete="off" style="min-width:220px"></label><label>Modell<select id="ki-model"></select></label><button class="btn" id="ki-save">Speichern</button><button class="btn sec" id="ki-test">Testen</button></form>
@@ -230,7 +230,7 @@ tr.fwrow.storno td:last-child,tr.fwrow.storno td:nth-last-child(2){text-decorati
 .bd-m h3{margin:14px 0 4px}
 #nav .badge{font-style:normal;background:var(--bad);color:#fff;border-radius:9px;font-size:10px;min-width:16px;height:16px;display:inline-grid;place-items:center;padding:0 4px;margin-left:2px}
 @media (max-width:560px){nav#nav{grid-template-columns:repeat(4,1fr)}}
-.imp{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.imp{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:12px}
 .imp[hidden]{display:none}
 .imp-c{width:100%;max-width:560px;max-height:85vh;overflow:auto;margin:0;box-shadow:0 10px 40px rgba(0,0,0,.25)}
 .imp-l{padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px}
@@ -248,23 +248,23 @@ tr.fwrow.storno td:last-child,tr.fwrow.storno td:nth-last-child(2){text-decorati
 .pvset summary{cursor:pointer;color:var(--acc);font-weight:500;margin:6px 0}
 .leg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink2)}.leg i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
 tr.sum td{font-weight:600;border-top:1px solid var(--line)}
-#intro{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#221c14 0,#0b0a08 75%);cursor:pointer;perspective:1400px;animation:inOut 2.3s ease forwards}
-.bk{position:relative;width:min(58vw,250px);aspect-ratio:3/4;animation:bkIn .6s ease both}
-.bk-page{position:absolute;inset:0;border-radius:3px 8px 8px 3px;background:linear-gradient(90deg,#e9e1cc,#f7f1e3 12%,#f4eddc);box-shadow:0 20px 50px rgba(0,0,0,.6)}
-.bk-lines{position:absolute;inset:18% 12% 14% 14%;background:repeating-linear-gradient(180deg,transparent 0 17px,rgba(120,100,60,.22) 17px 18px);opacity:0;animation:fade .5s 1.3s ease forwards}
-.bk-cover{position:absolute;inset:0;transform-origin:left center;border-radius:3px 8px 8px 3px;background:linear-gradient(135deg,#123126 0,#0c231b 55%,#081a14 100%);box-shadow:inset 6px 0 10px rgba(0,0,0,.45),inset -1px 0 0 rgba(255,255,255,.05),0 20px 50px rgba(0,0,0,.6);display:grid;place-items:center;animation:bkOpen 1s 1s cubic-bezier(.6,.05,.3,1) forwards;backface-visibility:hidden}
+#intro{position:fixed;inset:0;z-index:50;display:grid;place-items:center;cursor:pointer;perspective:1600px}
+#intro::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,#221c14 0,#0b0a08 75%);animation:bgOut .7s 1.05s ease forwards}
+.bk{position:relative;width:min(80vw,360px);aspect-ratio:3/4;animation:bkIn .6s ease both}
+.bk-cover{position:absolute;inset:0;transform-origin:left center;border-radius:3px 8px 8px 3px;background:linear-gradient(135deg,#123126 0,#0c231b 55%,#081a14 100%);box-shadow:inset 6px 0 10px rgba(0,0,0,.45),inset -1px 0 0 rgba(255,255,255,.05),0 20px 50px rgba(0,0,0,.6);display:grid;place-items:center;animation:bkOpen 1.1s 1s cubic-bezier(.6,.05,.3,1) forwards;backface-visibility:hidden}
 .bk-frame{position:absolute;inset:7%;border:1px solid rgba(217,189,116,.55);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:inset 0 0 0 4px rgba(0,0,0,.15),inset 0 0 0 5px rgba(217,189,116,.25)}
 .bk-t,.bk-n,.bk-orn,.bk-y{background:linear-gradient(100deg,#9c7a34 0,#f3dc9a 45%,#b8903f 55%,#f3dc9a 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 1.4s ease forwards}
-.bk-t{font-size:clamp(13px,4vw,18px);letter-spacing:.1em;text-transform:uppercase;font-weight:500}
-.bk-n{font-size:clamp(13px,3.8vw,16px);letter-spacing:.2em;font-style:italic}
-.bk-orn{font-size:18px}.bk-y{font-size:10px;letter-spacing:.3em;text-transform:uppercase;margin-top:10px;opacity:.8}
+.bk-t{font-size:clamp(17px,5.4vw,25px);letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.bk-n{font-size:clamp(15px,4.4vw,20px);letter-spacing:.2em;font-style:italic}
+.bk-orn{font-size:24px}.bk-y{font-size:12px;letter-spacing:.3em;text-transform:uppercase;margin-top:10px;opacity:.8}
 .bk-rule{width:46%;height:1px;background:linear-gradient(90deg,transparent,#d9bd74,transparent)}
 @keyframes bkIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
 @keyframes bkOpen{to{transform:rotateY(-165deg)}}
 @keyframes shine{from{background-position:100% 0}to{background-position:0 0}}
 @keyframes fade{to{opacity:1}}
 @keyframes inOut{0%,82%{opacity:1}100%{opacity:0;visibility:hidden}}
-@media (prefers-reduced-motion:reduce){#intro{animation:inOut 1s ease forwards}.bk,.bk-cover,.bk-lines{animation:none}}
+@keyframes bgOut{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){#intro{animation:inOut 1s ease forwards}.bk,.bk-cover{animation:none}}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}.kpis .card{margin:0;padding:10px 12px}.kpis .kpi .v{font-size:20px}
 #s-table input{width:74px;text-align:right}#s-table td,#pv-table td{white-space:nowrap}#pv-table{font-size:13px}
 .wi{border-color:color-mix(in srgb,var(--acc) 35%,var(--line))}.wi-ch{font-size:14px;padding:6px 0}
@@ -288,12 +288,79 @@ details.ph>summary{list-style:none;cursor:pointer}details.ph>summary::-webkit-de
   input,select,textarea{font-size:16px}
 }
 textarea.grow{overflow:hidden;resize:none}
+.rv{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}.dlt{font-size:12px;font-weight:600}.dlt.ok{color:var(--mute);font-weight:500}.snapn{margin:-4px 0 6px;font-size:12px}
+.goldsep{margin-top:14px;padding:10px 12px 8px;border-radius:10px;background:color-mix(in srgb,var(--gold) 9%,transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent)}
+.goldsep .row{border-bottom:0}
+details.row.goldsep{border-bottom:1px solid color-mix(in srgb,var(--gold) 30%,transparent)}
+.tend{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;line-height:1.45}
+.tend b{font-size:16px}.tend.pos{background:color-mix(in srgb,var(--good) 9%,transparent)}.tend.neg{background:color-mix(in srgb,var(--bad) 8%,transparent)}.tend.eq{background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.tend small{display:block;color:var(--mute)}
+.stab td,.stab th{padding:3px 6px}.stab input.ist.sm{width:78px;padding:3px 6px;font-size:13px;height:28px;box-sizing:border-box}
+.seg.yrs{flex-wrap:wrap}.seg.yrs button{padding:4px 9px;font-size:12px}
+.sdvw{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}.sdv{font-size:12px;font-weight:600;padding:1px 6px;border-radius:6px;white-space:nowrap}
+.sdv.neg{background:color-mix(in srgb,var(--bad) 12%,transparent)}.sdv.pos{background:color-mix(in srgb,var(--good) 12%,transparent)}.sdv.eq{color:var(--mute)}
+@media (max-width:560px){.stab input.ist.sm{width:62px}.stab td,.stab th{padding:3px 3px;font-size:12px}}
+.sect-h{margin:22px 2px 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:600;display:flex;align-items:center;gap:10px}.sect-h::after{content:"";flex:1;height:1px;background:var(--line)}
+#p-einst>.sect-h:first-child{margin-top:4px}
+.gown{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));align-items:start}
+.gcol{border:1px solid var(--line);border-top:4px solid var(--oc);border-radius:12px;padding:10px 12px 8px;background:color-mix(in srgb,var(--oc) 4%,var(--card))}
+.gcol-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}.gcol-h span{font-weight:700;font-size:16px;color:var(--oc)}.gcol-h small{color:var(--mute);font-size:12px}
+.ggrp{border-bottom:1px solid var(--line)}.ggrp>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;cursor:pointer;font-weight:500}
+.ggrp>summary::-webkit-details-marker{display:none}.ggrp>summary>span::before{content:"▸";display:inline-block;width:14px;color:var(--mute);transition:transform .15s}.ggrp[open]>summary>span::before{transform:rotate(90deg)}
+.ggrp[open]{padding-bottom:6px}.ggrp .grow{padding-left:14px}.ggrp .grow:last-child{border-bottom:0}
+.gsingle .grow{border-bottom:1px solid var(--line);padding:6px 0;font-weight:500}
+.gtag{font-size:11px;color:var(--mute);font-weight:400;border:1px solid var(--line);border-radius:5px;padding:0 4px;margin-left:4px}
+.gcol .grow{grid-template-columns:1fr 110px}
+.gcol .grow input{width:100%;min-width:0;box-sizing:border-box}.gcol .grow>span{min-width:0}
+.stab td{font-size:14px}
+.gcol .grow>span{overflow-wrap:anywhere;hyphens:auto}
+@media (max-width:560px){.gcol .grow{grid-template-columns:1fr 92px}.stab input.ist.sm{width:56px!important;padding:3px 4px;font-size:12px}.stab th{font-size:11px}.sdvw{flex-direction:column-reverse;gap:2px;align-items:flex-end}.sdv{font-size:11px}}
+@media (max-width:560px){.stab td,.stab th{padding:3px 2px}}
+.stab .hs{display:none}
+@media (max-width:560px){.stab .hl{display:none}.stab .hs{display:inline}.stab input.ist.sm{width:52px!important}.stab td{font-size:12px}}
+.geh>div:first-child{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.gehist{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute)}.gehist input{width:110px;text-align:right;padding:4px 8px}
+@media (max-width:560px){.gehist{margin-left:0;width:100%;justify-content:space-between}}
+.fixb{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin:4px 0 12px;font-size:20px;line-height:1}
+.fixb>div{flex:1;display:flex;flex-direction:column;gap:3px}.fixb b{font-size:15px}.fixb small{font-size:12px;color:var(--ink2);line-height:1.35}
+.fixb.on{background:color-mix(in srgb,var(--good) 13%,var(--card));border:1.5px solid color-mix(in srgb,var(--good) 55%,transparent)}.fixb.on b{color:var(--good)}
+.fixb.off{background:color-mix(in srgb,var(--warn) 10%,var(--card));border:1.5px dashed color-mix(in srgb,var(--warn) 55%,transparent)}.fixb.off b{color:color-mix(in srgb,var(--warn) 80%,var(--ink))}
+.fixb.done{background:var(--soft);border:1.5px solid var(--line)}
+.mstate.fixed{background:color-mix(in srgb,var(--good) 15%,transparent)!important;color:var(--good)!important;border-color:color-mix(in srgb,var(--good) 50%,transparent)!important;font-weight:600}
+.mstate.part{background:color-mix(in srgb,var(--warn) 12%,transparent)!important;border-color:color-mix(in srgb,var(--warn) 45%,transparent)!important}
+@media (max-width:560px){.fixb{flex-wrap:wrap}.fixb .btn{width:100%}}
+.fwnext{border-top:3px solid var(--gold)}
+.fwn-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin:4px 0 10px}.fwn-top>div{display:flex;flex-direction:column;gap:2px;font-size:13px}.fwn-d{font-size:18px;font-weight:700}.fwn-v{font-size:24px}
+.fwn-split{border:1px solid var(--line);border-radius:10px;padding:6px 12px}.fwn-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:4px 0}
+.fwn-r{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-top:1px dashed var(--line)}.fwn-r:first-of-type{border-top:0}.fwn-r small{display:block;font-size:11px}
+.fwn-more{margin-top:10px;font-size:13px;color:var(--ink2)}
+.kgrp{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));margin-bottom:14px}
+.kg{border-top:4px solid var(--kc);margin:0;background:color-mix(in srgb,var(--kc) 4%,var(--card))}.kg-h{font-weight:700;color:var(--kc);margin-bottom:6px}
+.kg-m{display:flex;flex-direction:column;margin-bottom:6px}.kg-m span{font-size:12px}.kg-m b{font-size:24px}.kg .row{font-size:13px}
+.seg-l{font-size:11px;color:var(--mute);padding:0 8px;display:inline-flex;align-items:center;border-right:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
+.yrsel{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font:inherit;font-size:13px;background:var(--card);color:var(--ink2)}.yrsel.on{border-color:var(--acc);color:var(--acc);font-weight:600}
+.glab{all:unset;cursor:pointer;display:inline}.glab:hover{text-decoration:underline dotted}
+.gtag.m{opacity:.75}.gtag.end{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.grow.ed{background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.gedit{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0 10px 14px;border-bottom:1px dashed var(--line);font-size:13px}.gedit label{display:flex;align-items:center;gap:6px}
+.danger-t{color:var(--bad)!important;border-color:color-mix(in srgb,var(--bad) 40%,transparent)!important;margin-left:auto}
+.gadd{margin-top:14px;padding:12px;border:1px dashed var(--acc);border-radius:12px;background:color-mix(in srgb,var(--acc) 4%,transparent)}
+.gcol .grow>span{overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+.gown{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+#f-gh label{max-width:100%;min-width:0}#gh-k{max-width:100%;width:100%}@media (min-width:561px){#gh-k{width:auto;max-width:340px}}
+.filters .seg button{white-space:nowrap}.filters .seg{flex-wrap:wrap}
+.gin{display:flex;align-items:center;gap:4px;min-width:0}.gin input{flex:1;min-width:0}
+.gcol .grow{grid-template-columns:1fr 136px}
+.gbtn{border:1px solid var(--line);background:var(--card);color:var(--ink2);border-radius:7px;width:26px;height:30px;flex:none;cursor:pointer;font-size:14px;line-height:1;padding:0}.gbtn:hover{border-color:var(--acc);color:var(--acc)}
+.grow.new{animation:gnew 2.5s ease}@keyframes gnew{0%,40%{background:color-mix(in srgb,var(--good) 22%,transparent)}100%{background:transparent}}
+@media (max-width:560px){.gcol .grow{grid-template-columns:1fr 118px}}
+.gsingle.ggold{margin-top:10px;padding:6px 10px 8px;border-radius:10px;background:color-mix(in srgb,var(--gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--gold) 40%,transparent)}.gsingle.ggold .grow{border-bottom:0}.gsingle.ggold .glab{color:color-mix(in srgb,var(--gold) 75%,var(--ink));font-weight:600}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
 #fbgate .btn{background:#d9bd74;color:#0c231b;border:0;padding:12px 22px;font-size:16px;border-radius:10px;font-weight:600}
 </style></head><body>
-<div id="intro" aria-hidden="true"><div class="bk"><div class="bk-page"><div class="bk-lines"></div></div><div class="bk-cover"><div class="bk-frame"><div class="bk-orn">✦</div><div class="bk-t">Haushaltsbuch</div><div class="bk-rule"></div><div class="bk-n">Till &amp; Patrick</div><div class="bk-y">seit 2026</div></div></div></div></div>
+<div id="intro" aria-hidden="true"><div class="bk"><div class="bk-cover"><div class="bk-frame"><div class="bk-orn">✦</div><div class="bk-t">Haushaltsbuch</div><div class="bk-rule"></div><div class="bk-n">Till &amp; Patrick</div><div class="bk-y">seit 2026</div></div></div></div></div>
 <script>(function(){var el=document.getElementById("intro");function go(){if(el.parentNode)el.remove();}el.onclick=go;setTimeout(go,2300);})();</script>
 <div class="wrap">
 <header>
@@ -315,7 +382,7 @@ body{margin:0;padding:0 16px}
       <textarea id="q-text" rows="2" placeholder="z. B. „Essen 36,34“ · „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“ · „Till Tanken im Oktober 60 statt 115“"></textarea>
       <div class="qbtns"><button class="btn" id="q-go">Übernehmen</button></div>
     </div>
-    <div class="note" id="q-msg">Schreib einfach, was sich geändert hat, oder diktier es mit dem 🎤 auf deiner Handy-Tastatur. Claude macht daraus die Einträge, du bestätigst sie.</div>
+    <div class="note" id="q-msg">Schreib einfach, was sich geändert hat. Die KI macht daraus Einträge, du bestätigst sie.</div>
     <div id="q-prev"></div>
   </div>
 
@@ -329,7 +396,7 @@ body{margin:0;padding:0 16px}
         <label>Wer<select id="b-wer"><option value="">–</option><option>Till</option><option>Patrick</option></select></label>
         <div style="display:flex;gap:6px"><button class="btn" data-topf="e" type="submit">− Essen</button><button class="btn sec" data-topf="s" type="button">− Sonstiges</button></div>
       </form>
-      <div class="note">Etwas ausgleichen, z. B. weil jemand Geld nachüberwiesen hat: Betrag mit Minus eintragen (−2,89), dann kommt er wieder in den Topf. Ist bei „Wer“ jemand ausgewählt, wird der Betrag im selben Monat auch bei dessen Girokonto als Ausgabe „Ausgleich Essen“ bzw. „Ausgleich Sonstiges“ eingetragen.</div><details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Einkäufe diesen Monat</summary><div id="b-list"></div></details>
+      <div class="note">Ausgleichen: Betrag mit Minus eintragen (−2,89). Mit „Wer“ wird er auch bei dessen Girokonto abgezogen.</div><details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Einkäufe diesen Monat</summary><div id="b-list"></div></details>
     </div>
     <div class="card">
       <h2>Überweisung Haushaltskonto → Girokonto</h2>
@@ -338,6 +405,7 @@ body{margin:0;padding:0 16px}
   </div>
 
   <div class="card"><div class="head"><h2>Kontostände am Monatsende</h2><span class="muted" style="font-size:12px">Prognose aus dem Plan</span></div><div class="perbox" id="h-konten"></div></div>
+  <div class="card fwnext" id="h-fw" hidden></div>
 </section>
 
 <!-- MONAT -->
@@ -352,8 +420,8 @@ body{margin:0;padding:0 16px}
 <section role="tabpanel" id="p-fewo" hidden>
   <div class="card">
     <div class="head"><h2>Neue Buchung</h2></div>
-    <div class="quick"><textarea id="fw-text" rows="3" placeholder="Buchung einfügen oder diktieren, z. B. „Airbnb, 13. bis 15. November, 2 Erwachsene, du erhältst 154,95 €“ oder den kopierten Text aus der Booking- bzw. Airbnb-App"></textarea><div class="qbtns"><button type="button" class="btn" id="fw-readtext">Übernehmen</button></div></div>
-    <div class="note" id="fw-shotmsg" style="margin-top:6px">Zum Diktieren das 🎤 auf deiner Handy-Tastatur nutzen. Claude füllt die Felder unten aus, du prüfst und speicherst. Liste, Urlaubskonto und Gästebeitrag führt die App dann selbst.</div>
+    <div class="quick"><textarea id="fw-text" rows="3" placeholder="Buchung einfügen, z. B. „Airbnb, 13. bis 15. November, 2 Erwachsene, du erhältst 154,95 €“ oder den kopierten Text aus der Booking- bzw. Airbnb-App"></textarea><div class="qbtns"><button type="button" class="btn" id="fw-readtext">Übernehmen</button></div></div>
+    <div class="note" id="fw-shotmsg" style="margin-top:6px">Die KI füllt die Felder unten aus, du prüfst und speicherst. Liste, Urlaubskonto und Gästebeitrag führt die App dann selbst.</div>
     <form class="form" id="f-fw" style="margin-top:12px">
       <label>Plattform<select id="fw-p"><option>Booking.com</option><option>Airbnb</option><option>Privat</option></select></label>
       <label>Anreise<input type="date" id="fw-a" required></label>
@@ -384,8 +452,8 @@ body{margin:0;padding:0 16px}
 
 <!-- KREDITE -->
 <section role="tabpanel" id="p-kredite" hidden>
-  <div class="grid" id="k-kpis"></div>
-  <div class="card"><div class="head"><h2>Hauskredit Sparda: Restschuld</h2><div class="legend" style="margin:0"><span><i style="background:var(--acc)"></i>mit euren Sondertilgungen</span><span><i class="dash"></i>ohne Sondertilgungen</span><span><i style="background:var(--pat)"></i>ING-Kredit</span></div></div><div class="chart" id="c-kred"></div></div>
+  <div class="kgrp" id="k-kpis"></div>
+  <div class="card"><div class="head"><h2>Kredite im Verlauf</h2></div><div class="filters"><div class="seg" id="kc-ser"></div><div class="seg" id="kc-rng"></div></div><div class="chart" id="c-kred" style="margin-top:8px"></div><div class="leg" id="kc-leg"></div><div class="note" style="margin-top:4px">Stand jeweils am Jahresende. Bausparvertrag: Guthaben bis zur Zuteilung.</div></div>
   <div class="g2">
     <div class="card"><h2>Sparda-Darlehen</h2>
       <form class="form" id="f-sp" onsubmit="return false">
@@ -424,7 +492,6 @@ body{margin:0;padding:0 16px}
     <form class="form" id="f-ingadd" style="margin-top:6px"><label>Monat<input type="month" id="ing-m" required></label><label>Betrag (€)<input type="number" id="ing-b" step="1" required style="width:110px"></label><button class="btn sec">Hinzufügen</button></form>
     <div id="ing-out" style="margin-top:10px"></div>
   </div>
-  <div class="card"><h2>Jahresübersicht Sparda</h2><div class="tw"><table id="k-table"></table></div><div class="note">„Bank“: Werte aus der Tilgungsübersicht der Sparda (ohne Sondertilgungen) zum Abgleich.</div></div>
 </section>
 
 <!-- STEUER -->
@@ -432,14 +499,14 @@ body{margin:0;padding:0 16px}
 <section role="tabpanel" id="p-vermoegen" hidden>
   <div class="grid" id="w-kpis"></div>
   <div class="card"><div class="head"><h2>ETF und Gold</h2><form class="form" id="f-gold" onsubmit="return false"><label>Goldpreis je Unze (€)<input id="gp" inputmode="decimal" style="width:110px"></label></form></div><div class="g2" id="w-dep"></div><div class="note">Den Goldpreis trägst du hier ein, oder per Schnelleingabe („Goldpreis 3.820“). Den echten ETF-Wert trägst du im Reiter Monat beim Kontoabgleich ein, Feld „ETF-Depot (Scalable)“.</div></div>
-  <div class="card"><div class="head"><h2>Vermögen im Verlauf</h2></div><div class="filters"><div class="seg" id="w-who"></div><div class="seg" id="w-range"></div><div class="seg" id="w-plan"></div></div><div class="legend" id="w-leg" style="margin-top:10px"></div><div class="chart" id="c-w"></div><div class="note" id="w-note"></div></div>
+  <div class="card"><div class="head"><h2>Vermögen im Verlauf</h2></div><div class="filters"><div class="seg" id="w-who"></div><div class="seg" id="w-range"></div><div class="seg" id="w-plan"></div><select id="w-year" class="yrsel"></select></div><div class="legend" id="w-leg" style="margin-top:10px"></div><div class="chart" id="c-w"></div><div class="note" id="w-note"></div></div>
 </section>
 
 <!-- DEMNAECHST -->
 <section role="tabpanel" id="p-bald" hidden>
-  <div class="card wi"><h2>Fragen &amp; Was wäre, wenn …?</h2><div class="note" style="margin-top:0">Frag zu eurem Plan, z. B. „Warum habe ich ab Mai 2032 weniger?“ oder „Wann ist der Gemeinschaftskredit abbezahlt?“. Oder spiel etwas durch: „Was wäre, wenn ich den Job wechsle und ab November 2027 nur noch 2.400 € netto verdiene?“ oder „Was passiert, wenn wir das Essen auf 450 € erhöhen und Patrick ab März 2028 Teilzeit arbeitet (1.900 €)?“ Ich rechne es durch, ohne etwas zu speichern.</div>
+  <div class="card wi"><h2>Fragen &amp; Was wäre, wenn …?</h2><div class="note" style="margin-top:0">Frag zu eurem Plan oder spiel etwas durch, z. B. „Was wäre, wenn ich ab 2028 nur 2.400 € netto verdiene?“ Es wird nichts gespeichert.</div>
     <div class="quick" style="margin-top:8px"><textarea id="wi-text" placeholder="Was wäre, wenn …"></textarea><div class="qbtns"><button class="btn" id="wi-go">Durchrechnen</button></div></div><div id="wi-msg" class="note"></div><div id="wi-out"></div></div>
-  <div class="card"><h2>Wie entwickelt sich euer Geld?</h2><div class="note" style="margin-top:0">Kontostand am Monatsende laut Plan: Girokonto + Tagesgeld je Person (ohne ETF und Gold) und das Haushaltskonto. Das sind dieselben Zahlen wie im Reiter Monat.</div><div id="c-ueb" class="chart"></div><div class="leg"><span><i style="background:var(--acc)"></i>Till</span><span><i style="background:var(--pat)"></i>Patrick</span><span><i style="background:var(--gem)"></i>Haushaltskonto</span></div><div class="tw" id="bd-kt" style="margin-top:8px"></div>
+  <div class="card" id="bd-card"><h2>Wie entwickelt sich euer Geld?</h2><div class="note" style="margin-top:0">Kontostand am Monatsende laut Plan, dieselben Zahlen wie im Reiter Monat. Tippe die Knöpfe an, um Linien und Zeitraum zu wählen.</div><div class="filters" style="margin-top:8px"><div class="seg" id="bd-ser"></div><div class="seg" id="bd-val"></div><div class="seg" id="bd-rng"></div></div><div class="kpis" id="bd-kpi" style="margin-top:10px"></div><div id="c-ueb" class="chart"></div><div class="leg" id="bd-leg"></div><div class="tw" id="bd-kt" style="margin-top:8px"></div>
     <h3 style="margin-top:14px">Was sich dauerhaft ändert</h3><div class="note" style="margin-top:0">Ab diesen Monaten legt jeder dauerhaft mehr oder weniger zurück als vorher. Einmalige Zahlungen stehen unten bei „Was demnächst auf euch zukommt“.</div><div id="bd-ph"></div></div>
   <div class="card"><h2>Rücklagen im Haushaltskonto</h2><div class="note" style="margin-top:0">Jährliche und vierteljährliche Zahlungen werden jeden Monat anteilig angespart. So weit seid ihr bei der jeweils nächsten Zahlung.</div><div id="bd-rl" style="margin-top:8px"></div><div id="bd-pj"></div></div>
   <div class="card"><h2>Was demnächst auf euch zukommt</h2><div class="note" style="margin-top:0">Die nächsten 12 Monate: vorgemerkte Änderungen, Posten die beginnen, enden oder sich ändern, größere einmalige Zahlungen, Gäste der nächsten 60 Tage, Urlaubsausgaben und Kredit-Termine.</div><div id="bd-list" style="margin-top:8px"></div></div>
@@ -448,30 +515,18 @@ body{margin:0;padding:0 16px}
 <section role="tabpanel" id="p-strom" hidden>
   <div class="card"><h2>Stromkonto</h2><div class="note" style="margin-top:0">Was ihr einzahlt, was der Strom kostet und was die Einspeisung bringt. Der Kontostand läuft wie in deinem Excel-Blatt Strom mit.</div>
     <form class="form" id="f-sst" onsubmit="return false" style="margin:8px 0"><label>Kontostand vor Januar 2027 (€)<input id="s-start" inputmode="decimal" style="width:110px"></label></form>
-    <div id="s-kpi" class="kpis"></div><div id="c-skonto" class="chart"></div>
-    <div class="tw" style="max-height:360px;overflow:auto"><table id="s-table"></table></div></div>
-  <div class="card"><h2>PV, Speicher und Wärmepumpe: was bringt das?</h2><div class="note" style="margin-top:0">Schätzung für ein Jahr in Üdersdorf. Grundlage: euer bisheriger Verbrauch (Haus + E-Auto), die Monatstemperaturen aus deinen Wetterdaten, 1.700 Liter Heizöl im Jahr als Wärmebedarf (≈ 14.800 kWh Wärme). Alle Werte kannst du anpassen.</div>
-    <details class="pvset"><summary>Annahmen anpassen</summary><form class="form" id="f-pv" onsubmit="return false"></form><div id="pv-hh"></div></details>
-    <div id="pv-kpi" class="kpis" style="margin-top:10px"></div><div id="c-pv" class="chart"></div><div class="leg" id="pv-leg"></div>
-    <div class="tw" style="margin-top:8px"><table id="pv-table"></table></div><div id="pv-out" style="margin-top:10px"></div></div>
-  <div class="card"><h2>Die nächsten Tage</h2><div class="note" style="margin-top:0">Kopier die Wettervorhersage aus deiner Wetter-App hier rein (einfach den Text, z. B. „Mo sonnig 17°, Di Regen 12° …“). Ich schätze daraus, wie viel die Anlage pro Tag liefert und wann sich E-Auto laden oder Waschen lohnt.</div>
-    <div class="quick" style="margin-top:8px"><textarea id="wx-text" placeholder="Wettervorhersage einfügen …"></textarea><div class="qbtns"><button class="btn" id="wx-go">Auswerten</button></div></div><div id="wx-msg" class="note"></div><div id="wx-out"></div></div>
+    <div class="filters" style="margin-top:6px"><div class="seg yrs" id="s-yr"></div><div class="seg" id="s-cr"></div></div>
+    <div id="s-kpi" class="kpis"></div><div id="c-skonto" class="chart"></div><div class="tw"><table id="s-table" class="stab"></table></div><div class="note">„Verbrauch echt“ aus der Abrechnung eintragen: rot = mehr als geplant, grün = weniger. Der Kontostand rechnet dann mit dem echten Wert. Graue Werte sind vom Vorjahr übernommen.</div></div>
 </section>
 
 <!-- EINSTELLUNGEN -->
 <section role="tabpanel" id="p-einst" hidden>
-  <div class="card"><div class="head"><h2>Sicherung</h2></div>
-    <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn" id="bk-save">Sicherung speichern</button><label class="btn sec" style="cursor:pointer">Wiederherstellen …<input type="file" id="bk-file" accept=".json,application/json" hidden></label><span class="note" id="bk-msg" style="margin:0"></span></div><div id="bk-conf"></div></div>
-  <div class="card"><div class="head"><h2>Excel herunterladen</h2></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn" id="x-exp">Excel erstellen</button><span class="note" id="x-msg" style="margin:0">Erzeugt deine Finanzierungspläne mit allem aus der App: Monatsblöcke, Grundbeträge, Ferienwohnung, Urlaubskonto, Strom. Kommt als ZIP, darin die .xlsm mit deinen Makros.</span></div></div>
-  <div class="card"><h2>Grundbeträge</h2><form class="form" id="f-gh" style="margin-bottom:10px"><label>Ändert sich<select id="gh-k"></select></label><label>ab Monat (leer = sofort)<input type="month" id="gh-ab"></label><label>neuer Betrag (€)<input id="gh-v" inputmode="decimal" required style="width:110px"></label><button class="btn sec sm">Weiter</button><span class="note" id="gh-msg" style="margin:0"></span></form><div class="note" style="margin-top:0">Egal ob oben oder direkt in der Liste: Bevor etwas gespeichert wird, siehst du, was die Änderung bewirkt, und legst fest, ab welchem Monat sie gilt. Die Monate davor bleiben beim alten Betrag. Änderungen gelten für alle Monate, in denen der Posten verknüpft ist (gestrichelt umrandet) und die noch nicht abgeschlossen sind.</div><div id="g-list"></div></div>
+  <div class="sect-h">Beträge</div>
+  <div class="card"><h2>Grundbeträge</h2><form class="form" id="f-gh" style="margin-bottom:10px"><label>Ändert sich<select id="gh-k"></select></label><label>ab Monat (leer = sofort)<input type="month" id="gh-ab"></label><label>neuer Betrag (€)<input id="gh-v" inputmode="decimal" required style="width:110px"></label><button class="btn sec sm">Weiter</button><span class="note" id="gh-msg" style="margin:0"></span></form><div class="note" style="margin-top:0">Betrag direkt in der Liste ändern oder oben mit „ab Monat“. Vor dem Speichern siehst du immer, was sich dadurch ändert. Gruppen antippen zum Aufklappen.</div><div id="g-list" lang="de"></div></div>
   <div class="g2">
     <div class="card"><h2>Budgets</h2><form class="form" id="f-bud" onsubmit="return false"><label>Essen je Monat (€)<input type="number" id="bu-e" style="width:100px"></label></form><div id="bu-s" style="margin-top:8px"></div>
       <h3>Per Dauerauftrag vom Haushaltskonto</h3><div class="note" style="margin-top:0">Diese Posten zählen nicht zur Überweisung, weil sie automatisch rübergehen.</div><div id="bu-da"></div></div>
-    
-  </div>
-  <div class="card"><h2>FeWo-Rechenregeln</h2><form class="form" id="f-rules" onsubmit="return false">
+    <div class="card"><h2>FeWo-Rechenregeln</h2><form class="form" id="f-rules" onsubmit="return false">
     <label>Gästebeitrag € je Erw./Nacht<input type="number" step="0.01" data-k="gb"></label>
     <label>Booking Provision %<input type="number" step="0.1" data-k="kom"></label>
     <label>Booking Servicegebühr %<input type="number" step="0.1" data-k="serv"></label>
@@ -482,7 +537,15 @@ body{margin:0;padding:0 16px}
     <label>Spartopf %<input type="number" step="1" data-k="urlProz"></label>
     <label>Spartopf € fest<input type="number" step="0.5" data-k="urlFix"></label>
   </form></div>
-  <div class="card"><h2>Zugang für Patrick</h2><div class="note" style="margin-top:0">Teile diese Seite über „Teilen“ mit Patrick und gib ihm Bearbeitungsrechte (mindestens „Mitwirkende“), sonst kann er nur lesen. Er braucht dafür ein eigenes Claude-Konto.</div></div>
+  </div>
+  <div class="sect-h">App</div>
+  <div id="app-sect">
+  <div class="card"><div class="head"><h2>Sicherung</h2></div>
+    <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn" id="bk-save">Sicherung speichern</button><label class="btn sec" style="cursor:pointer">Wiederherstellen …<input type="file" id="bk-file" accept=".json,application/json" hidden></label><span class="note" id="bk-msg" style="margin:0"></span></div><div id="bk-conf"></div></div>
+  <div class="card"><div class="head"><h2>Excel herunterladen</h2></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn" id="x-exp">Excel erstellen</button><span class="note" id="x-msg" style="margin:0">Erzeugt deine Finanzierungspläne mit allem aus der App: Monatsblöcke, Grundbeträge, Ferienwohnung, Urlaubskonto, Strom. Kommt als ZIP, darin die .xlsm mit deinen Makros.</span></div></div>
+  </div>
 </section>
 </main>
 </div>
@@ -493,7 +556,7 @@ body{margin:0;padding:0 16px}
 <script>
 (function(){
 'use strict';
-const TABS=[['heute','Heute'],['monat','Monat'],['fewo','Ferienwohnung'],['kredite','Kredite'],['vermoegen','Vermögen'],['bald','Ausblick'],['strom','Strom'],['einst','Einstellungen']];
+const TABS=[['heute','Übersicht'],['monat','Monat'],['fewo','Ferienwohnung'],['kredite','Kredite'],['vermoegen','Vermögen'],['bald','Ausblick'],['strom','Strom'],['einst','Einstellungen']];
 const MN=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const MS=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 const OZ=31.1035;
@@ -510,7 +573,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
-const PLAN0='2026-10',PLAN1='2032-12',MIN_M='2026-09';
+const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
 let db=null,tab='heute',month=CUR<PLAN0?PLAN0:CUR,sampleFn=null,dlFn=null;
@@ -518,15 +581,15 @@ window.__S=S;
 
 /* ---------- Grundbeträge & Formeln ---------- */
 let GYM=null;
-const liveGold=()=>{const L=S.live?.gold;if(!L?.preis)return null;const it=S.grund.items.find(i=>i.k==='goldpreis');return (!it?.am||L.am>=it.am)?L:null;};
+const liveGold=()=>{const L=S.live?.gold;if(!L?.preis)return null;const it=S.grund.items.find(i=>i.k==='goldpreis');return (!it?.am||L.am>it.am)?L:null;};
 const goldAm=()=>liveGold()?.am||S.grund.items.find(i=>i.k==='goldpreis')?.am||null;
-const gv=(k,ym)=>{if(k==='goldpreis'){const L=liveGold();if(L)return +L.preis;}const it=S.grund.items.find(i=>i.k===k);if(!it)return null;const at=ym||GYM;let v=it.v;if(at)(it.hist||[]).slice().sort((a,b)=>a.ab.localeCompare(b.ab)).forEach(h=>{if(h.ab<=at)v=h.v;});return v;};
+const gv=(k,ym)=>{if(k==='goldpreis'){const L=liveGold();if(L)return +L.preis;}const it=S.grund.items.find(i=>i.k===k);if(!it)return null;const at=ym||GYM;if(at&&it.fmt!=='date'&&((it.bis&&at>it.bis)||(it.cu?.ab&&at<it.cu.ab)))return 0;let v=it.v;if(at)(it.hist||[]).slice().sort((a,b)=>a.ab.localeCompare(b.ab)).forEach(h=>{if(h.ab<=at)v=h.v;});return v;};
 const gn=(k,ym)=>+gv(k,ym)||0;
 const VCACHE={};function useYm(ym){GYM=ym;VARS=VCACHE[ym]||(VCACHE[ym]=vars());return VARS;}
 function varsReset(){Object.keys(VCACHE).forEach(k=>delete VCACHE[k]);}
 function baseVars(){const g=GYM;GYM=null;const v=vars();GYM=g;return v;}
 function vars(){
-  const J={J5:gn('h_tilgung'),J6:gn('h_wohngeb')/12,J7:gn('h_hausrat')/12,J8:gn('h_wasser')/12,J9:gn('h_grundst')/12,J10:gn('h_abfall')/12,J11:gn('h_risiko'),J12:gn('h_haftpfl')/12,J13:gn('h_rechts'),J14:gn('h_adac')/12,J15:gn('h_internet'),J16:gn('h_gez')*4/12,J17:gn('h_essen'),J18:gn('h_s_frei')+gn('h_s_chatgpt')+gn('h_s_pcloud')+gn('h_s_prime'),J19:0};
+  const J={J5:gn('h_tilgung'),J6:gn('h_wohngeb')/12,J7:gn('h_hausrat')/12,J8:gn('h_wasser')/12,J9:gn('h_grundst')/12,J10:gn('h_abfall')/12,J11:gn('h_risiko'),J12:gn('h_haftpfl')/12,J13:gn('h_rechts'),J14:gn('h_adac')/12,J15:gn('h_internet'),J16:gn('h_gez')*4/12,J17:gn('h_essen'),J18:gn('h_s_frei')+gn('h_s_chatgpt')+gn('h_s_pcloud')+gn('h_s_prime'),J19:0,J20:S.grund.items.filter(i=>i.cu&&i.g==='Haus').reduce((a,i)=>a+(i.cu.rh==='j'?gn(i.k)/12:gn(i.k)),0)};
   const anteil=Object.values(J).reduce((a,b)=>a+b,0)/2;
   const st=gv('ing_start')||'2026-11';
   return {D_C19:anteil,D_D19:anteil,D_J5:J.J5,D_J11:J.J11,D_J13:J.J13,D_J15:J.J15,D_J17:J.J17,D_J18:J.J18,
@@ -559,10 +622,13 @@ const SH=['TILL','PATRICK','HAUS'];const SHN={TILL:'Till',PATRICK:'Patrick',HAUS
 const GR={TILL:[['C','Girokonto: Ausgaben'],['E','Girokonto: Eingänge'],['I','Tagesgeld: Entnahmen'],['K','Tagesgeld: Einzahlungen']],PATRICK:[['C','Girokonto: Ausgaben'],['E','Girokonto: Eingänge'],['I','Tagesgeld: Entnahmen'],['K','Tagesgeld: Einzahlungen']],HAUS:[['G','Abbuchungen vom Girokonto'],['I','Einzahlungen']]};
 const GOLD=[10,20,31.1035,10,31.1035];
 let CALC=null;const GIRO0={};
+const hasGehIst=blk=>blk?.gehIst!=null&&blk.gehIst!=='';
+function gehOf(blk,sh){const base=sh==='TILL'?VARS.Gehalt_Till:VARS.Gehalt_Patrick;if(!hasGehIst(blk))return base;return sh==='TILL'?+blk.gehIst-41.91:+blk.gehIst;}
 function entryVal(e,blk,sh){
+  if(e.gk)return gn(e.gk);
   if(e.f==='=GIROAUSGLEICH'){const g0=GIRO0[GYM+'|'+sh]??CALC?.[GYM]?.[sh]?.giro0??0;const other=x=>x!==e&&x.l!==ABGL&&x.f!=='=GIROAUSGLEICH';
     const c=(blk.C||[]).filter(other).reduce((a,x)=>a+entryVal(x,blk,sh),0),eo=(blk.E||[]).filter(other).reduce((a,x)=>a+entryVal(x,blk,sh),0);return c-eo-g0;}
-  if(e.f==='=RESTGEHALT'){const g=sh==='TILL'?VARS.Gehalt_Till:VARS.Gehalt_Patrick;return g-giroAus(blk,sh).reduce((a,x)=>a+x.v,0);}
+  if(e.f==='=RESTGEHALT'){const g=gehOf(blk,sh);return g-giroAus(blk,sh).reduce((a,x)=>a+x.v,0);}
   let v0;if(e.f){const v=evalF(e.f);v0=isFinite(v)?v:(+e.v||0);}else v0=+e.v||0;
   if(sh!=='HAUS'&&isPausch(e)&&(blk?.C||[]).includes(e)){const used=pauschUsed(blk,sh);if(used)return Math.max(0,v0-used);}
   return v0;
@@ -573,14 +639,31 @@ function pauschBase(e,blk,sh){if(e.f){const v=evalF(e.f);if(isFinite(v))return v
 function restNeg(blk,sh){const e=(blk?.K||[]).find(x=>x.f==='=RESTGEHALT');if(!e)return 0;const v=entryVal(e,blk,sh);return v<0?-v:0;}
 function sumG(blk,g,sh){return (blk?.[g]||[]).reduce((a,e)=>a+entryVal(e,blk,sh),0);}
 function planStart(){return S.plan['2026-09']?'2026-09':PLAN0;}
+/* Monate nach dem letzten echten Plan (bis PLAN1) werden aus demselben Monat des Vorjahres fortgeschrieben, bis jemand sie ändert */
+let ING_END=null;
+function fillVirtual(){const P=S.plan;Object.keys(P).forEach(k=>{if(P[k]?._virt)delete P[k];});if(!Object.keys(P).length)return;
+  try{const g=GYM;GYM=null;ING_END=typeof ingRows==='function'?ingRows().at(-1)?.ym||null:null;GYM=g;}catch(_){ING_END=null;}
+  for(let ym=PLAN0;ym<=PLAN1;ym=ymAdd(ym,1)){if(P[ym])continue;const mm=ym.slice(5),y=+ym.slice(0,4);let tpl=null;for(let yy=y-1;yy>=y-10&&!tpl;yy--)tpl=P[yy+'-'+mm];if(!tpl)continue;
+    const d=structuredClone(tpl);delete d.zu;delete d.zuAm;
+    SH.forEach(sh=>{const b=d[sh];if(!b)return;delete b.snap;delete b.etfIst;delete b.gehIst;Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;
+      b[g]=b[g].filter(e=>e.l!==ABGL&&!(ING_END&&ym>ING_END&&/^gemeinschaftskredit$/i.test((e.l||'').trim())));
+      b[g].forEach(e=>{delete e.fix;delete e.p;if(e.f)e.f=e.f.replace(/DATE\((\d+),(\d+),1\)/g,(_,yy,m)=>`DATE(${y},${m},1)`);else if(g==='E'&&/^giroausgleich$/i.test((e.l||'').trim())){e.f='=GIROAUSGLEICH';e.v=null;}});});});
+    d._virt=true;P[ym]=d;}}
+/* Eigene Posten aus den Einstellungen (item.c) in die Monate einsetzen; stehen immer am Ende der Liste und werden nicht gespeichert */
+function stripCustom(d){SH.forEach(sh=>{const b=d?.[sh];if(!b)return;Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g]=b[g].filter(e=>!e._c);});});return d;}
+function injectCustom(){const P=S.plan;Object.values(P).forEach(stripCustom);const its=S.grund.items.filter(i=>i.cu);if(!its.length)return;
+  const own=g=>g==='Till'?'TILL':g==='Patrick'?'PATRICK':'HAUS';
+  its.forEach(i=>{const c=i.cu;const sh=own(i.g);for(let ym=c.ab<PLAN0?(P['2026-09']?'2026-09':PLAN0):c.ab;ym<=PLAN1&&(!i.bis||ym<=i.bis);ym=ymAdd(ym,1)){const M=P[ym];if(!M||M.zu)continue;if(c.rh==='j'&&ym.slice(5)!==c.ab.slice(5))continue;
+    const b=M[sh]=M[sh]||{};const g=sh==='HAUS'?'G':(c.art==='ein'?'E':'C');(b[g]=b[g]||[]).push({l:i.l,gk:i.k,_c:1,v:null});
+    if(sh!=='HAUS'&&c.an&&c.art!=='ein'){const o=own(c.an);if(o!=='HAUS'&&o!==sh){const bo=M[o]=M[o]||{};(bo.E=bo.E||[]).push({l:c.lg||`${i.l} (von ${i.g})`,gk:i.k,_c:1,v:null});}}}});}
 function calcAll(){
-  varsReset();GYM=null;const VBASE=vars();
+  Object.values(S.plan).forEach(stripCustom);fillVirtual();injectCustom();varsReset();GYM=null;const VBASE=vars();
   const A=S.archiv||{};const P0=planStart();const pm=ymAdd(P0,-1);const sep=k=>(A[k]||{})[pm]||[0,0,0,0];
   const es=A.etfStart?.[pm];const eT=es?.TILL??A.start?.TILL_etf??6800,eP=es?.PATRICK??A.start?.PATRICK_etf??2600;
   const prev={TILL:{giro:sep('TILL')[0]||0,tg:sep('TILL')[1]||0,etf:eT,einz:eT},PATRICK:{giro:sep('PATRICK')[0]||0,tg:sep('PATRICK')[1]||0,etf:eP,einz:eP},HAUS:{k:sep('HAUS')[0]||0}};
-  const out={};const gold=GOLD.reduce((a,g)=>a+g,0)/OZ*gn('goldpreis');
+  const out={};const GG=GOLD.reduce((a,g)=>a+g,0)/OZ,gpNow=gn('goldpreis');
   for(let ym=P0;ym<=PLAN1;ym=ymAdd(ym,1)){
-    const P=S.plan[ym]||{};const o={};useYm(ym);GIRO0[ym+'|TILL']=prev.TILL.giro;GIRO0[ym+'|PATRICK']=prev.PATRICK.giro;
+    const P=S.plan[ym]||{};const o={};const gold=GG*(P.zu&&P.gold>0?+P.gold:gpNow);useYm(ym);GIRO0[ym+'|TILL']=prev.TILL.giro;GIRO0[ym+'|PATRICK']=prev.PATRICK.giro;
     ['TILL','PATRICK'].forEach(sh=>{const b=P[sh]||{};const p=prev[sh];
       const c=sumG(b,'C',sh),e=sumG(b,'E',sh),rn=restNeg(b,sh),i=sumG(b,'I',sh)+rn,k=sumG(b,'K',sh)+rn;
       const etfE=(b.C||[]).find(x=>/^etf$/i.test((x.l||'').trim()));const rate=etfE?entryVal(etfE,b,sh):0;const ist=b.etfIst!=null&&b.etfIst!=='';const etf=ist?+b.etfIst:p.etf+rate;const einz=p.einz+rate;
@@ -610,7 +693,7 @@ function showUndo(){const b=$('#undo');if(!b)return;b.hidden=!UNDO.length;b.text
 async function doUndo(){const st=UNDO.pop();if(!st)return;undoing=true;
   for(const {path,prev} of st.e.slice().reverse()){try{if(prev===undefined){await db.doc(path).delete();}else{await db.doc(path).set(prev);}remember(path,prev);}catch(_){}}
   undoing=false;showUndo();flash('ok','Rückgängig gemacht');}
-function savePlan(ym,mut){const d=structuredClone(S.plan[ym]||{});mut(d);S.plan[ym]=d;render();return save('plan/'+ym,d);}
+function savePlan(ym,mut){const d=stripCustom(structuredClone(S.plan[ym]||{}));delete d._virt;mut(d);S.plan[ym]=d;render();return save('plan/'+ym,d);}
 function saveBudget(ym,mut){const d=structuredClone(S.budget[ym]||{e:[],s:[]});d.e=d.e||[];d.s=d.s||[];mut(d);S.budget[ym]=d;render();return save('budget/'+ym,d);}
 function setGrund(k,v,ab){const items=structuredClone(S.grund.items);const it=items.find(i=>i.k===k);if(!it)return;if(ab){it.hist=(it.hist||[]).filter(h=>h.ab!==ab);it.hist.push({ab,v});it.hist.sort((a,b)=>a.ab.localeCompare(b.ab));}else{const ov=+it.v;it.v=v;it.am=TODAY;if(k==='h_tilgung'&&S.kredit?.sparda&&isFinite(ov)&&isFinite(+v)&&ov!==+v){const d=structuredClone(S.kredit);d.sparda.rate=r2((+d.sparda.rate||0)+(+v-ov));S.kredit=d;save('config/kredit',d);}if(k==='ing_rate'&&S.kredit?.ing){const d=structuredClone(S.kredit);d.ing.rate=+v;S.kredit=d;save('config/kredit',d);}}S.grund={items};render();return save('config/grund',{items});}
 let flashT;function flash(k,t){const el=$('#status');el.innerHTML=`<span class="dot ${k}"></span><span>${t}</span>`;clearTimeout(flashT);if(k==='ok')flashT=setTimeout(()=>el.innerHTML='<span class="dot ok"></span><span>Synchronisiert</span>',1800);}
@@ -650,8 +733,8 @@ function barChart(el,labels,vals,o={}){
 const kpi=(l,v,n,cls='')=>`<div class="card kpi"><span class="l">${l}</span><span class="v ${cls}">${v}</span><span class="n">${n||''}</span></div>`;
 const sign=v=>v<-0.005?'neg':v>0.005?'pos':'';
 /* ---------- Monatsnavigation ---------- */
-function mState(ym){const P=S.plan[ym];if(ym<planStart())return 'vor Planbeginn';if(!P)return 'kein Plan';return P.zu?'abgeschlossen':(ym<CUR?'offen (vergangen)':ym===CUR?'laufender Monat':'Planung');}
-function renderMonthBar(){$$('.mtitle').forEach(e=>e.textContent=ymName(month));$$('.mstate').forEach(e=>e.textContent=mState(month));const c=$('#m-close');if(c)c.textContent=S.plan[month]?.zu?'Abschluss aufheben':'Monat abschließen';}
+function mState(ym){const P=S.plan[ym];if(ym<planStart())return 'vor Planbeginn';if(!P)return 'kein Plan';if(P.zu)return '🔒 abgeschlossen';const fx=['TILL','PATRICK'].filter(sh=>fixInfo(sh,P[sh])?.fixed).length;const base=ym<CUR?'offen (vergangen)':ym===CUR?'laufender Monat':P._virt?'fortgeschrieben':'Planung';return fx===2?'📌 festgeschrieben · '+base:fx===1?'📌 teilweise festgeschrieben · '+base:base;}
+function renderMonthBar(){$$('.mtitle').forEach(e=>e.textContent=ymName(month));$$('.mstate').forEach(e=>{const t=mState(month);e.textContent=t;e.classList.toggle('fixed',t.startsWith('📌 fest'));e.classList.toggle('part',t.startsWith('📌 teil'));e.classList.toggle('zu',t.startsWith('🔒'));});const c=$('#m-close');if(c)c.textContent=S.plan[month]?.zu?'Abschluss aufheben':'Monat abschließen';}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-mnav]');if(!b)return;const n=ymAdd(month,+b.dataset.mnav);if(n<MIN_M||n>PLAN1)return;month=n;render();});
 
 /* ---------- Budget ---------- */
@@ -684,22 +767,45 @@ function rHeute(){
   const H=c.HAUS;
   $('#h-ueb').innerHTML=`<div class="kpi"><span class="v">${eur(H.ueb)}</span><span class="n">im ${ymName(month)} vom Haushaltskonto aufs Girokonto überweisen</span></div>
    ${H.dauer.length?`<div class="note">Nicht enthalten, weil per Dauerauftrag: ${H.dauer.map(([l,v])=>`${esc(l)} ${eur(v)}`).join(', ')}.</div>`:''}
-   <details style="margin-top:8px"><summary class="muted" style="cursor:pointer">Woraus sich der Betrag zusammensetzt</summary>${(S.plan[month]?.HAUS?.G||[]).filter(e=>!isDauer(e.l)).map(e=>`<div class="row"><span>${esc(e.l)}</span><span class="num">${eur(entryVal(e,S.plan[month].HAUS,'HAUS'))}</span></div>`).join('')}</details>`;
-  const box=(t,rows,color)=>`<div class="card" style="border-top:3px solid ${color}"><h2>${t}</h2>${rows.map(([l,v,b])=>`<div class="row"><span>${l}</span>${b?`<b class="num ${sign(v)}">${eur(v)}</b>`:`<span class="num ${v<0?'neg':''}">${eur(v)}</span>`}</div>`).join('')}</div>`;
-  $('#h-konten').innerHTML=box('Till',[['<span class="kd giro"></span>Girokonto',c.TILL.giro],['<span class="kd tg"></span>Tagesgeld',c.TILL.tg],['ETF',c.TILL.etf],['Gold',c.TILL.gold],['Gesamt',c.TILL.total,1]],'var(--till)')
-    +box('Patrick',[['<span class="kd giro"></span>Girokonto',c.PATRICK.giro],['<span class="kd tg"></span>Tagesgeld',c.PATRICK.tg],['ETF',c.PATRICK.etf],['Gesamt',c.PATRICK.total,1]],'var(--pat)')
-    +box('Haushaltskonto',[['Anfang',H.k0],['− Abbuchungen',-H.soll],['+ Einzahlungen',H.haben],['Ende',H.k,1],['Gemeinsames Golddepot',sharedGold().reduce((a,x)=>a+x.w,0)]],'var(--gem)');
+   <details open style="margin-top:8px"><summary class="muted" style="cursor:pointer">Woraus sich der Betrag zusammensetzt</summary>${(S.plan[month]?.HAUS?.G||[]).filter(e=>!isDauer(e.l)).map(e=>`<div class="row"><span>${esc(e.l)}</span><span class="num">${eur(entryVal(e,S.plan[month].HAUS,'HAUS'))}</span></div>`).join('')}</details>`;
+  const dl=(v,base)=>{if(base==null)return'';const d=v-base;return Math.abs(d)<0.005?'<small class="dlt ok">✓ wie geplant</small>':`<small class="dlt ${d<0?'neg':'pos'}">${d>0?'+':'−'}${eur(Math.abs(d))} seit Planung</small>`;};
+  const snapInfo=sh=>{const sn=S.plan[month]?.[sh]?.snap;if(S.plan[month]?.zu)return `<div class="note snapn">🔒 Monat abgeschlossen am ${dDE(S.plan[month].zuAm)}.</div>`;return sn?`<div class="note snapn">📌 Geplant am ${dDE(sn.am)}. Daneben siehst du, was sich seitdem geändert hat.</div>`:`<div class="note snapn">Noch nicht festgeschrieben. Nach der Monatsplanung im Reiter Monat beim Giroausgleich auf 📌 tippen, dann siehst du hier jede Abweichung.</div>`;};
+  const box=(t,rows,color,sh,extra='')=>`<div class="card" style="border-top:3px solid ${color}"><h2>${t}</h2>${sh?snapInfo(sh):''}${rows.map(([l,v,b,base])=>`<div class="row"><span>${l}</span><span class="rv">${b?`<b class="num ${sign(v)}">${eur(v)}</b>`:`<span class="num ${v<0?'neg':''}">${eur(v)}</span>`}${dl(v,base)}</span></div>`).join('')}${extra}</div>`;
+  const SN=sh=>S.plan[month]?.[sh]?.snap||{};
+  const inv=(rows,tot)=>`<div class="goldsep">${rows.map(([l,v])=>`<div class="row"><span>${l}</span><span class="num">${eur(v)}</span></div>`).join('')}<div class="note" style="margin:2px 0 0">Anlagen, laufen im Hintergrund</div></div><div class="row" style="margin-top:8px"><span>Gesamt</span><b class="num ${sign(tot)}">${eur(tot)}</b></div>`;
+  $('#h-konten').innerHTML=box('Till',[['<span class="kd giro"></span>Girokonto',c.TILL.giro,0,SN('TILL').giro],['<span class="kd tg"></span>Tagesgeld',c.TILL.tg,0,SN('TILL').tg]],'var(--till)','TILL',inv([['ETF',c.TILL.etf],['Gold',c.TILL.gold]],c.TILL.total))
+    +box('Patrick',[['<span class="kd giro"></span>Girokonto',c.PATRICK.giro,0,SN('PATRICK').giro],['<span class="kd tg"></span>Tagesgeld',c.PATRICK.tg,0,SN('PATRICK').tg]],'var(--pat)','PATRICK',inv([['ETF',c.PATRICK.etf]],c.PATRICK.total))
+    +box('Haushaltskonto',[['Anfang',H.k0],['− Abbuchungen',-H.soll],['+ Einzahlungen',H.haben],['Ende',H.k,1]],'var(--gem)','',`<div class="goldsep"><div class="row"><span>Gemeinsames Golddepot</span><span class="num">${eur(sharedGold().reduce((a,x)=>a+x.w,0))}</span></div><div class="note" style="margin:2px 0 0">separat, nicht auf dem Haushaltskonto</div></div>`);
+  try{rFwNext();}catch(err){console.error(err);}
 }
 
+function rFwNext(){const el=$('#h-fw');if(!el||typeof fwList!=='function')return;const R=FR();
+  const L=fwList().filter(b=>b.ud>=TODAY).sort((a,b)=>a.ud.localeCompare(b.ud));if(!L.length){el.hidden=true;return;}el.hidden=false;const b=L[0];
+  const basis=b.barU===false?b.netto:b.ein;const spar=r2(basis*R.urlProz+R.urlFix);const tage=Math.round((Date.parse(b.ud)-Date.parse(TODAY))/864e5);
+  el.innerHTML=`<div class="head"><h2>Nächste Gutschrift Ferienwohnung</h2><span class="muted" style="font-size:12px">${tage===0?'heute':tage===1?'morgen':'in '+tage+' Tagen'}</span></div>
+  <div class="fwn-top"><div><span class="fwn-d">${dDE(b.ud)}</span><span class="muted">${esc(b.p)} · ${dDE(b.a)}–${dDE(b.ab)} · ${gaeste(b)}</span></div><b class="num fwn-v">${eur(b.netto)}</b></div>
+  ${b.bar?`<div class="row"><span>zusätzlich bar vor Ort</span><span class="num">${eur(b.bar)}</span></div>`:''}
+  <div class="fwn-split"><div class="fwn-h">Davon weiterleiten</div>
+   <div class="fwn-r u"><span>🏖️ aufs <b>Urlaubskonto</b></span><b class="num">${eur(b.urlaub)}</b></div>
+   <div class="fwn-r g"><span>🏛️ <b>Gästebeitrag</b> für die Gemeinde <small class="muted">${b.erw||0} Erw. × ${b.n} Nächte</small></span><b class="num">${eur(b.gb)}</b></div>
+   <div class="fwn-r s"><span>🐷 <b>Spartopf</b> <small class="muted">${Math.round(R.urlProz*100)} % + ${eur(R.urlFix,0)}</small></span><b class="num">${eur(spar)}</b></div></div>
+  ${b.sicher?'':`<div class="note">Stornierbar bis ${dDE(b.frist)}.</div>`}
+  ${L.length>1?`<div class="fwn-more">Danach: ${L.slice(1,4).map(x=>`${dDE(x.ud)} <b class="num">${eur(x.netto,0)}</b> <span class="muted">(${esc(x.p)})</span>`).join(' · ')}</div>`:''}`;}
 /* ---------- Monat ---------- */
 let mWho='TILL';
 $('#m-who').innerHTML=SH.map(s=>`<button type="button" data-w="${s}">${SHN[s]}</button>`).join('');
 $('#m-who').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;mWho=b.dataset.w;render();};
 const FEST_P=/^(giroausgleich|haus, sonst|pauschale|ioniq|sparen für auto|autosparen|etf$|versicherung|gemeinschaftskredit|strom anteil|rückgabe|rate sonde|kfz|anhänger|startkapital|svlfg|rest gehalt|debeka)/i;
 const ABGL='Abgleich Kontostand';
-function isFest(e,sh,g){if(e.fest!=null)return !!e.fest;if((e.l||'')===ABGL)return false;if(e.f)return true;
+function isFest(e,sh,g){if(e._c)return true;if(e.fest!=null)return !!e.fest;if((e.l||'')===ABGL)return false;if(e.f)return true;
   if(sh==='HAUS')return g==='G'?!!e.l:/^anteil/i.test(e.l||'');return FEST_P.test((e.l||'').trim());}
 const ABG={giro:['C','E'],tg:['I','K'],haus:['G','I']};
+function tendHTML(blk,c){const sn=blk.snap;if(!sn)return `<div class="tend eq"><small>Nach dem 📌 beim Giroausgleich siehst du hier, ob ihr über oder unter dem Plan liegt.</small></div>`;
+  const dg=r2(c.giro-sn.giro),dt=r2(c.tg-sn.tg),d=r2(dg+dt);const fin=['giro','tg'].some(k=>(ABG[k]).some(g=>(blk[g]||[]).some(e=>e.l===ABGL)));
+  const head=fin?'Endergebnis mit echtem Kontostand':`Tendenz seit der Planung am ${dDE(sn.am)}`;
+  const txt=Math.abs(d)<0.5?'genau wie geplant':d>0?`<b class="num pos">${eur(d,0)}</b> weniger ausgegeben als geplant`:`<b class="num neg">${eur(-d,0)}</b> mehr ausgegeben als geplant`;
+  const det=Math.abs(d)<0.5?'':` · Girokonto ${dg>=0?'+':'−'}${eur(Math.abs(dg),0)}, Tagesgeld ${dt>=0?'+':'−'}${eur(Math.abs(dt),0)}`;
+  return `<div class="tend ${Math.abs(d)<0.5?'eq':d>0?'pos':'neg'}"><small>${fin?'✅ ':'📈 '}${head}</small>${txt}<small>${d>0.5?'(oder mehr eingenommen) ':''}Girokonto + Tagesgeld, ohne ETF${det}</small></div>`;}
 function abglVal(blk,k){const[out,inn]=ABG[k];const f=g=>(blk[g]||[]).filter(e=>e.l===ABGL).reduce((a,e)=>a+(+e.v||0),0);return f(inn)-f(out);}
 const UNL=new Set();
 function sharedGold(){const p=gn('goldpreis');return [0,1].map(()=>({t:'Barren 10 g',w:10/OZ*p,k:624.65}));}
@@ -710,17 +816,21 @@ function goldList(rows){const k=rows.reduce((a,x)=>a+x.k,0),w=rows.reduce((a,x)=
 function depotHTML(c,sh){const gain=c.etf-c.einz;let h=`<div class="dep"><div class="row"><span>ETF-Depot ${c.etfIst?'<span class="pill g">echter Wert</span>':'<span class="pill">Plan</span>'}</span><b class="num">${eur(c.etf)}</b></div><div class="row"><span class="muted">eingezahlt insgesamt</span><span class="num muted">${eur(c.einz)}</span></div><div class="row"><span class="muted">${gain>=0?'Gewinn':'Verlust'}</span><span class="num ${sign(gain)}">${gain>=0?'+':''}${eur(gain)}</span></div><div class="row"><span class="muted">Sparrate diesen Monat</span><span class="num muted">${eur(c.etfRate)}</span></div>`;
   if(sh==='TILL'){h+=`<div class="row" style="margin-top:6px"><span>Gold <span class="muted">zu ${eur(gn('goldpreis'))} je Unze${gv('goldpreis')&&goldAm()?' · Stand '+dDE(goldAm())+(liveGold()?' (automatisch)':''):''}</span></span><b class="num">${eur(c.gold)}</b></div>`+goldList(goldRows());}
   return h+'</div>';}
+function fixInfo(sh,blk){const E=blk?.E||[];const i=E.findIndex(e=>GIROAUS.test((e.l||'').trim()));if(i<0)return null;const e=E[i];return {i,fixed:e.f!=='=GIROAUSGLEICH',am:e.fix||blk.snap?.am||null};}
+function fixBanner(sh,blk){if(sh==='HAUS'||!blk)return '';const f=fixInfo(sh,blk);if(!f)return '';const P=S.plan[month];if(P?.zu)return `<div class="fixb done">🔒 <div><b>Monat abgeschlossen</b><small>am ${dDE(P.zuAm)} · alle Beträge sind festgeschrieben</small></div></div>`;
+  return f.fixed?`<div class="fixb on">📌 <div><b>Plan festgeschrieben</b><small>${f.am?'am '+dDE(f.am)+' · ':''}Giroausgleich ${eur(entryVal(blk.E[f.i],blk,sh))} ist fix. Abweichungen siehst du unten bei der Tendenz.</small></div><button type="button" class="btn sec sm" data-auto="${f.i}" title="Wieder automatisch rechnen lassen">↺ lösen</button></div>`
+   :`<div class="fixb off">✏️ <div><b>Noch in Planung</b><small>Der Giroausgleich rechnet sich noch automatisch. Wenn alles passt und überwiesen ist: festschreiben.</small></div><button type="button" class="btn sm" data-fix="${f.i}">📌 Festschreiben</button></div>`;}
 function gehInfo(sh,blk){if(sh==='HAUS'||!blk)return'';useYm(month);const k=sh==='TILL'?'t_gehalt':'p_gehalt';const it=S.grund.items.find(i=>i.k===k);if(!it)return'';
-  const g=sh==='TILL'?VARS.Gehalt_Till:VARS.Gehalt_Patrick;const ga=giroAus(blk,sh);const a=ga.reduce((x,y)=>x+y.v,0),b=0;const rest=g-a;const v=gv(k,month);const chg=(it.hist||[]).filter(h=>h.ab<=month).at(-1);
-  return `<div class="geh ${rest<0?'neg-b':''}"><div><span class="muted">Gehalt ${ymName(month)}</span> ${sh==='TILL'?`<span class="muted">${eur(v)} − IG-BCE-Beitrag 41,91 € =</span> <b>${eur(g)}</b>`:`<b>${eur(g)}</b>`}${chg?` <span class="pill">seit ${ymName(chg.ab)} geändert, vorher ${eur(it.v)}</span>`:''}</div><div class="muted" style="font-size:12px">${rest<0?`Das Girokonto braucht diesen Monat ${eur(a)}: <b>${eur(g)}</b> aus dem Gehalt + <b class="num neg">${eur(-rest)}</b> vom Tagesgeld`:`Aufs Girokonto (Giroausgleich) ${eur(a)} · Rest aufs Tagesgeld <b class="num">${eur(rest)}</b>`}${(()=>{const g0=CALC?.[month]?.[sh]?.giro0||0;return Math.abs(g0)>=0.5&&!ga.some(x=>x.e.f!=='=GIROAUSGLEICH')?`<div class="muted" style="font-size:12px;margin-top:3px">ℹ️ Im Giroausgleich stecken ${g0<0?`${eur(-g0)} zum Ausgleich des Minus aus dem Vormonat`:`${eur(g0)} weniger, weil vom Vormonat noch Guthaben da ist`}.</div>`:'';})()}</div>${(()=>{const man=ga.some(x=>x.e.f!=='=GIROAUSGLEICH');const ge=CALC?.[month]?.[sh]?.giro??0;let h='';if(man)h+=`<div class="muted" style="font-size:12px;margin-top:3px">${ga.some(x=>x.e.fix)?'📌 Giroausgleich festgeschrieben':'✎ Giroausgleich von Hand eingetragen'}${Math.abs(ge)>=0.005?`: das Girokonto endet dadurch bei <b class="num ${ge<0?'neg':''}">${eur(ge)}</b>`:''}. ↺ = wieder automatisch.</div>`;if(rest<0)h+=`<div class="warnc" style="font-size:12px;margin-top:3px">${man?`Du überweist ${eur(-rest)} mehr aufs Girokonto, als Gehalt da ist.`:'Das Gehalt reicht diesen Monat nicht für alle Ausgaben.'} Der fehlende Betrag steht beim Tagesgeld unter Entnahmen.</div>`;return h;})()}</div>`;}
+  const g=gehOf(blk,sh);const ist=hasGehIst(blk);const ga=giroAus(blk,sh);const a=ga.reduce((x,y)=>x+y.v,0),b=0;const rest=g-a;const v=gv(k,month);const chg=(it.hist||[]).filter(h=>h.ab<=month).at(-1);
+  return `<div class="geh ${rest<0?'neg-b':''}"><div><span class="muted">Gehalt ${ymName(month)}</span> ${sh==='TILL'?`<span class="muted">${eur(ist?+blk.gehIst:v)} − IG-BCE-Beitrag 41,91 € =</span> <b>${eur(g)}</b>`:`<b>${eur(g)}</b>`}${ist?` <span class="pill">echtes Gehalt · geplant ${eur(v)}, ${g-(sh==='TILL'?v-41.91:v)>=0?'+':'−'}${eur(Math.abs(g-(sh==='TILL'?v-41.91:v)))}</span>`:chg?` <span class="pill">seit ${ymName(chg.ab)} geändert, vorher ${eur(it.v)}</span>`:''}<label class="gehist">echtes Gehalt diesen Monat<input inputmode="decimal" data-gehist="1" value="${ist?num(blk.gehIst):''}" placeholder="${num(v)}"></label></div><div class="muted" style="font-size:12px">${rest<0?`Das Girokonto braucht diesen Monat ${eur(a)}: <b>${eur(g)}</b> aus dem Gehalt + <b class="num neg">${eur(-rest)}</b> vom Tagesgeld`:`Aufs Girokonto (Giroausgleich) ${eur(a)} · Rest aufs Tagesgeld <b class="num">${eur(rest)}</b>`}${(()=>{const g0=CALC?.[month]?.[sh]?.giro0||0;return Math.abs(g0)>=0.5&&!ga.some(x=>x.e.f!=='=GIROAUSGLEICH')?`<div class="muted" style="font-size:12px;margin-top:3px">ℹ️ Im Giroausgleich stecken ${g0<0?`${eur(-g0)} zum Ausgleich des Minus aus dem Vormonat`:`${eur(g0)} weniger, weil vom Vormonat noch Guthaben da ist`}.</div>`:'';})()}</div>${(()=>{const man=ga.some(x=>x.e.f!=='=GIROAUSGLEICH');const ge=CALC?.[month]?.[sh]?.giro??0;let h='';if(man)h+=`<div class="muted" style="font-size:12px;margin-top:3px">${ga.some(x=>x.e.fix)?'📌 Giroausgleich festgeschrieben':'✎ Giroausgleich von Hand eingetragen'}${Math.abs(ge)>=0.005?`: das Girokonto endet dadurch bei <b class="num ${ge<0?'neg':''}">${eur(ge)}</b>`:''}. ↺ = wieder automatisch.</div>`;if(rest<0)h+=`<div class="warnc" style="font-size:12px;margin-top:3px">${man?`Du überweist ${eur(-rest)} mehr aufs Girokonto, als Gehalt da ist.`:'Das Gehalt reicht diesen Monat nicht für alle Ausgaben.'} Der fehlende Betrag steht beim Tagesgeld unter Entnahmen.</div>`;return h;})()}</div>`;}
 function pauInfo(blk,sh){const pe=(blk.C||[]).find(isPausch);if(!pe)return'';const used=pauschUsed(blk,sh);if(!used)return'<div class="pinfo muted">Tipp: Ausgaben, die aus der Pauschale bezahlt werden (Restaurant, Klamotten …), mit <b>P</b> markieren. Dann werden sie von der Pauschale abgezogen und nicht doppelt gezählt.</div>';
   const base=pauschBase(pe,blk,sh);const rest=base-used;return `<div class="pinfo">Pauschale ${eur(base,0)}: davon ${eur(used)} ausgegeben (P) · ${rest>=0?`noch <b class="pos">${eur(rest)}</b> frei (steht unten bei „Pauschale“)`:`<b class="neg">${eur(-rest)} über der Pauschale</b>`}</div>`;}
 function rMonat(){
-  renderMonthBar();$$('#m-who button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.w===mWho));
+  renderMonthBar();$$('#m-who button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.w===mWho));$$('#m-who button').forEach(b=>{const sh=b.dataset.w;const f=sh!=='HAUS'?fixInfo(sh,S.plan[month]?.[sh]):null;b.textContent=SHN[sh]+(f?.fixed||S.plan[month]?.zu&&sh!=='HAUS'?' 📌':'');});
   const P=S.plan[month];const el=$('#m-blocks');
-  if(!P){el.innerHTML=`<div class="card muted">Für ${ymName(month)} gibt es keinen Plan. Der Plan läuft von Oktober 2026 bis Dezember 2032.</div>`;return;}
+  if(!P){el.innerHTML=`<div class="card muted">Für ${ymName(month)} gibt es keinen Plan. Der Plan läuft von Oktober 2026 bis ${ymName(PLAN1)}.</div>`;return;}
   const sh=mWho,blk=P[sh]||{};const c=CALC[month][sh];
-  const row=(e,i,g,ov)=>{const v=ov??entryVal(e,blk,sh);const lk=isLinked(e)||e.f==='=RESTGEHALT'||e.f==='=GIROAUSGLEICH';const fe=isFest(e,sh,g);const ab=e.l===ABGL;const key=`${month}|${sh}|${g}|${i}`;const locked=fe&&!UNL.has(key);const ro=locked?' readonly tabindex="-1"':'';
+  const row=(e,i,g,ov)=>{if(e._c)return `<div class="er fest locked cst"><input value="${esc(e.l)}" readonly tabindex="-1" title="Eigener Posten aus den Einstellungen"><input class="amt fx" value="${num(entryVal(e,blk,sh))}" readonly tabindex="-1"><span class="pin" title="kommt aus den Einstellungen → Grundbeträge; dort ändern oder beenden">⚙️</span><span></span></div>`;const v=ov??entryVal(e,blk,sh);const lk=isLinked(e)||e.f==='=RESTGEHALT'||e.f==='=GIROAUSGLEICH';const fe=isFest(e,sh,g);const ab=e.l===ABGL;const key=`${month}|${sh}|${g}|${i}`;const locked=fe&&!UNL.has(key);const ro=locked?' readonly tabindex="-1"':'';
     return `<div class="er${fe?' fest':''}${locked?' locked':''}${ab?' abgl':''}" data-g="${g}" data-i="${i}"><input value="${esc(e.l)}" data-fld="l" aria-label="Bezeichnung"${ro} title="${e.lk?'gehört zu einer Tagesgeld-Entnahme: Tagesgeld → Girokonto → Ausgabe':''}"${e.lk?' class="lnk"':''}><input class="amt${lk?' fx':''}" inputmode="decimal" value="${num(v)}" data-fld="v" aria-label="Betrag"${ro} title="${e.f==='=GIROAUSGLEICH'?'automatisch: so viel, dass das Girokonto am Monatsende auf 0 steht. Eigener Betrag möglich; Feld leeren = wieder automatisch':lk?'verknüpft mit den Grundbeträgen':''}">${g==='C'&&sh!=='HAUS'&&!fe&&!e.lk&&!ab?`<button type="button" data-pau="${i}" class="ptog${e.p?' on':''}" title="${e.p?'wird von der Pauschale abgezogen – tippen, um es als zusätzliche Ausgabe zu zählen':'aus der Pauschale bezahlt? Tippen, dann wird es von der Pauschale abgezogen statt zusätzlich gezählt'}" aria-pressed="${!!e.p}">P</button>`:g==='E'&&e.f==='=GIROAUSGLEICH'?`<button type="button" data-fix="${i}" class="pin" title="Betrag jetzt festschreiben (z. B. nach der Überweisung). Danach ändert er sich nicht mehr automatisch." aria-label="Giroausgleich festschreiben">📌</button>`:fe?`<button type="button" data-lock="${key}" class="pin" aria-label="${locked?'Schloss öffnen, um zu ändern':'wieder verriegeln'}" title="${locked?'zum Ändern aufschließen':'wieder verriegeln'}">${locked?'🔒':'🔓'}</button>`:'<span></span>'}${g==='E'&&GIROAUS.test((e.l||'').trim())&&e.f!=='=GIROAUSGLEICH'?`<button type="button" data-auto="${i}" title="${e.fix?'festgeschrieben am '+dDE(e.fix)+' – ':''}wieder automatisch rechnen" aria-label="Giroausgleich wieder automatisch">↺</button>`:locked?'<span></span>':'<button type="button" data-del="1" aria-label="Zeile löschen">×</button>'}</div>`;};
   const rn=sh==='HAUS'?0:restNeg(blk,sh);
   const grp=([g,t])=>{let L=(blk[g]||[]).map((e,i)=>[e,i]);if(rn&&g==='K')L=L.filter(([e])=>e.f!=='=RESTGEHALT');let tot=L.reduce((a,[e])=>a+entryVal(e,blk,sh),0);if(rn&&g==='I')tot+=rn;
@@ -735,12 +845,13 @@ function rMonat(){
   const groups=ACC.map(([k,name,gs,a0,a1])=>`<div class="acct ${k}"><div class="acct-h"><span><span class="kd ${k}"></span>${name}</span><small>Anfang ${eur(a0)} → Ende <b class="num ${a1<0?'neg':''}">${eur(a1)}</b></small></div><div class="gridg">${GR[sh].filter(([g])=>gs.includes(g)).map(grp).join('')}</div></div>`).join('');
   const bank=(k,calc,label)=>{const has=Math.abs(abglVal(blk,k))>0.004;return `<div class="bankrow"><span><span class="kd ${k}"></span>${label}<small>laut Plan ${eur(calc-abglVal(blk,k))}${has?` · Abgleich ${abglVal(blk,k)>0?'+':''}${eur(abglVal(blk,k))}`:''}</small></span><label>echter Kontostand<input inputmode="decimal" data-abgl="${k}" value="${has?num(calc):''}" placeholder="${num(calc)}"></label></div>`;};
   let sum='';
-  if(sh==='HAUS'){sum=`<div class="row"><span>Anfang</span><span class="num">${eur(c.k0)}</span></div><div class="row"><span>− Abbuchungen</span><span class="num">${eur(c.soll)}</span></div><div class="row"><span>+ Einzahlungen</span><span class="num">${eur(c.haben)}</span></div><div class="sumrow"><span>Haushaltskonto Monatsende</span><span class="num ${c.k<0?'neg':''}">${eur(c.k)}</span></div><div class="row"><span>Überweisung aufs Girokonto</span><b class="num">${eur(c.ueb)}</b></div><details class="row" style="display:block"><summary style="display:flex;justify-content:space-between;cursor:pointer"><span>Gemeinsames Golddepot <span class="muted">▸ aufschlüsseln</span></span><span class="num">${eur(sharedGold().reduce((a,x)=>a+x.w,0))}</span></summary><div class="dep">${goldList(sharedGold())}<div class="note">2 × 10 g, gehört euch beiden je zur Hälfte. Zählt nicht zum Stand des Haushaltskontos.</div></div></details>${blk.notiz?`<div class="note">${esc(blk.notiz)}</div>`:''}`;}
-  else sum=`<div class="row"><span><span class="kd giro"></span>Girokonto: Anfang ${eur(c.giro0)} − ${eur(c.soll)} + ${eur(c.haben)}</span><b class="num ${c.giro<0?'neg':''}">${eur(c.giro)}</b></div><div class="row"><span><span class="kd tg"></span>Tagesgeld: Anfang ${eur(c.tg0)} − ${eur(c.tgS)} + ${eur(c.tgH)}</span><b class="num">${eur(c.tg)}</b></div><details class="row" style="display:block"><summary style="display:flex;justify-content:space-between;cursor:pointer"><span>ETF${sh==='TILL'?' und Gold':''} <span class="muted">▸ aufschlüsseln</span></span><span class="num">${eur(c.etf+c.gold)}</span></summary>${depotHTML(c,sh)}</details><div class="sumrow"><span>Gesamt am Monatsende</span><span class="num">${eur(c.total)}</span></div>`;
+  if(sh==='HAUS'){sum=`<div class="row"><span>Anfang</span><span class="num">${eur(c.k0)}</span></div><div class="row"><span>− Abbuchungen</span><span class="num">${eur(c.soll)}</span></div><div class="row"><span>+ Einzahlungen</span><span class="num">${eur(c.haben)}</span></div><div class="sumrow"><span>Haushaltskonto Monatsende</span><span class="num ${c.k<0?'neg':''}">${eur(c.k)}</span></div><div class="row"><span>Überweisung aufs Girokonto</span><b class="num">${eur(c.ueb)}</b></div><details class="row goldsep" style="display:block"><summary style="display:flex;justify-content:space-between;cursor:pointer"><span>Gemeinsames Golddepot <span class="muted">▸ aufschlüsseln</span></span><span class="num">${eur(sharedGold().reduce((a,x)=>a+x.w,0))}</span></summary><div class="dep">${goldList(sharedGold())}<div class="note">2 × 10 g, gehört euch beiden je zur Hälfte. Zählt nicht zum Stand des Haushaltskontos.</div></div></details>${blk.notiz?`<div class="note">${esc(blk.notiz)}</div>`:''}`;}
+  else sum=`<div class="row"><span><span class="kd giro"></span>Girokonto: Anfang ${eur(c.giro0)} − ${eur(c.soll)} + ${eur(c.haben)}</span><b class="num ${c.giro<0?'neg':''}">${eur(c.giro)}</b></div><div class="row"><span><span class="kd tg"></span>Tagesgeld: Anfang ${eur(c.tg0)} − ${eur(c.tgS)} + ${eur(c.tgH)}</span><b class="num">${eur(c.tg)}</b></div><details class="row goldsep" style="display:block"><summary style="display:flex;justify-content:space-between;cursor:pointer"><span>ETF${sh==='TILL'?' und Gold':''} <span class="muted">▸ aufschlüsseln</span></span><span class="num">${eur(c.etf+c.gold)}</span></summary>${depotHTML(c,sh)}</details><div class="sumrow"><span>Gesamt am Monatsende</span><span class="num">${eur(c.total)}</span></div>`+tendHTML(blk,c);
   const abgl=sh==='HAUS'?bank('haus',c.k,'Haushaltskonto'):bank('giro',c.giro,'Girokonto')+bank('tg',c.tg,'Tagesgeld')+`<div class="bankrow"><span>ETF-Depot (Scalable)<small>${c.etfIst?'echter Depotwert eingetragen':'laut Plan '+eur(c.etf)+' (nur Einzahlungen)'}</small></span><label>Depotwert heute<input inputmode="decimal" data-etf="1" value="${c.etfIst?num(c.etf):''}" placeholder="${num(c.etf)}"></label></div>`;
-  el.innerHTML=`<div class="card blk"><h2>${SHN[sh]} · ${ymName(month)}</h2>${gehInfo(sh,blk)}${groups}<div class="g2" style="margin-top:14px"><div>${sum}</div><div class="abglbox"><h3 style="margin-top:0">Monatsende: mit dem Konto abgleichen</h3>${abgl}<div class="note">Trag ein, was wirklich auf dem Konto ist. Die App bucht die Differenz als „${ABGL}“, damit der nächste Monat mit dem richtigen Stand startet. Leer lassen = kein Abgleich.</div></div></div></div>`;
+  el.innerHTML=`<div class="card blk"><h2>${SHN[sh]} · ${ymName(month)}</h2>${fixBanner(sh,blk)}${gehInfo(sh,blk)}${groups}<div class="g2" style="margin-top:14px"><div>${sum}</div><div class="abglbox"><h3 style="margin-top:0">Monatsende: mit dem Konto abgleichen</h3>${abgl}<div class="note">Trag ein, was wirklich auf dem Konto ist. Die App bucht die Differenz als „${ABGL}“, damit der nächste Monat mit dem richtigen Stand startet. Leer lassen = kein Abgleich.</div></div></div></div>`;
 }
 $('#m-blocks').addEventListener('change',e=>{
+  if(e.target.dataset.gehist){const val=parseNum(e.target.value);savePlan(month,d=>{const b=d[mWho]=d[mWho]||{};if(val==null)delete b.gehIst;else b.gehIst=r2(val);});return;}
   if(e.target.dataset.etf){const val=parseNum(e.target.value);savePlan(month,d=>{const b=d[mWho]=d[mWho]||{};if(val==null)delete b.etfIst;else b.etfIst=r2(val);});return;}
   const ak=e.target.dataset.abgl;if(ak){const c=CALC[month][mWho];const calc=ak==='haus'?c.k:ak==='giro'?c.giro:c.tg;const act=parseNum(e.target.value);
     savePlan(month,d=>{const b=d[mWho]=d[mWho]||{};const[out,inn]=ABG[ak];const base=calc-abglVal(b,ak);[out,inn].forEach(g=>{b[g]=(b[g]||[]).filter(x=>x.l!==ABGL);});
@@ -748,15 +859,16 @@ $('#m-blocks').addEventListener('change',e=>{
   const r=e.target.closest('.er');if(!r)return;const g=r.dataset.g,i=+r.dataset.i,f=e.target.dataset.fld;
   savePlan(month,d=>{const b=d[mWho]=d[mWho]||{};const e2=b[g][i];if(!e2)return;
     if(f==='l')e2.l=e.target.value.trim();else{const v=parseNum(e.target.value);if(v==null&&/^giroausgleich$/i.test((e2.l||'').trim())&&g==='E'){e2.f='=GIROAUSGLEICH';e2.v=null;return;}delete e2.f;e2.v=v;if(e2.lk)Object.keys(b).forEach(gg=>{if(Array.isArray(b[gg]))b[gg].forEach(x=>{if(x.lk===e2.lk)x.v=v;});});}});});
-$('#m-blocks').addEventListener('click',e=>{const pt=e.target.closest('[data-pau]');if(pt){const i=+pt.dataset.pau;savePlan(month,d=>{const x=d[mWho]?.C?.[i];if(x){if(x.p)delete x.p;else x.p=true;}});return;}const fx=e.target.closest('[data-fix]');if(fx){const i=+fx.dataset.fix;const cur=entryVal((S.plan[month]?.[mWho]?.E||[])[i],S.plan[month][mWho],mWho);savePlan(month,d=>{const x=d[mWho]?.E?.[i];if(x){delete x.f;x.v=r2(cur);x.fix=TODAY;}});flash('ok','Giroausgleich festgeschrieben');return;}const au=e.target.closest('[data-auto]');if(au){const i=+au.dataset.auto;savePlan(month,d=>{const x=d[mWho]?.E?.[i];if(x){x.f='=GIROAUSGLEICH';x.v=null;}});return;}const a=e.target.closest('[data-add]');if(a){savePlan(month,d=>{const b=d[mWho]=d[mWho]||{};(b[a.dataset.add]=b[a.dataset.add]||[]).push({l:'',v:null});});setTimeout(()=>{const ins=$$(`#m-blocks .er[data-g="${a.dataset.add}"] input[data-fld="l"]`);ins.filter(x=>!x.value).at(-1)?.focus();},60);return;}
+$('#m-blocks').addEventListener('click',e=>{const pt=e.target.closest('[data-pau]');if(pt){const i=+pt.dataset.pau;savePlan(month,d=>{const x=d[mWho]?.C?.[i];if(x){if(x.p)delete x.p;else x.p=true;}});return;}const fx=e.target.closest('[data-fix]');if(fx){const i=+fx.dataset.fix;const cur=entryVal((S.plan[month]?.[mWho]?.E||[])[i],S.plan[month][mWho],mWho);const cc=CALC[month]?.[mWho];savePlan(month,d=>{const x=d[mWho]?.E?.[i];if(x){delete x.f;x.v=r2(cur);x.fix=TODAY;}if(cc)d[mWho].snap={am:TODAY,giro:r2(cc.giro),tg:r2(cc.tg)};});flash('ok','Giroausgleich festgeschrieben – ab jetzt siehst du Abweichungen in der Übersicht');return;}const au=e.target.closest('[data-auto]');if(au){const i=+au.dataset.auto;savePlan(month,d=>{const x=d[mWho]?.E?.[i];if(x){x.f='=GIROAUSGLEICH';x.v=null;delete x.fix;}if(d[mWho])delete d[mWho].snap;});return;}const a=e.target.closest('[data-add]');if(a){savePlan(month,d=>{const b=d[mWho]=d[mWho]||{};(b[a.dataset.add]=b[a.dataset.add]||[]).push({l:'',v:null});});setTimeout(()=>{const ins=$$(`#m-blocks .er[data-g="${a.dataset.add}"] input[data-fld="l"]`);ins.filter(x=>!x.value).at(-1)?.focus();},60);return;}
   const lk=e.target.closest('[data-lock]');if(lk){const k=lk.dataset.lock;UNL.has(k)?UNL.delete(k):UNL.add(k);rMonat();if(UNL.has(k))setTimeout(()=>$(`#m-blocks [data-lock="${k}"]`)?.closest('.er')?.querySelector('.amt')?.focus(),30);return;}
   const d=e.target.closest('[data-del]');if(d){const r=d.closest('.er');if(!d.dataset.armed){d.dataset.armed=1;d.textContent='✓';d.style.color='var(--bad)';setTimeout(()=>{d.dataset.armed='';d.textContent='×';d.style.color='';},2500);return;}
     savePlan(month,x=>{const blk=x[mWho];const e0=blk[r.dataset.g][+r.dataset.i];if(e0&&e0.lk){Object.keys(blk).forEach(g=>{if(Array.isArray(blk[g]))blk[g]=blk[g].filter(e=>e.lk!==e0.lk);});}else blk[r.dataset.g].splice(+r.dataset.i,1);});}});
 $('#m-close').onclick=()=>{const P=S.plan[month];if(!P)return;
-  if(P.zu){savePlan(month,d=>{d.zu=false;});return;}
+  if(P.zu){savePlan(month,d=>{d.zu=false;SH.forEach(sh=>{const b=d[sh];if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g]=b[g].filter(e=>!e.cm);});});});return;}
   const b=$('#m-close');if(!b.dataset.armed){b.dataset.armed='1';b.textContent='Wirklich abschließen? Nochmal tippen';b.classList.add('danger');setTimeout(()=>{b.dataset.armed='';b.classList.remove('danger');renderMonthBar();},4000);return;}
   b.dataset.armed='';b.classList.remove('danger');
-  savePlan(month,d=>{SH.forEach(sh=>{const b=d[sh];if(!b)return;Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;b[g].forEach(e=>{if(e.f){e.v=r2(isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));if(e.f==='=GIROAUSGLEICH')e.fix=TODAY;delete e.f;}});});});d.zu=true;d.zuAm=TODAY;});};
+  const CST=[];useYm(month);SH.forEach(sh=>{const b=P[sh];if(!b)return;Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g].filter(e=>e._c).forEach(e=>CST.push([sh,g,{l:e.l,v:r2(entryVal(e,b,sh)),fest:true,cm:1}]));});});
+  savePlan(month,d=>{CST.forEach(([sh,g,e])=>{const b=d[sh]=d[sh]||{};(b[g]=b[g]||[]).push(e);});SH.forEach(sh=>{const b=d[sh];if(!b)return;Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;b[g].forEach(e=>{if(e.f){e.v=r2(isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));if(e.f==='=GIROAUSGLEICH')e.fix=TODAY;delete e.f;}});});});d.zu=true;d.zuAm=TODAY;d.gold=gn('goldpreis');});};
 
 /* ---------- Schnelleingabe ---------- */
 const BER={giro_aus:['C','Girokonto Ausgabe'],giro_ein:['E','Girokonto Eingang'],tg_raus:['I','vom Tagesgeld genommen'],tg_kauf:['I','vom Tagesgeld für einen Kauf (Tagesgeld → Giro → Ausgabe)'],tg_rein:['K','aufs Tagesgeld'],haus_ab:['G','Abbuchung Haushaltskonto'],haus_ein:['I','Einzahlung Haushaltskonto']};
@@ -797,7 +909,8 @@ Eine Überweisung von einem privaten Konto aufs gemeinsame Konto zum Ausgleich e
    - anreise und plattform genau aus der Buchungsliste oben. bar = Gesamtbetrag, der zusätzlich bar vor Ort gezahlt wird. Nur Felder füllen, die sich ändern, sonst null.
 5) Kreditwerte ändern (z. B. "Sparda-Restschuld um 1 € ändern", "Restschuld Sparda ist jetzt 318.000", "Mutter-Rate 900 €"): {"art":"kredit","feld":"feld aus der Kreditliste","wert":Zahl|null,"um":Zahl|null}  – wert = neuer Wert; um = Änderung um diesen Betrag (+ oder −), wenn nur eine Änderung genannt ist. "um 1 € ändern" ohne Richtung: um=-1 bei Restschuld (sinkt), sonst Rückfrage.
 6) Sondertilgung vormerken: {"art":"sondertilgung","kredit":"sparda"|"ing","monat":"JJJJ-MM","betrag":Zahl}
-7) Stromkonto: {"art":"strom","monat":"JJJJ-MM","feld":"spar"|"verbrauch"|"verg","wert":Zahl}  – spar = Einzahlung aufs Stromkonto, verbrauch = Stromkosten in €, verg = Einspeisevergütung in €.
+7) Stromkonto: {"art":"strom","monat":"JJJJ-MM","feld":"spar"|"verbrauch"|"ist"|"verg","wert":Zahl}  – spar = Einzahlung aufs Stromkonto, verbrauch = geplante Stromkosten in €, ist = tatsächliche Stromkosten laut Abrechnung, verg = Einspeisevergütung in €.
+8) Tatsächliches Gehalt in EINEM Monat (z. B. "Patrick hat im Oktober 2.610 € bekommen", "Gehalt Patrick diesen Monat 2.540") – NICHT dauerhaft, dafür art grund: {"art":"gehalt","person":"Till"|"Patrick","monat":"JJJJ-MM","wert":Zahl|null}  – null = wieder das geplante Gehalt.
 Beträge als Zahl mit Punkt. Nichts erfinden. Wenn unklar, eine rueckfrage stellen und aktionen leer lassen.`;}
 let qActs=[];
 function qDescribe(a){
@@ -807,7 +920,8 @@ function qDescribe(a){
   if(a.art==='grund'){const it=S.grund.items.find(i=>i.k===a.key);return `Grundbetrag „${esc(it?.l||a.key)}“: ${it?eur(gv(a.key,a.ab||month))+' → ':''}${eur(a.wert)} ${a.ab?'ab '+ymName(a.ab):'(gilt ab sofort für alle offenen Monate)'}`;}
   if(a.art==='kredit'){const f=KFELDER.find(x=>x[0]===a.feld);const cur=String(a.feld||'').split('.').reduce((o,x)=>o?.[x],K());const nv=kNeu(a);return `${esc(f?f[1]:a.feld)}: ${fmtK2(a.feld,cur)} → <b>${fmtK2(a.feld,nv)}</b>`;}
   if(a.art==='sondertilgung')return `Sondertilgung ${a.kredit==='ing'?'ING':'Sparda'} ${ymName(a.monat)}: ${eur(a.betrag)}`;
-  if(a.art==='strom'){const L={spar:'Einzahlung',verbrauch:'Verbrauch €',verg:'Vergütung €'};return `Stromkonto ${ymName(a.monat)}: ${L[a.feld]||esc(a.feld)} ${eur(S.strom.m?.[a.monat]?.[a.feld]??0)} → <b>${eur(a.wert)}</b>`;}
+  if(a.art==='gehalt')return `${esc(a.person)}: echtes Gehalt ${ymName(a.monat)} ${a.wert==null?'zurück auf geplant':eur(+a.wert)}`;
+  if(a.art==='strom'){const L={spar:'Einzahlung',verbrauch:'Verbrauch geplant €',ist:'Verbrauch echt €',verg:'Vergütung €'};return `Stromkonto ${ymName(a.monat)}: ${L[a.feld]||esc(a.feld)} ${eur(S.strom.m?.[a.monat]?.[a.feld]??0)} → <b>${eur(a.wert)}</b>`;}
   return esc(JSON.stringify(a));
 }
 const KFELDER=[['sparda.stand','Sparda Restschuld (Stand)'],['sparda.standNach','Sparda Stand nach Monat (JJJJ-MM)'],['sparda.rate','Sparda Monatsrate'],['sparda.zins','Sparda Zinssatz %'],['sparda.szenario.aktiv','Szenario Mutter einrechnen (true/false)'],['sparda.szenario.an','Szenario Mutter ab Monat'],['sparda.szenario.betrag','Szenario Mutter Betrag'],['sparda.szenario.rate','Rate an Mutter monatlich'],['bauspar.saldo','Bausparguthaben'],['bauspar.monat','Bausparen monatlich'],['bauspar.summe','Bausparsumme'],['ing.betrag','ING Kreditbetrag'],['ing.zins','ING Zinssatz %']];
@@ -829,21 +943,22 @@ async function qApply(list){let ok=0;const skip=[];
     else if(a.art==='grund'){await setGrund(a.key,+a.wert,a.ab||null);ok++;}
     else if(a.art==='kredit'){if(!KFELDER.some(x=>x[0]===a.feld)){skip.push(qDescribe(a));continue;}let v=kNeu(a);if(/aktiv/.test(a.feld))v=!!v;else if(!/an$|standNach/.test(a.feld))v=+v;await setK(a.feld,v);ok++;}
     else if(a.art==='sondertilgung'){const k=a.kredit==='ing'?'ing':'sparda';const l=[...(K()[k].sonder||[]),{ym:a.monat,b:+a.betrag}].sort((x,y)=>x.ym.localeCompare(y.ym));await setK(k+'.sonder',l);ok++;}
-    else if(a.art==='strom'){if(!['spar','verbrauch','verg'].includes(a.feld)){skip.push(qDescribe(a));continue;}const d=structuredClone(S.strom);d.m=d.m||{};d.m[a.monat]={...(d.m[a.monat]||{}),[a.feld]:+a.wert};S.strom=d;render();await save('config/strom',d);ok++;}
+    else if(a.art==='gehalt'){const sh=PSH[a.person];if(!sh||sh==='HAUS'||!S.plan[a.monat]){skip.push(qDescribe(a));continue;}await savePlan(a.monat,d=>{const b=d[sh]=d[sh]||{};if(a.wert==null)delete b.gehIst;else b.gehIst=r2(+a.wert);});ok++;}
+    else if(a.art==='strom'){if(!['spar','verbrauch','ist','verg'].includes(a.feld)){skip.push(qDescribe(a));continue;}const d=structuredClone(S.strom);d.m=d.m||{};d.m[a.monat]={...(d.m[a.monat]||{}),[a.feld]:+a.wert};S.strom=d;render();await save('config/strom',d);ok++;}
   }
   return {ok,skip};
 }
 $('#q-go').onclick=async()=>{const tx=$('#q-text').value.trim();const msg=$('#q-msg');if(!tx)return;
   // Schnellweg ohne Claude: nur ein Betrag => Essen
   const only=parseNum(tx.replace(/^essen\s*/i,''));if(only!=null&&/^(essen\s*)?[\d.,\s€]+$/i.test(tx)){await addBudget('e',only);$('#q-text').value='';msg.innerHTML=`<b class="pos">${eur(only)} bei Essen abgezogen.</b>`;return;}
-  if(!sampleFn){msg.textContent='Claude ist in dieser Ansicht nicht verfügbar. Nutze die Felder bei Essen & Sonstiges oder den Reiter Monat.';return;}
-  $('#q-go').disabled=true;msg.textContent='Claude liest deine Nachricht …';
+  if(!sampleFn){msg.textContent='Die KI ist in dieser Ansicht nicht verfügbar. Nutze die Felder bei Essen & Sonstiges oder den Reiter Monat.';return;}
+  $('#q-go').disabled=true;msg.textContent='Die KI liest deine Nachricht …';
   try{const r=await sampleFn.json(qPrompt(tx),{modelTier:'default',cache:false});
     qActs=(r?.aktionen||[]).filter(a=>a&&a.art);
     if(!qActs.length){msg.innerHTML=r?.rueckfrage?`<b>Rückfrage:</b> ${esc(r.rueckfrage)}`:'Ich habe daraus keine Änderung erkannt. Formulier es gern etwas genauer.';$('#q-prev').innerHTML='';}
     else{msg.innerHTML=(r?.rueckfrage?`<b>Hinweis:</b> ${esc(r.rueckfrage)} `:'')+'Bitte prüfen und bestätigen:';
       $('#q-prev').innerHTML=qActs.map((a,i)=>`<label class="qa"><input type="checkbox" checked data-qi="${i}"><span>${qDescribe(a)}</span></label>`).join('')+`<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="q-ok">Bestätigen</button><button class="btn sec" id="q-no">Verwerfen</button></div>`;}
-  }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'Claude-Zugang fehlt.'):e?.code==='not_granted'?'Claude wurde nicht erlaubt. Trag es im Reiter Monat von Hand ein.':e?.code==='rate_limited'?'Gerade zu viele Anfragen. Bitte gleich noch einmal.':'Das hat nicht geklappt. Bitte noch einmal versuchen.';}
+  }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'KI-Zugang fehlt. Einstellungen → KI-Zugang.'):e?.code==='not_granted'?'Die KI wurde nicht erlaubt. Trag es im Reiter Monat von Hand ein.':e?.code==='rate_limited'?'Gerade zu viele Anfragen. Bitte gleich noch einmal.':'Das hat nicht geklappt. Bitte noch einmal versuchen.';}
   $('#q-go').disabled=false;};
 $('#q-prev').addEventListener('click',async e=>{if(e.target.id==='q-no'){$('#q-prev').innerHTML='';$('#q-msg').textContent='Verworfen.';return;}
   if(e.target.id!=='q-ok')return;const sel=$$('#q-prev [data-qi]').filter(c=>c.checked).map(c=>qActs[+c.dataset.qi]);e.target.disabled=true;
@@ -917,7 +1032,7 @@ Du liest EINE Ferienwohnungs-Buchung aus (Screenshots oder kopierter Text) (Book
 Antworte NUR mit JSON: {"art":"neu","plattform":"Booking.com"|"Airbnb"|"Privat"|"unbekannt","anreise":"JJJJ-MM-TT"|null,"abreise":"JJJJ-MM-TT"|null,"erwachsene":Zahl|null,"kinder":Zahl|null,"gesamtpreis":Zahl|null,"kommissionspflichtig":Zahl|null,"auszahlung":Zahl|null,"gebuehr":Zahl|null,"storniert":true|false,"stornierbar":true|false|null,"unsicher":["feldname"],"hinweis":"ein kurzer Satz"}
 Regeln: Booking.com: gesamtpreis = "Gesamtpreis der Buchung"; kommissionspflichtig = "Kommissionspflichtiger Betrag"; gebuehr = "Kommission". Airbnb: gesamtpreis = vom Gast bezahlt für die Nächte (ohne Servicegebühr für Gäste); auszahlung = "Du erhältst"; gebuehr = Servicegebühr für Gastgeber positiv. Privat: auszahlung = Betrag vom Gast.
 stornierbar=false bei "nicht stornierbar"/ohne kostenlose Stornierung. erwachsene = nur Erwachsene, kinder = Anzahl Kinder (Kleinkinder/Babys mitzählen). Fehlendes Jahr ergänzen und in unsicher. Zahlen mit Punkt. Nichts erfinden.`;}
-async function fwAuslesen(opts,btn,textIn){const msg=$('#fw-shotmsg');btn.disabled=true;msg.textContent='Claude liest die Buchung … (bis zu einer Minute)';
+async function fwAuslesen(opts,btn,textIn){const msg=$('#fw-shotmsg');btn.disabled=true;msg.textContent='Die KI liest die Buchung … (bis zu einer Minute)';
   try{const r=await sampleFn.json(fwPrompt()+(textIn?'\n\nText:\n"""\n'+textIn.slice(0,6000)+'\n"""':''),{...opts,modelTier:'default'});
     if(r.art==='aenderung'){const a={art:'buchung',anreise:r.anreise,plattform:r.plattform,erwachsene:r.erwachsene,kinder:r.kinder,abreise:r.abreise,bar:r.bar,storniert:!!r.storniert,notiz:r.notiz,barUrlaub:r.bar_aufs_urlaubskonto};
       msg.innerHTML=`<b>Änderung erkannt:</b> ${qDescribe(a)} <button type="button" class="btn sm" id="fw-chok">Bestätigen</button> <button type="button" class="btn sec sm" id="fw-chno">Verwerfen</button>`;fwPending=a;btn.disabled=false;return;}
@@ -927,7 +1042,7 @@ async function fwAuslesen(opts,btn,textIn){const msg=$('#fw-shotmsg');btn.disabl
     $('#fw-ges').value=r.gesamtpreis??'';$('#fw-bet').value=p==='Booking.com'?(r.kommissionspflichtig??''):(r.auszahlung??'');
     $$('#f-fw .unsure').forEach(x=>x.classList.remove('unsure'));const map={anreise:'#fw-a',abreise:'#fw-ab',erwachsene:'#fw-erw',gesamtpreis:'#fw-ges',kommissionspflichtig:'#fw-bet',auszahlung:'#fw-bet'};(r.unsicher||[]).forEach(k=>{const el=map[k]&&$(map[k]);if(el)el.classList.add('unsure');});
     fwPreview();msg.innerHTML=`<b>Ausgelesen.</b> Bitte prüfen und speichern${(r.unsicher||[]).length?' (gelb = unsicher)':''}.${r.hinweis?' '+esc(r.hinweis):''}`;
-  }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'Claude-Zugang fehlt.'):e?.code==='not_granted'?'Auslesen nicht erlaubt. Bitte von Hand eintragen.':e?.code==='rate_limited'?'Gerade zu viele Anfragen, bitte gleich nochmal.':'Das Auslesen hat nicht geklappt. Bitte nochmal oder von Hand eintragen.';}
+  }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'KI-Zugang fehlt. Einstellungen → KI-Zugang.'):e?.code==='not_granted'?'Auslesen nicht erlaubt. Bitte von Hand eintragen.':e?.code==='rate_limited'?'Gerade zu viele Anfragen, bitte gleich nochmal.':'Das Auslesen hat nicht geklappt. Bitte nochmal oder von Hand eintragen.';}
   btn.disabled=false;}
 $('#fw-readtext').onclick=async()=>{const tx=$('#fw-text').value.trim();if(tx.length<8){$('#fw-shotmsg').textContent='Bitte zuerst die Buchung eintragen.';return;}if(!sampleFn){$('#fw-shotmsg').textContent='Auslesen ist in dieser Ansicht nicht verfügbar.';return;}await fwAuslesen({},$('#fw-readtext'),tx);};
 
@@ -1013,16 +1128,30 @@ function setK(path,val){const d=structuredClone(K());const ks=path.split('.');le
   if(path==='sparda.rate'&&isFinite(+old)&&isFinite(+val)&&+old!==+val&&S.grund.items.some(i=>i.k==='h_tilgung')){const items=structuredClone(S.grund.items);const it=items.find(i=>i.k==='h_tilgung');it.v=r2((+it.v||0)+(+val-+old));it.am=TODAY;S.grund={items};save('config/grund',{items});}
   if(path==='ing.rate'&&isFinite(+val)&&S.grund.items.some(i=>i.k==='ing_rate')){const items=structuredClone(S.grund.items);const it=items.find(i=>i.k==='ing_rate');it.v=+val;it.am=TODAY;S.grund={items};save('config/grund',{items});}
   render();return save('config/kredit',d);}
+let kSer=new Set(['sp','sp0','ing','bs']),kRng='all';
+$('#p-kredite').addEventListener('click',e=>{const b=e.target.closest('[data-kc],[data-kr]');if(!b)return;if(b.dataset.kc){kSer.has(b.dataset.kc)?kSer.delete(b.dataset.kc):kSer.add(b.dataset.kc);}if(b.dataset.kr)kRng=b.dataset.kr;rKredite();});
 function rKredite(){
   const k=K();$$('#p-kredite [data-k]').forEach(i=>{if(document.activeElement===i)return;const v=i.dataset.k.split('.').reduce((o,x)=>o?.[x],k);if(i.type==='checkbox')i.checked=!!v;else i.value=v??'';});
   $('#ing-start').value=gv('ing_start')||'';
   const A=sparda(true),B=sparda(false),I=ingRows();
   const endY=r=>{const m={};r.forEach(x=>{m[x.ym.slice(0,4)]=x;});return m;};
   const ea=endY(A),eb=endY(B),ei=endY(I);const years=[];for(let y=2026;y<=2053;y++)years.push(String(y));
-  lineChart($('#c-kred'),years,[{n:'mit Sondertilgungen',c:'var(--acc)',v:years.map(y=>ea[y]?ea[y].st:(y>A.at(-1)?.ym.slice(0,4)?0:null))},{n:'ohne',c:'var(--mute)',dash:1,v:years.map(y=>eb[y]?.st??null)},{n:'ING',c:'var(--pat)',v:years.map(y=>ei[y]?ei[y].st:(I.length&&y>I.at(-1).ym.slice(0,4)&&y<=String(+I.at(-1).ym.slice(0,4)+1)?0:null))}],{h:260,aria:'Restschuld'});
+  const bsRows=(()=>{const b=k.bauspar;if(!b.summe)return {};const z=bausparZuteil();let sd=+b.saldo||0,ym=b.stand||CUR;const m={};m[ym.slice(0,4)]=sd;let n=0;while(n<400&&(!z||ym<z.ym)){ym=ymAdd(ym,1);sd+=+b.monat||0;m[ym.slice(0,4)]=r2(sd);n++;}return m;})();
+  const KS=[['sp','Sparda','var(--till)'],['sp0','Sparda ohne Sondertilgungen','var(--till)'],['ing','ING','var(--pat)'],['bs','Bausparvertrag','var(--gold)']];
+  const lastY=kRng==='all'?'2053':kRng;const yv=years.filter(y=>y<=lastY);
+  $('#kc-ser').innerHTML=KS.map(([x,l])=>`<button type="button" data-kc="${x}" aria-pressed="${kSer.has(x)}">${l}</button>`).join('');
+  $('#kc-rng').innerHTML=[['2030','bis 2030'],['2036','bis 2036'],['2040','bis 2040'],['all','bis 2053']].map(([x,l])=>`<button type="button" data-kr="${x}" aria-pressed="${x===kRng}">${l}</button>`).join('');
+  const SV={sp:yv.map(y=>ea[y]?ea[y].st:(y>A.at(-1)?.ym.slice(0,4)?0:null)),sp0:yv.map(y=>eb[y]?.st??null),ing:yv.map(y=>ei[y]?ei[y].st:(I.length&&y>I.at(-1).ym.slice(0,4)&&y<=String(+I.at(-1).ym.slice(0,4)+1)?0:null)),bs:yv.map(y=>bsRows[y]??null)};
+  const act=KS.filter(([x])=>kSer.has(x));
+  lineChart($('#c-kred'),yv,act.map(([x,l,c])=>({n:l,c,dash:x==='sp0'?1:0,v:SV[x]})),{h:260,aria:'Restschuld',mark:yv.indexOf(CUR.slice(0,4))});
+  $('#kc-leg').innerHTML=act.map(([x,l,c])=>`<span><i style="background:${c}${x==='sp0'?';opacity:.5':''}"></i>${l}</span>`).join('');
   const zA=A.reduce((a,x)=>a+x.zi,0),zB=B.reduce((a,x)=>a+x.zi,0);const at=(r,ym)=>{const x=r.filter(x=>x.ym<=ym).at(-1);return x?x.st:null;};
   const bs=bausparZuteil();
-  $('#k-kpis').innerHTML=kpi('Sparda Restschuld heute',eur(at(A,CUR)??k.sparda.stand,0),`Zinsbindung bis 03/2053`)+kpi('Restschuld 03/2053',eur(at(A,'2053-03')||0,0),`ohne Sondertilgungen ${eur(at(B,'2053-03'),0)} (Bank: ${eur(BANK['2053-03'],0)})`)+kpi('Zinsen gespart',eur(zB-zA,0),'durch Sondertilgungen und Szenario')+kpi('ING abbezahlt',I.length?ymName(I.at(-1).ym):'–',I.length?`Zinsen gesamt ${eur(I.reduce((a,x)=>a+x.zi,0),0)}`:'');
+  const ing0=I.filter(x=>x.ym<=CUR).at(-1)?.st??(+k.ing.betrag||0);const bsNow=(()=>{const b=k.bauspar;if(!b.summe)return null;let sd=+b.saldo||0,ym=b.stand||CUR;while(ym<CUR){ym=ymAdd(ym,1);sd+=+b.monat||0;}return sd;})();
+  const kg=(t,col,main,mainL,rows)=>`<div class="kg card" style="--kc:${col}"><div class="kg-h">${t}</div><div class="kg-m"><span class="muted">${mainL}</span><b class="num">${main}</b></div>${rows.map(([l,v])=>`<div class="row"><span>${l}</span><span class="num">${v}</span></div>`).join('')}</div>`;
+  $('#k-kpis').innerHTML=kg('🏠 Sparda · Hauskredit','var(--till)',eur(at(A,CUR)??k.sparda.stand,0),'Restschuld heute',[['Restschuld 03/2053 (Ende Zinsbindung)',eur(at(A,'2053-03')||0,0)],['ohne Sondertilgungen',eur(at(B,'2053-03'),0)],['Zinsen gespart',`<b class="pos">${eur(zB-zA,0)}</b>`]])
+    +kg('🤝 ING · Gemeinschaftskredit','var(--pat)',I.length?ymName(I.at(-1).ym):'–','abbezahlt',[['Restschuld heute',eur(ing0,0)],['Rate',eur(gn('ing_rate'),2)+' (je '+eur(gn('ing_rate')/2)+')'],['Zinsen gesamt',eur(I.reduce((a,x)=>a+x.zi,0),0)]])
+    +(bs?kg('💰 Bausparvertrag','var(--gold)',ymName(bs.ym),'Zuteilung voraussichtlich',[['Guthaben heute',eur(bsNow,0)],['Mindestguthaben',eur(bs.ziel,0)],['danach',k.bauspar.alsSonder?'als Sondertilgung an die Sparda':'nicht verplant']]):'');
   $('#sp-sonder').innerHTML=spardaSonder().map(x=>`<div class="row"><span>${ymName(x.ym)} <span class="pill">${x.src==='plan'?'aus dem Plan':x.src==='bauspar'?'Bausparvertrag':'manuell'}</span></span><span class="num">${eur(x.b,0)} ${x.src==='manuell'?`<button class="btn sec sm" data-spdel="${x.i}">×</button>`:''}</span></div>`).join('')||'<div class="muted">Keine.</div>';
   const yrs={};spardaSonder().forEach(x=>{const y=x.ym.slice(0,4);yrs[y]=(yrs[y]||0)+x.b;});const over=Object.entries(yrs).filter(([,v])=>v>(k.sparda.sonderMax||17250));if(over.length)$('#sp-sonder').innerHTML+=`<div class="note neg">Über 17.250 € im Jahr: ${over.map(([y])=>y).join(', ')}</div>`;
   const mu=k.sparda.szenario||{};if(mu.aktiv){const x=A.find(r=>r.ym===mu.an);$('#mu-out').innerHTML=x?`Im ${ymName(mu.an)} löst ihr ${eur(x.mut,0)} bei der Sparda ab. Danach bleiben bei der Bank ${eur(x.st,0)}; bei gleicher Rate ist das Darlehen ${A.at(-1).ym<=('2053-03')?'im '+ymName(A.at(-1).ym)+' abbezahlt':'bis 03/2053 nicht ganz abbezahlt'}. Bei deiner Mutter stehen dann ${eur(x.mut,0)}.`+muTxt(x.mut):'Der Monat liegt außerhalb der Laufzeit.';}else $('#mu-out').textContent='Aktivieren, um zu sehen, was bei der Bank übrig bleibt.';
@@ -1031,7 +1160,7 @@ function rKredite(){
   $('#ing-out').innerHTML=ic.length?`<div class="row"><span>Rate</span><span class="num">${eur(gn('ing_rate'))} (je ${eur(gn('ing_rate')/2)})</span></div><div class="row"><span>letzte Rate</span><b>${ymName(ic.at(-1).ym)}</b></div><div class="row"><span>Zinsen gesamt</span><span class="num">${eur(ic.reduce((a,x)=>a+x.zi,0))}</span></div><div class="row"><span>Restschuld Ende 2033</span><span class="num">${eur(at(ic,'2033-12')??0)}</span></div>${zielTxt}`:'';
   $('#ing-sonder').innerHTML=(k.ing.sonder||[]).map((x,i)=>`<div class="row"><span>${ymName(x.ym)}</span><span class="num">${eur(x.b,0)} <button class="btn sec sm" data-ingdel="${i}">×</button></span></div>`).join('')||'<div class="muted">Keine.</div>';
   const Y={};A.forEach(x=>{const y=x.ym.slice(0,4);const o=Y[y]??={zi:0,tg:0,so:0,st:0};o.zi+=x.zi;o.tg+=x.tg;o.so+=x.so+x.mut;o.st=x.st;});
-  $('#k-table').innerHTML=`<thead><tr><th>Jahr</th><th class="r">Zinsen</th><th class="r">Tilgung</th><th class="r">Sondertilgung</th><th class="r">Restschuld</th><th class="r">Bank</th></tr></thead><tbody>`+Object.entries(Y).map(([y,o])=>`<tr><td>${y}</td><td class="r">${eur(o.zi,0)}</td><td class="r">${eur(o.tg,0)}</td><td class="r">${o.so?eur(o.so,0):''}</td><td class="r">${eur(o.st,0)}</td><td class="r muted">${BANK[y+'-12']?eur(BANK[y+'-12'],0):''}</td></tr>`).join('')+'</tbody>';
+  if($('#k-table'))$('#k-table').innerHTML=`<thead><tr><th>Jahr</th><th class="r">Zinsen</th><th class="r">Tilgung</th><th class="r">Sondertilgung</th><th class="r">Restschuld</th><th class="r">Bank</th></tr></thead><tbody>`+Object.entries(Y).map(([y,o])=>`<tr><td>${y}</td><td class="r">${eur(o.zi,0)}</td><td class="r">${eur(o.tg,0)}</td><td class="r">${o.so?eur(o.so,0):''}</td><td class="r">${eur(o.st,0)}</td><td class="r muted">${BANK[y+'-12']?eur(BANK[y+'-12'],0):''}</td></tr>`).join('')+'</tbody>';
 }
 $('#p-kredite').addEventListener('change',e=>{const i=e.target;if(i.id==='ing-start'){if(i.value)setGrund('ing_start',i.value);return;}const k=i.dataset.k;if(!k)return;const v=i.type==='checkbox'?i.checked:i.type==='month'?i.value:(i.value===''?null:+i.value);setK(k,v);});
 $('#f-spadd').onsubmit=e=>{e.preventDefault();const l=[...(K().sparda.sonder||[]),{ym:$('#sp-m').value,b:+$('#sp-b').value}];setK('sparda.sonder',l);e.target.reset();};
@@ -1058,15 +1187,17 @@ function rSteuer(){
 $('#st-yr').onchange=rSteuer;
 
 /* ---------- Vermögen ---------- */
-let wWho='ALLE',wRange='36',wPlan='12';
+let wWho='ALLE',wRange='6',wPlan='36',wYear='';
 function rVerm(){
   const ym=CUR<PLAN0?PLAN0:CUR;const cc=CALC[ym];if(cc)$('#w-dep').innerHTML=['TILL','PATRICK'].map(sh=>`<div><h3 style="margin-top:0">${SHN[sh]} · ${ymName(ym)}</h3>${depotHTML(cc[sh],sh)}</div>`).join('')+(()=>{const rows=sharedGold();return `<div><h3 style="margin-top:0">Gemeinsames Golddepot</h3><div class="dep"><div class="row"><span>Wert (2 × 10 g, je zur Hälfte)</span><b class="num">${eur(rows[0].w*2)}</b></div>${goldList(rows)}</div><div class="note">Nicht in Tills oder Patricks Summe enthalten.</div></div>`;})();
   if(document.activeElement!==$('#gp'))$('#gp').value=num(gn('goldpreis'));
   const A=S.archiv||{TILL:{},PATRICK:{},HAUS:{}};
   $('#w-who').innerHTML=[['ALLE','Alle'],['TILL','Till'],['PATRICK','Patrick'],['HAUS','Haushaltskonto']].map(([k,l])=>`<button type="button" data-ww="${k}" aria-pressed="${k===wWho}">${l}</button>`).join('');
-  $('#w-range').innerHTML=[['12','1 Jahr'],['36','3 Jahre'],['all','Alles']].map(([k,l])=>`<button type="button" data-wr="${k}" aria-pressed="${k===wRange}">${l}</button>`).join('');
-  $('#w-plan').innerHTML=[['0','ohne Plan'],['12','+1 Jahr Plan'],['all','Plan bis 2032']].map(([k,l])=>`<button type="button" data-wp="${k}" aria-pressed="${k===wPlan}">${l}</button>`).join('');
-  const start=wRange==='all'?'2023-01':(ymAdd(CUR,-+wRange)<'2023-01'?'2023-01':ymAdd(CUR,-+wRange));const end=wPlan==='0'?CUR:wPlan==='all'?PLAN1:ymAdd(CUR,12);
+  $('#w-range').innerHTML='<span class="seg-l">Rückblick</span>'+[['0','keiner'],['6','6 Mon.'],['12','1 Jahr'],['all','alles']].map(([k,l])=>`<button type="button" data-wr="${k}" aria-pressed="${!wYear&&k===wRange}">${l}</button>`).join('');
+  $('#w-plan').innerHTML='<span class="seg-l">Zukunft</span>'+[['12','1 Jahr'],['36','3 Jahre'],['60','5 Jahre'],['all','bis '+PLAN1.slice(0,4)]].map(([k,l])=>`<button type="button" data-wp="${k}" aria-pressed="${!wYear&&k===wPlan}">${l}</button>`).join('');
+  {const ys=[];for(let y=2023;y<=+PLAN1.slice(0,4);y++)ys.push(y);$('#w-year').innerHTML=`<option value="">einzelnes Jahr …</option>`+ys.map(y=>`<option ${String(y)===wYear?'selected':''}>${y}</option>`).join('');$('#w-year').classList.toggle('on',!!wYear);}
+  let start=wRange==='all'?'2023-01':(ymAdd(CUR,-+wRange)<'2023-01'?'2023-01':ymAdd(CUR,-+wRange));let end=wPlan==='all'?PLAN1:ymAdd(CUR,+wPlan);if(end>PLAN1)end=PLAN1;
+  if(wYear){start=wYear+'-01';end=wYear+'-12';if(start<'2023-01')start='2023-01';}
   const months=[];for(let ym=start;ym<=end;ym=ymAdd(ym,1))months.push(ym);
   const comp=(sh,ym,k)=>{if(ym<PLAN0){const a=A[sh]?.[ym];if(!a)return null;if(sh==='HAUS')return k==='total'?a[0]:null;const[g,t,,tot]=a;return k==='giro'?g:k==='tg'?t:k==='dep'?(tot!=null&&g!=null&&t!=null?tot-g-t:null):tot;}
     const c=CALC[ym];if(!c)return null;if(sh==='HAUS')return k==='total'?c.HAUS.k:null;const r=c[sh];return k==='giro'?r.giro:k==='tg'?r.tg:k==='dep'?r.etf+r.gold:r.total;};
@@ -1083,25 +1214,68 @@ function rVerm(){
   $('#w-kpis').innerHTML=kpi('Till',eur(lastA('TILL'),0),`in 12 Monaten laut Plan ${eur(in12('TILL'),0)}`)+kpi('Patrick',eur(lastA('PATRICK'),0),`in 12 Monaten laut Plan ${eur(in12('PATRICK'),0)}`)+kpi('Haushaltskonto',eur(lastA('HAUS'),0),`in 12 Monaten laut Plan ${eur(in12('HAUS'),0)}`)+kpi('Gold (Till)',eur(GOLD.reduce((a,g)=>a+g,0)/OZ*gn('goldpreis'),0),`${eur(gn('goldpreis'),0)} je Unze · Preis im Kasten darunter`);
 }
 
-$('#p-vermoegen').addEventListener('click',e=>{const b=e.target.closest('[data-ww],[data-wr],[data-wp]');if(!b)return;if(b.dataset.ww)wWho=b.dataset.ww;if(b.dataset.wr)wRange=b.dataset.wr;if(b.dataset.wp)wPlan=b.dataset.wp;rVerm();});
+$('#p-vermoegen').addEventListener('click',e=>{const b=e.target.closest('[data-ww],[data-wr],[data-wp]');if(!b)return;if(b.dataset.ww)wWho=b.dataset.ww;if(b.dataset.wr){wRange=b.dataset.wr;wYear='';}if(b.dataset.wp){wPlan=b.dataset.wp;wYear='';}rVerm();});
+$('#w-year').addEventListener('change',e=>{wYear=e.target.value;rVerm();});
 $('#gp').addEventListener('change',e=>{const x=parseNum(e.target.value);if(x>0)setGrund('goldpreis',x);});
 /* ---------- Einstellungen ---------- */
+const GOWN=[['TILL','Till','var(--till)',[['Gehalt',/^t_gehalt$/],['Pauschalen',/^t_p_/],['Versicherungen',/^t_(zahn|lv)$/],['Auto',/^t_(ioniq|tanken)$/]]],
+  ['PATRICK','Patrick','var(--pat)',[['Gehalt',/^p_gehalt$/],['Pauschalen',/^p_p_/],['Versicherungen',/^p_debeka$/],['Kredit PC',/^p_pc$/],['Strom-Anteil',/^p_strom/]]],
+  ['GEM','Gemeinsam','var(--gem)',[['Kredite',/^(h_tilgung|ing_)/],['Versicherungen',/^h_(wohngeb|hausrat|risiko|haftpfl|rechts|adac)$/],['Wasser, Grundsteuer, Abfall',/^h_(wasser|grundst|abfall)$/],['Internet & GEZ',/^h_(internet|gez)$/],['Essen',/^h_essen$/],['Sonstiges',/^h_s_/],['Strom',/^s_/],['Goldpreis',/^goldpreis$/]]]];
+const GOPEN=new Set();let GED=null;
+const gMon=i=>{if(i.fmt==='date'||i.k==='goldpreis')return 0;const v=gn(i.k,CUR);return /jährlich/i.test(i.l)?v/12:/quartal/i.test(i.l)?v/3:v;};
+function gAddHTML(){if(!GADD)return `<button type="button" class="btn sec sm" id="gadd-open" style="margin-top:12px">+ Neuer Posten</button>`;
+  return `<form class="form gadd" id="f-gadd"><h3 style="width:100%;margin:0">Neuer Posten</h3><label>Wer<select name="g"><option>Till</option><option>Patrick</option><option value="Haus">Gemeinsam</option></select></label><label>Bezeichnung<input name="l" required style="min-width:180px" placeholder="z. B. Fitnessstudio"></label><label>Betrag (€)<input name="v" inputmode="decimal" required style="width:100px"></label>
+   <label>Rhythmus<select name="rh"><option value="m">monatlich</option><option value="j">jährlich (im Monat „ab“)</option></select></label><label class="gp">Art<select name="art"><option value="aus">Ausgabe Girokonto</option><option value="ein">Eingang Girokonto</option></select></label><label class="gp">geht an<select name="an"><option value="">–</option><option>Till</option><option>Patrick</option></select></label>
+   <label>ab Monat<input type="month" name="ab" value="${ymAdd(CUR,1)}" required></label><label>bis einschließlich (optional)<input type="month" name="bis"></label>
+   <div style="display:flex;gap:8px;width:100%"><button class="btn">Hinzufügen</button><button type="button" class="btn sec" id="gadd-x">Abbrechen</button></div>
+   <div class="note" style="width:100%;margin:0">Erscheint automatisch im Reiter Monat bei den festen Beträgen (⚙️), vom Startmonat bis zum Ende. Gemeinsame Posten laufen übers Haushaltskonto und erhöhen den Anteil von euch beiden je zur Hälfte (jährliche werden monatlich angespart). „geht an“: z. B. Rückzahlung von Patrick an Till, dann steht es bei Till als Eingang.</div></form>`;}
+let GADD=false,GNEW=null;
+function grundHTML(){const used=new Set();const own=i=>i.g==='Till'?'TILL':i.g==='Patrick'?'PATRICK':'GEM';
+  const rh=i=>i.fmt==='date'||i.k==='goldpreis'||/gehalt/.test(i.k)?'':(i.cu?.rh==='j'||/jährlich/i.test(i.l))?'jährlich':/quartal/i.test(i.l)?'je Quartal':'monatlich';
+  const lab=i=>{const t=rh(i);return esc(i.l.replace(/^(Pauschale|sonstiges):\s*/i,'').replace(/\s*\((jährlich|monatlich)\)/i,''))+(t?` <span class="gtag ${t==='monatlich'?'m':''}">${t}</span>`:'')+(i.cu?.an?` <span class="gtag">an ${esc(i.cu.an)}</span>`:'')+(i.cu?.art==='ein'?' <span class="gtag">Eingang</span>':'')+(i.cu?.ab&&i.cu.ab>CUR?` <span class="gtag">ab ${ymShort(i.cu.ab)}</span>`:'')+(i.bis?` <span class="gtag end">bis ${ymShort(i.bis)}</span>`:'');};
+  const row=i=>`<div class="grow${GED===i.k?' ed':''}${GNEW===i.k?' new':''}" data-row="${i.k}"><span><button type="button" class="glab" data-ged="${i.k}" title="Ende festlegen oder entfernen">${lab(i)}</button>${(i.hist||[]).map((h,hi)=>`<small class="hist">ab ${ymName(h.ab)}: <b>${i.fmt==='date'?esc(h.v):eur(h.v)}</b> <button type="button" data-hdel="${i.k}:${hi}" aria-label="Änderung löschen">×</button></small>`).join('')}</span><span class="gin">${i.fmt==='date'?`<input type="month" data-gk="${i.k}" value="${esc(i.v||'')}">`:`<input inputmode="decimal" data-gk="${i.k}" value="${num(i.v)}">`}<button type="button" class="gbtn" data-ged="${i.k}" title="Ende festlegen oder entfernen" aria-label="Bearbeiten">${GED===i.k?'✕':'⋯'}</button></span></div>`
+    +(GED===i.k?`<div class="gedit"><label>endet nach<input type="month" data-gbis="${i.k}" value="${i.bis||''}"></label><span class="muted">${i.bis?'danach 0 €':'leer = läuft weiter'}</span><button type="button" class="btn sec sm danger-t" data-gdel="${i.k}">Entfernen</button>${i.cu?'':'<div class="note" style="margin:4px 0 0;width:100%">Entfernen setzt den Posten in allen offenen Monaten auf 0. Abgeschlossene Monate bleiben, wie sie sind.</div>'}</div>`:'');
+  return `<div class="gown">`+GOWN.map(([o,name,col,grp])=>{const its=S.grund.items.filter(i=>own(i)===o);
+    const G=grp.map(([t,re])=>{const l=its.filter(i=>re.test(i.k));l.forEach(i=>used.add(i.k));return [t,l];}).filter(([,l])=>l.length);
+    const rest=its.filter(i=>!used.has(i.k));const own2=rest.filter(i=>i.cu),oth=rest.filter(i=>!i.cu);if(oth.length)G.push(['Weitere',oth]);if(own2.length)G.push(['Eigene Posten',own2]);
+    const tot=its.reduce((a,i)=>a+(/gehalt/.test(i.k)?0:gMon(i)),0);
+    return `<div class="gcol" style="--oc:${col}"><div class="gcol-h"><span>${name}</span>${o!=='GEM'||tot?`<small>Ausgaben ≈ ${eur(tot,0)} / Monat</small>`:''}</div>`+G.map(([t,l])=>{const key=o+':'+t;
+      if(l.length===1&&(l[0].l.replace(/\s*\(.*\)/,'').length<30||t===l[0].l))return `<div class="gsingle${l[0].k==='goldpreis'?' ggold':''}">${row(l[0])}${l[0].k==='goldpreis'?`<div class="note" style="margin:2px 0 0">${goldAm()?'Stand '+dDE(goldAm())+' · ':''}gilt überall außer in abgeschlossenen Monaten</div>`:''}</div>`;
+      const m=l.reduce((a,i)=>a+gMon(i),0);
+      return `<details class="ggrp" data-gg="${key}" ${GOPEN.has(key)?'open':''}><summary><span>${esc(t)} <small class="muted">${l.length}</small></span>${m?`<b class="num">${eur(m)}<small class="muted"> / Monat</small></b>`:''}</summary>${l.map(row).join('')}</details>`;}).join('')+`</div>`;}).join('')+`</div>`+gAddHTML();}
 function rEinst(){
   const groups={};S.grund.items.forEach(i=>{(groups[i.g]??=[]).push(i);});
-  if(!$('#gh-k').options.length)$('#gh-k').innerHTML=S.grund.items.filter(i=>i.fmt!=='date').map(i=>`<option value="${i.k}">${esc(i.g)}: ${esc(i.l)}</option>`).join('');
-  const gl=$('#g-list');if(!gl.contains(document.activeElement))gl.innerHTML=Object.entries(groups).map(([g,l])=>`<h3>${esc(g)}</h3>${l.map(i=>`<div class="grow"><span>${esc(i.l)}${(i.hist||[]).map((h,hi)=>`<small class="hist">ab ${ymName(h.ab)}: <b>${i.fmt==='date'?esc(h.v):eur(h.v)}</b> <button type="button" data-hdel="${i.k}:${hi}" aria-label="Änderung löschen">×</button></small>`).join('')}</span>${i.fmt==='date'?`<input type="month" data-gk="${i.k}" value="${esc(i.v||'')}">`:`<input inputmode="decimal" data-gk="${i.k}" value="${num(i.v)}">`}</div>`).join('')}`).join('');
+  if($('#gh-k').options.length!==S.grund.items.filter(i=>i.fmt!=='date').length)$('#gh-k').innerHTML=S.grund.items.filter(i=>i.fmt!=='date').map(i=>`<option value="${i.k}">${esc(i.g)}: ${esc(i.l)}</option>`).join('');
+  const gl=$('#g-list');if(!gl.contains(document.activeElement))gl.innerHTML=grundHTML();
   if(document.activeElement!==$('#bu-e'))$('#bu-e').value=essenBudget(CUR);
   {const ab=S.bcfg.sonstAbzug||{v:100,bis:'2027-04'};if(!$('#bu-s').contains(document.activeElement))$('#bu-s').innerHTML=`<div class="note" style="margin-top:0">Sonstiges je Monat kommt aus dem Grundbetrag „sonstiges: freie Verwendung“ (${eur(gn('h_s_frei',CUR),0)}). Davon werden bis ${ymName(ab.bis)} ${eur(ab.v,0)} fürs Kredit-Sparen abgezogen. Diesen Monat: <b>${eur(sonstBudget(CUR),0)}</b>, ab ${ymName(ymAdd(ab.bis,1))}: <b>${eur(sonstBudget(ymAdd(ab.bis,1)),0)}</b>.</div><form class="form" id="f-bus" style="margin-top:6px"><label>Abzug fürs Kredit-Sparen (€)<input type="number" id="bus-v" value="${ab.v}" style="width:90px"></label><label>bis einschließlich<input type="month" id="bus-ab" value="${ab.bis}"></label><button class="btn sec sm">Speichern</button></form>`;}
   $('#bu-da').innerHTML=(S.bcfg.dauerauftrag||[]).map((d,i)=>`<span class="pill">${esc(d)} <button class="btn sec sm" style="border:0;padding:0 2px" data-dadel="${i}">×</button></span>`).join(' ')+`<form class="form" id="f-da" style="margin-top:6px"><label>Bezeichnung beginnt mit<input id="da-t" required></label><button class="btn sec sm">Hinzufügen</button></form>`;
   const Rv=FR();$$('#f-rules input').forEach(i=>{if(document.activeElement!==i){const k=i.dataset.k;i.value=['kom','serv','airNeu','airAlt','mwst','urlProz'].includes(k)?r2(Rv[k]*100):Rv[k];}});
 }
-$('#g-list').addEventListener('click',e=>{const b=e.target.closest('[data-hdel]');if(!b)return;const[k,hi]=b.dataset.hdel.split(':');const items=structuredClone(S.grund.items);const it=items.find(x=>x.k===k);it.hist.splice(+hi,1);S.grund={items};render();save('config/grund',{items});});
+$('#g-list').addEventListener('toggle',e=>{const d=e.target.closest?.('[data-gg]');if(!d)return;d.open?GOPEN.add(d.dataset.gg):GOPEN.delete(d.dataset.gg);},true);
+$('#g-list').addEventListener('click',e=>{
+  const ge=e.target.closest('[data-ged]');if(ge){GED=GED===ge.dataset.ged?null:ge.dataset.ged;$('#g-list').innerHTML=grundHTML();return;}
+  if(e.target.id==='gadd-open'){GADD=true;$('#g-list').innerHTML=grundHTML();$('#f-gadd [name=l]')?.focus();return;}
+  if(e.target.id==='gadd-x'){GADD=false;$('#g-list').innerHTML=grundHTML();return;}
+  const gd=e.target.closest('[data-gdel]');if(gd){if(!gd.dataset.armed){gd.dataset.armed=1;gd.textContent='Wirklich entfernen?';setTimeout(()=>{if(gd.isConnected){gd.dataset.armed='';gd.textContent='Entfernen';}},3000);return;}
+    const k=gd.dataset.gdel;const it=S.grund.items.find(i=>i.k===k);const items=S.grund.items.filter(i=>i.k!==k);S.grund={items};GED=null;document.activeElement?.blur();$('#g-list').innerHTML=grundHTML();render();save('config/grund',{items});flash('ok',`„${it?.l||k}“ entfernt`);return;}
+const b=e.target.closest('[data-hdel]');if(!b)return;const[k,hi]=b.dataset.hdel.split(':');const items=structuredClone(S.grund.items);const it=items.find(x=>x.k===k);it.hist.splice(+hi,1);S.grund={items};render();save('config/grund',{items});});
 $('#f-gh').addEventListener('submit',e=>{e.preventDefault();const val=parseNum($('#gh-v').value);if(val==null)return;askGrund($('#gh-k').value,val,null,$('#gh-ab').value||null);e.target.reset();});
-$('#g-list').addEventListener('change',e=>{const k=e.target.dataset.gk;if(!k)return;const it=S.grund.items.find(i=>i.k===k);const v=it.fmt==='date'?e.target.value:parseNum(e.target.value);if(v==null||v==='')return;if(it.fmt==='date')setGrund(k,v);else askGrund(k,v);});
+$('#g-list').addEventListener('submit',e=>{if(e.target.id!=='f-gadd')return;e.preventDefault();const f=new FormData(e.target);const v=parseNum(f.get('v'));const l=String(f.get('l')||'').trim();if(v==null||!l)return;
+  const g=f.get('g');const c={art:g==='Haus'?'aus':f.get('art'),rh:f.get('rh'),ab:f.get('ab')||ymAdd(CUR,1)};const an=f.get('an');if(g!=='Haus'&&an&&an!==g&&c.art==='aus')c.an=an;
+  const sb=e.target.querySelector('button.btn:not(.sec)');if(sb?.disabled)return;if(sb)sb.disabled=true;
+  const it={k:'c_'+uid(),l,g,v:r2(v),cu:c,am:TODAY};const bis=f.get('bis');if(bis)it.bis=bis;const items=[...S.grund.items,it];S.grund={items};GADD=false;GNEW=it.k;
+  const ok=g==='Till'?'TILL':g==='Patrick'?'PATRICK':'GEM';GOPEN.add(ok+':Eigene Posten');document.activeElement?.blur();$('#g-list').innerHTML=grundHTML();render();save('config/grund',{items});
+  setTimeout(()=>{$(`#g-list [data-row="${it.k}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});},50);setTimeout(()=>{GNEW=null;$(`#g-list [data-row="${it.k}"]`)?.classList.remove('new');},4000);
+  flash('ok',`„${l}“ hinzugefügt – steht jetzt bei ${g==='Haus'?'Gemeinsam':g} unter „Eigene Posten“`);});
+$('#g-list').addEventListener('change',e=>{if(e.target.closest('#f-gadd')){if(e.target.name==='g')$$('#f-gadd .gp').forEach(x=>x.hidden=e.target.value==='Haus');return;}const gb=e.target.dataset.gbis;if(gb){const items=structuredClone(S.grund.items);const it=items.find(i=>i.k===gb);if(!it)return;if(e.target.value)it.bis=e.target.value;else delete it.bis;S.grund={items};render();save('config/grund',{items});return;}
+const k=e.target.dataset.gk;if(!k)return;const it=S.grund.items.find(i=>i.k===k);const v=it.fmt==='date'?e.target.value:parseNum(e.target.value);if(v==null||v==='')return;if(it.fmt==='date')setGrund(k,v);else if(k==='goldpreis'){setGrund(k,v);flash('ok','Goldpreis überall angepasst (außer abgeschlossene Monate)');}else askGrund(k,v);});
 $('#f-bud').addEventListener('change',()=>{const v=+$('#bu-e').value||0;if(S.grund.items.some(i=>i.k==='h_essen'))askGrund('h_essen',v,$('#bu-e'));else{S.bcfg={...S.bcfg,essen:v};render();save('config/budget',S.bcfg);}});
 $('#p-einst').addEventListener('submit',e=>{if(e.target.id==='f-bus'){e.preventDefault();S.bcfg={...S.bcfg,sonstAbzug:{v:+$('#bus-v').value||0,bis:$('#bus-ab').value||'2027-04'}};render();save('config/budget',S.bcfg);}
   if(e.target.id==='f-da'){e.preventDefault();S.bcfg={...S.bcfg,dauerauftrag:[...(S.bcfg.dauerauftrag||[]),$('#da-t').value.trim()]};render();save('config/budget',S.bcfg);}});
 $('#bu-da').addEventListener('click',e=>{const b=e.target.closest('[data-dadel]');if(!b)return;const l=[...S.bcfg.dauerauftrag];l.splice(+b.dataset.dadel,1);S.bcfg={...S.bcfg,dauerauftrag:l};render();save('config/budget',S.bcfg);});
+$('#s-yr')?.addEventListener('click',e=>{const b=e.target.closest('[data-sy]');if(!b)return;sJahr=b.dataset.sy;rStrom();});
+$('#s-cr')?.addEventListener('click',e=>{const b=e.target.closest('[data-sc]');if(!b)return;sCr=b.dataset.sc;rStrom();});
 $('#s-table').addEventListener('change',e=>{const k=e.target.dataset.sm;if(!k)return;const[ym,f]=k.split(':');const d=structuredClone(S.strom);d.m=d.m||{};d.m[ym]={...(d.m[ym]||{}),[f]:parseNum(e.target.value)};S.strom=d;render();save('config/strom',d);});
 $('#f-rules').addEventListener('change',e=>{const i=e.target;const k=i.dataset.k;if(!k||i.value==='')return;let v=+i.value;if(['kom','serv','airNeu','airAlt','mwst','urlProz'].includes(k))v=v/100;S.einst={...S.einst,fewo:{...(S.einst.fewo||{}),[k]:v}};render();save('config/einstellungen',S.einst);});
 /* ---------- Demnächst ---------- */
@@ -1170,16 +1344,30 @@ function privJahr(){const out=[];const seen=new Set();
 
 const EVI={grund:'📌',neu:'➕',ende:'✖️',aend:'↕️',einmal:'💶',fewo:'🏡',urlaub:'✈️',kredit:'🏦'};
 let bdShow=6;
+let bdSer=new Set(['TILL','PATRICK','HAUS']),bdVal='gt',bdRng='all';
+$('#p-bald').addEventListener('click',e=>{const b=e.target.closest('[data-bs],[data-bv],[data-br]');if(!b)return;const d=b.dataset;if(d.bs){bdSer.has(d.bs)?bdSer.delete(d.bs):bdSer.add(d.bs);}if(d.bv)bdVal=d.bv;if(d.br)bdRng=d.br;rBald();});
 function rBald(){const ev=upcoming();const by={};ev.forEach(e=>(by[e.ym]??=[]).push(e));
   const bt=$('#t-bald');bt?.querySelector('.badge')?.remove();
   if(tab!=='bald')return;
   $('#bd-list').innerHTML=Object.keys(by).length?Object.entries(by).map(([ym,l])=>`<div class="bd-m"><h3>${ymName(ym)}</h3>${l.map(e=>`<div class="row"><span>${EVI[e.typ]||'•'} ${esc(e.txt)}</span>${e.v!=null?`<span class="num ${e.v<0?'neg':'pos'}">${e.v>0?'+':''}${eur(e.v)}</span>`:''}</div>`).join('')}</div>`).join(''):'<div class="muted">In den nächsten 12 Monaten ändert sich nichts.</div>';
   // Verlauf der Konten
-  const {ph}=phasen();const st=CUR<planStart()?planStart():CUR;const yms=Object.keys(CALC).filter(m=>m>=st).sort();
-  const av=(m,sh)=>CALC[m]?CALC[m][sh].giro+CALC[m][sh].tg:null;
-  lineChart($('#c-ueb'),yms,[{n:'Till (Giro + Tagesgeld)',c:'var(--acc)',v:yms.map(m=>av(m,'TILL'))},{n:'Patrick (Giro + Tagesgeld)',c:'var(--pat)',v:yms.map(m=>av(m,'PATRICK'))},{n:'Haushaltskonto',c:'var(--gem)',dash:1,v:yms.map(m=>CALC[m].HAUS.k)}],{h:230,xl:ymShort,xt:ymName,aria:'Kontostände'});
-  const yEnd=[...new Set([st,ymAdd(st.slice(0,4)+'-12',0),'2027-12','2029-12',PLAN1])].filter(m=>CALC[m]);
-  $('#bd-kt').innerHTML=`<table><thead><tr><th>Ende</th><th class="r">Till</th><th class="r">Patrick</th><th class="r">Haushaltskonto</th></tr></thead><tbody>${yEnd.map(m=>`<tr><td>${ymName(m)}</td><td class="r num ${sign(av(m,'TILL'))}">${eur(av(m,'TILL'),0)}</td><td class="r num ${sign(av(m,'PATRICK'))}">${eur(av(m,'PATRICK'),0)}</td><td class="r num">${eur(CALC[m].HAUS.k,0)}</td></tr>`).join('')}</tbody></table>`;
+  const {ph}=phasen();const st=CUR<planStart()?planStart():CUR;const ymsAll=Object.keys(CALC).filter(m=>m>=st).sort();
+  const yms=bdRng==='all'?ymsAll:ymsAll.slice(0,+bdRng+1);
+  const SER=[['TILL','Till','var(--till)'],['PATRICK','Patrick','var(--pat)'],['HAUS','Haushaltskonto','var(--gem)'],['SUM','Zusammen','var(--ink2)']];
+  const VAL=[['gt','Giro + Tagesgeld'],['tg','nur Tagesgeld'],['all','inkl. ETF & Gold']];
+  const RNG=[['12','1 Jahr'],['36','3 Jahre'],['all','bis '+ymName(PLAN1).split(' ').pop()]];
+  const pb=(a,k,on)=>a.map(([x,l])=>`<button type="button" data-${k}="${x}" aria-pressed="${on(x)}">${l}</button>`).join('');
+  $('#bd-ser').innerHTML=pb(SER,'bs',x=>bdSer.has(x));$('#bd-val').innerHTML=pb(VAL,'bv',x=>x===bdVal);$('#bd-rng').innerHTML=pb(RNG,'br',x=>x===bdRng);
+  const pv=(m,sh)=>{const c=CALC[m]?.[sh];if(!c)return null;if(sh==='HAUS')return c.k+(bdVal==='all'?sharedGold().reduce((a,x)=>a+x.w,0):0);return bdVal==='tg'?c.tg:bdVal==='all'?c.total:c.giro+c.tg;};
+  const av=(m,sh)=>sh==='SUM'?['TILL','PATRICK','HAUS'].reduce((a,x)=>a+(pv(m,x)||0),0):pv(m,sh);
+  const act=SER.filter(([k])=>bdSer.has(k));
+  lineChart($('#c-ueb'),yms,act.map(([k,l,c])=>({n:l,c,dash:k==='HAUS'||k==='SUM'?1:0,v:yms.map(m=>av(m,k))})),{h:240,xl:ymShort,xt:ymName,aria:'Kontostände',mark:yms.indexOf(CUR)});
+  $('#bd-leg').innerHTML=act.map(([k,l,c])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')||'<span>Wähle oben mindestens eine Linie.</span>';
+  const last=yms.at(-1);
+  $('#bd-kpi').innerHTML=act.map(([k,l])=>{const v=yms.map(m=>av(m,k));const lo=v.reduce((a,x,i)=>x<a[0]?[x,i]:a,[Infinity,0]);const d=v.at(-1)-v[0];
+    return kpi(l+' · '+ymName(last),eur(v.at(-1),0),`${d>=0?'+':'−'}${eur(Math.abs(d),0)} ggü. ${ymShort(yms[0])} · tiefster Stand ${eur(lo[0],0)} (${ymShort(yms[lo[1]])})`,lo[0]<0?'neg':'');}).join('');
+  const yEnd=[...new Set([yms[0],...yms.filter(m=>m.endsWith('-12')),last])].filter(m=>CALC[m]);
+  $('#bd-kt').innerHTML=act.length?`<table><thead><tr><th>Ende</th>${act.map(([,l])=>`<th class="r">${l}</th>`).join('')}</tr></thead><tbody>${yEnd.map(m=>`<tr><td>${ymName(m)}</td>${act.map(([k])=>`<td class="r num ${sign(av(m,k))}">${eur(av(m,k),0)}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'';
   const sg=v=>`<b class="${v<0?'neg':'pos'}">${v>0?'+':'−'}${eur(Math.abs(v),0)}</b>`;
   $('#bd-ph').innerHTML=ph.slice(1,1+bdShow).map((x,k)=>{const pr=ph[k];const dT=x.t.rest-pr.t.rest,dP=x.p.rest-pr.p.rest;const parts=[];if(Math.abs(dT)>=1)parts.push(`Till ${sg(dT)}`);if(Math.abs(dP)>=1)parts.push(`Patrick ${sg(dP)}`);
     return `<div class="ph"><div class="ph-z">ab ${ymName(x.von)}</div><div>${parts.join(' · ')} <span class="muted">im Monat</span></div>${x.warum?.length?`<div class="ph-w">weil ${x.warum.map(esc).join(' · ')}</div>`:''}</div>`;}).join('')+(ph.length-1>bdShow?`<button class="btn sec sm" id="bd-more" style="margin-top:8px">Alle ${ph.length-1} Änderungen bis ${ymName(PLAN1)} zeigen</button>`:'')||'<div class="muted">Keine dauerhaften Änderungen geplant.</div>';
@@ -1200,12 +1388,12 @@ function impact(k,v,ab){const it=S.grund.items.find(i=>i.k===k);const ym0=ab||(C
   const L=[],W=[];const old=gv(k,ym);const d=v-(+old||0);
   L.push(`<b>${esc(it.l)}</b>: ${eur(old)} → <b>${eur(v)}</b> (${d>=0?'+':''}${eur(d)})${ab?' ab '+ymName(ab):' ab sofort'}`);
   if(Math.abs(B.anteil-A.anteil)>=0.5)L.push(`Jeder zahlt ${d>0?'mehr':'weniger'} aufs Haushaltskonto: ${eur(A.anteil)} → ${eur(B.anteil)} im Monat (${B.anteil>A.anteil?'+':''}${eur(B.anteil-A.anteil)})`);
-  if(B.essen!==A.essen)L.push(`Das Essen-Budget im Reiter Heute ist dann ${eur(B.essen,0)} statt ${eur(A.essen,0)}.`);
+  if(B.essen!==A.essen)L.push(`Das Essen-Budget im Reiter Übersicht ist dann ${eur(B.essen,0)} statt ${eur(A.essen,0)}.`);
   [['t','Till'],['p','Patrick']].forEach(([x,n])=>{if(A[x]==null)return;const dv=B[x]-A[x];if(Math.abs(dv)>=0.5)L.push(`${n} bleiben im ${ymName(ym)} ${eur(B[x],0)} statt ${eur(A[x],0)} übrig (${dv>0?'+':''}${eur(dv,0)}).`);
     if(B[x]<0)W.push(`${n} gibt dann jeden Monat ${eur(-B[x],0)} mehr aus, als reinkommt.`);else if(B[x]<150&&B[x]<A[x])W.push(`Bei ${n} bleiben nur noch ${eur(B[x],0)} im Monat übrig. Das ist wenig Puffer.`);});
   if(B.low[1]<0&&B.low[1]<A.low[1]-0.5)W.push(`Das Haushaltskonto rutscht im ${ymName(B.low[0])} auf ${eur(B.low[1],0)}.`);
   const dt=B.tot-A.tot;if(Math.abs(dt)>=10)L.push(`Bis ${ymName(PLAN1)} habt ihr zusammen ${dt>0?'rund '+eur(dt,0)+' mehr':'rund '+eur(-dt,0)+' weniger'} auf den Konten.`);
-  const LNK={s_pauschale:`Wird automatisch mit angepasst: Strom-Anteil von Till und Patrick in den Monatsplänen (je ${eur(v/2)}) und die Einzahlung im Stromkonto (Reiter Strom).`,h_tilgung:'Wird automatisch mit angepasst: die Sparda-Rate im Reiter Kredite (um denselben Betrag).',ing_rate:'Wird automatisch mit angepasst: ING-Rate im Reiter Kredite und der Gemeinschaftskredit-Anteil (je die Hälfte) in den Monatsplänen.',h_s_frei:'Wird automatisch mit angepasst: das Sonstiges-Budget im Reiter Heute.',h_essen:'Wird automatisch mit angepasst: das Essen-Budget im Reiter Heute.',t_gehalt:'Wird automatisch mit angepasst: Rest Gehalt bzw. Entnahme vom Tagesgeld in jedem Monat.',p_gehalt:'Wird automatisch mit angepasst: Rest Gehalt bzw. Entnahme vom Tagesgeld in jedem Monat.'};
+  const LNK={s_pauschale:`Wird automatisch mit angepasst: Strom-Anteil von Till und Patrick in den Monatsplänen (je ${eur(v/2)}) und die Einzahlung im Stromkonto (Reiter Strom).`,h_tilgung:'Wird automatisch mit angepasst: die Sparda-Rate im Reiter Kredite (um denselben Betrag).',ing_rate:'Wird automatisch mit angepasst: ING-Rate im Reiter Kredite und der Gemeinschaftskredit-Anteil (je die Hälfte) in den Monatsplänen.',h_s_frei:'Wird automatisch mit angepasst: das Sonstiges-Budget im Reiter Übersicht.',h_essen:'Wird automatisch mit angepasst: das Essen-Budget im Reiter Übersicht.',t_gehalt:'Wird automatisch mit angepasst: Rest Gehalt bzw. Entnahme vom Tagesgeld in jedem Monat.',p_gehalt:'Wird automatisch mit angepasst: Rest Gehalt bzw. Entnahme vom Tagesgeld in jedem Monat.'};
   if(LNK[k])L.push('🔗 '+LNK[k]);
   if(L.length===1&&!W.length)L.push('Dieser Wert steckt in keinem Monatsplan als Formel, die Monatsrechnung ändert sich dadurch nicht direkt.');
   return {L,W,ym};}
@@ -1257,8 +1445,8 @@ Kreditfelder (feld | Bezeichnung | Wert): ${KFELDER.map(([f,l])=>`${f} | ${l} | 
 Nachricht: <<<${tx.slice(0,1500)}>>>
 Antworte NUR mit JSON: {"typ":"frage"|"szenario","antwort":"bei frage: kurze, klare Antwort auf Deutsch in 1–4 Sätzen, mit konkreten Posten und Beträgen aus den Daten; bei szenario leer","aenderungen":[nur bei szenario: {"art":"grund","key":"…","wert":Zahl,"ab":"JJJJ-MM"|null} oder {"art":"kredit","feld":"…","wert":Zahl|true|false|"JJJJ-MM"}],"annahmen":"bei szenario: kurzer Satz, was du angenommen hast","rueckfrage":null|"Frage"}
 Erkläre Veränderungen der Kontostände vor allem mit den Buchungen aus der Monatsliste (z. B. Tagesgeld-Entnahmen). Beantworte Fragen nur mit den Daten oben, nichts erfinden; sag ehrlich, wenn die Daten es nicht zeigen. Duze die beiden. Gehälter sind Nettogehälter. Relative Angaben ("100 € weniger") in absolute Werte umrechnen.`;}
-async function wiGo(){const tx=$('#wi-text').value.trim();const msg=$('#wi-msg');if(!tx)return;if(!sampleFn){msg.textContent='Claude ist in dieser Ansicht nicht verfügbar.';return;}
-  $('#wi-go').disabled=true;msg.textContent='Claude schaut sich euren Plan an …';$('#wi-out').innerHTML='';
+async function wiGo(){const tx=$('#wi-text').value.trim();const msg=$('#wi-msg');if(!tx)return;if(!sampleFn){msg.textContent='Die KI ist in dieser Ansicht nicht verfügbar.';return;}
+  $('#wi-go').disabled=true;msg.textContent='Die KI schaut sich euren Plan an …';$('#wi-out').innerHTML='';
   try{const r=await sampleFn.json(wiPrompt(tx),{modelTier:'default',cache:false});
     const ch=(r?.aenderungen||[]).filter(c=>c&&((c.art==='grund'&&S.grund.items.some(i=>i.k===c.key))||(c.art==='kredit'&&KFELDER.some(x=>x[0]===c.feld))));
     if(r?.antwort&&!ch.length){msg.textContent='';$('#wi-out').innerHTML=`<div class="wi-a">${esc(r.antwort)}</div>`;}
@@ -1291,19 +1479,29 @@ function pvCalc(c,withWP=true){
     return {m:i,pv,hh,wp,qh,ww,direct,bat,grid,feed,kost,ein,vorher,netto:kost-ein};});}
 const n0=v=>Math.round(v).toLocaleString('de-DE');
 const pvSum=(R,k)=>R.reduce((a,r)=>a+r[k],0);
+let sJahr='2027',sCr='jahr';
 function rStrom(){
   // Stromkonto
-  const sm=S.strom.m||{};const sk=[];for(let ym='2027-01';ym<='2029-12';ym=ymAdd(ym,1))sk.push(ym);
+  const sm=S.strom.m||{};const sk=[];for(let ym='2027-01';ym<=PLAN1;ym=ymAdd(ym,1))sk.push(ym);
   const pa=gn('s_pauschale');let bal=+S.strom.start||0;const ks=[];
-  sk.forEach(ym=>{const o=sm[ym]||{};const sp=o.spar!=null?+o.spar:gn('s_pauschale',ym);bal+=sp+(+o.verg||0)-(+o.verbrauch||0);ks.push(bal);});
-  const tb=$('#s-table');
-  if(!tb.contains(document.activeElement))tb.innerHTML=`<thead><tr><th>Monat</th><th class="r">Einzahlung</th><th class="r">Verbrauch €</th><th class="r">Vergütung €</th><th class="r">Kontostand</th></tr></thead><tbody>`+sk.map((ym,i)=>`<tr><td>${ymShort(ym)}</td><td class="r"><input class="ist" inputmode="decimal" data-sm="${ym}:spar" value="${num(sm[ym]?.spar)}" placeholder="${num(gn('s_pauschale',ym))}"></td><td class="r"><input class="ist" inputmode="decimal" data-sm="${ym}:verbrauch" value="${num(sm[ym]?.verbrauch)}"></td><td class="r"><input class="ist" inputmode="decimal" data-sm="${ym}:verg" value="${num(sm[ym]?.verg)}"></td><td class="r num ${ks[i]<0?'neg':''}" data-ks="${i}">${eur(ks[i],0)}</td></tr>`).join('')+'</tbody>';
-  else ks.forEach((v,i)=>{const c=tb.querySelector(`[data-ks="${i}"]`);if(c){c.textContent=eur(v,0);c.classList.toggle('neg',v<0);}});
+  const pf=(ym,f)=>{for(let m=ym,n=0;n<20&&m>='2027-01';m=ymAdd(m,-12),n++){const v=sm[m]?.[f];if(v!=null&&v!=='')return +v;}return null;};
+  const vb=(o,ym)=>o.ist!=null?+o.ist:(pf(ym,'verbrauch')||0);
+  sk.forEach(ym=>{const o=sm[ym]||{};const sp=o.spar!=null?+o.spar:gn('s_pauschale',ym);bal+=sp+(pf(ym,'verg')||0)-vb(o,ym);ks.push(bal);});
+  const yrs=[...new Set(sk.map(m=>m.slice(0,4)))];if(!yrs.includes(sJahr))sJahr=yrs[0];
+  $('#s-yr').innerHTML=yrs.map(y=>`<button type="button" data-sy="${y}" aria-pressed="${y===sJahr}">${y}</button>`).join('');
+  const dv=(o,ym)=>{const pl=pf(ym,'verbrauch');if(o.ist==null||pl==null)return '';const d=+o.ist-pl;return Math.abs(d)<0.5?'<span class="sdv eq">±0</span>':`<span class="sdv ${d>0?'neg':'pos'}" title="${d>0?'mehr':'weniger'} verbraucht als geplant">${d>0?'+':'−'}${n0(Math.abs(d))} €</span>`;};
+  const tb=$('#s-table');const ys=sk.map((m,i)=>[m,i]).filter(([m])=>m.startsWith(sJahr));
+  if(!tb.contains(document.activeElement)||tb.dataset.y!==sJahr){tb.dataset.y=sJahr;tb.innerHTML=`<thead><tr><th>Monat</th><th class="r"><span class="hl">Einzahlung</span><span class="hs">Einz.</span></th><th class="r"><span class="hl">Verbrauch geplant</span><span class="hs">Plan</span></th><th class="r"><span class="hl">Verbrauch echt</span><span class="hs">Echt</span></th><th class="r"><span class="hl">Vergütung</span><span class="hs">Verg.</span></th><th class="r"><span class="hl">Kontostand</span><span class="hs">Stand</span></th></tr></thead><tbody>`+ys.map(([ym,i])=>{const o=sm[ym]||{};return `<tr><td>${PVM[+ym.slice(5)-1]}</td><td class="r"><input class="ist sm" inputmode="decimal" data-sm="${ym}:spar" value="${num(o.spar)}" placeholder="${num(gn('s_pauschale',ym))}"></td><td class="r"><input class="ist sm" inputmode="decimal" data-sm="${ym}:verbrauch" value="${num(o.verbrauch)}" placeholder="${num(pf(ym,'verbrauch'))}"></td><td class="r"><span class="sdvw"><span data-dv="${ym}">${dv(o,ym)}</span><input class="ist sm ${o.ist!=null?'set':''}" inputmode="decimal" data-sm="${ym}:ist" value="${num(o.ist)}" placeholder="–"></span></td><td class="r"><input class="ist sm" inputmode="decimal" data-sm="${ym}:verg" value="${num(o.verg)}" placeholder="${num(pf(ym,'verg'))}"></td><td class="r num ${ks[i]<0?'neg':''}" data-ks="${i}">${eur(ks[i],0)}</td></tr>`;}).join('')+'</tbody>';}
+  else{ks.forEach((v,i)=>{const c=tb.querySelector(`[data-ks="${i}"]`);if(c){c.textContent=eur(v,0);c.classList.toggle('neg',v<0);}});ys.forEach(([ym])=>{const c=tb.querySelector(`[data-dv="${ym}"]`);if(c)c.innerHTML=dv(sm[ym]||{},ym);});}
   if(document.activeElement!==$('#s-start'))$('#s-start').value=num(S.strom.start||0);
-  const low=ks.reduce((a,v,i)=>v<a[0]?[v,i]:a,[Infinity,0]);const y1=sk.slice(0,12).reduce((a,ym)=>a+(+(sm[ym]?.verbrauch)||0)-(+(sm[ym]?.verg)||0),0);
-  $('#s-kpi').innerHTML=kpi('Kontostand Ende 2027',eur(ks[11],0),'',sign(ks[11]))+kpi('tiefster Stand',eur(low[0],0),ymName(sk[low[1]]),low[0]<0?'neg':'')+kpi('Stromkosten 2027 netto',eur(y1,0),`${eur(y1/12,0)} im Monat, Pauschale ${eur(pa,0)}`);
-  lineChart($('#c-skonto'),sk,[{n:'Kontostand',c:'var(--acc)',v:ks}],{h:180,xl:ymShort,xt:ymName,aria:'Stromkonto'});
-  // PV-Modell
+  const yi=ys.map(x=>x[1]);const low=ks.reduce((a,v,i)=>v<a[0]?[v,i]:a,[Infinity,0]);const y1=ys.reduce((a,[ym])=>a+vb(sm[ym]||{},ym)-(pf(ym,'verg')||0),0);
+  const isum=ys.reduce((a,[ym])=>{const o=sm[ym]||{};const pl=pf(ym,'verbrauch');if(o.ist!=null&&pl!=null){a.n++;a.d+=+o.ist-pl;}return a;},{n:0,d:0});
+  $('#s-kpi').innerHTML=kpi('Kontostand Ende '+sJahr,eur(ks[yi.at(-1)],0),'',sign(ks[yi.at(-1)]))+kpi('tiefster Stand',eur(low[0],0),ymName(sk[low[1]]),low[0]<0?'neg':'')+kpi('Stromkosten '+sJahr+' netto',eur(y1,0),`${eur(y1/12,0)} im Monat, Pauschale ${eur(pa,0)}`)+(isum.n?kpi('Echt vs. geplant '+sJahr,`${isum.d>0?'+':isum.d<0?'−':'±'}${eur(Math.abs(isum.d),0)}`,`${isum.n} Monat${isum.n>1?'e':''} eingetragen · ${isum.d>0?'mehr':'weniger'} verbraucht`,isum.d>0.5?'neg':'pos'):'');
+  $('#s-cr').innerHTML=[['jahr','nur '+sJahr],['3','3 Jahre ab '+sJahr],['all','alle Jahre']].map(([x,l])=>`<button type="button" data-sc="${x}" aria-pressed="${x===sCr}">${l}</button>`).join('');
+  const ci=sk.map((m,i)=>i).filter(i=>sCr==='all'||(sCr==='jahr'?sk[i].startsWith(sJahr):sk[i]>=sJahr&&sk[i]<String(+sJahr+3)));
+  lineChart($('#c-skonto'),ci.map(i=>sk[i]),[{n:'Kontostand',c:'var(--acc)',v:ci.map(i=>ks[i])}],{h:180,xl:ymShort,xt:ymName,aria:'Stromkonto'});
+  // PV-Modell (Karte entfernt)
+  if(!$('#f-pv'))return;
   const c=pvCfg();const f=$('#f-pv');
   if(!f.contains(document.activeElement)){f.innerHTML=[['kwp','PV-Leistung (kWp)'],['spe','Speicher (kWh)'],['ertrag','Ertrag je kWp und Jahr (kWh)'],['waerme','Wärmebedarf Heizung + Warmwasser (kWh/Jahr)'],['wpAb','Wärmepumpe ab','month'],['preis','Strompreis (ct/kWh)'],['verg','Einspeisevergütung (ct/kWh)'],['tag','Anteil Verbrauch tagsüber (%)']].map(([k,l,t])=>`<label>${l}<input ${t?'type="month"':'inputmode="decimal"'} data-pv="${k}" value="${t?c[k]:num(c[k])}" style="width:${t?140:90}px"></label>`).join('');
     $('#pv-hh').innerHTML=`<div class="note">Haus + E-Auto je Monat (kWh), vorbelegt aus deinen Screenshots:</div><div class="hh">${PVM.map((m,i)=>`<label>${m}<input inputmode="numeric" data-hh="${i}" value="${c.hh[i]}"></label>`).join('')}</div>`;}
@@ -1329,8 +1527,8 @@ $('#p-strom').addEventListener('click',async e=>{
     S.strom=d;render();await save('config/strom',d);$('#pv-msg').textContent='Übernommen. Rückgängig geht unten rechts.';}
   if(e.target.id==='wx-go')wxGo();});
 async function wxGo(){const tx=$('#wx-text').value.trim();const msg=$('#wx-msg');if(!tx)return;
-  if(!sampleFn){msg.textContent='Claude ist in dieser Ansicht nicht verfügbar.';return;}
-  $('#wx-go').disabled=true;msg.textContent='Claude liest die Vorhersage …';
+  if(!sampleFn){msg.textContent='Die KI ist in dieser Ansicht nicht verfügbar.';return;}
+  $('#wx-go').disabled=true;msg.textContent='Die KI liest die Vorhersage …';
   try{const r=await sampleFn.json(`Heute ist ${TODAY}. Hier ist eine Wettervorhersage für Üdersdorf (Eifel). Gib für jeden genannten Tag zurück: datum (JJJJ-MM-TT), wolken (0 = wolkenlos bis 100 = komplett bedeckt, Schätzung aus der Beschreibung), temp (Tagesmittel °C, Schätzung), text (2–4 Wörter).
 Vorhersage: """${tx.slice(0,3000)}"""
 Antworte NUR mit JSON: {"tage":[{"datum":"","wolken":0,"temp":0,"text":""}]}`,{modelTier:'default',cache:false});
@@ -1399,7 +1597,7 @@ async function exportExcel(){
           for(const [g,info] of Object.entries(cm.groups)){const lc=info.label;for(let r=cm.first;r<=cm.last;r++){setCell(X,g+r,null);setCell(X,lc+r,null);}
             (blk[g]||[]).slice(0,15).forEach((e,i)=>{const r=cm.first+i;let val=null;if(e.f&&!zu&&(differs(e)||(isPausch(e)&&pauschUsed(blk,sh)>0))){setCell(X,g+r,{n:r2(entryVal(e,blk,sh))});if(e.l)setCell(X,lc+r,{s:e.l});return;}
               if(e.f==='=GIROAUSGLEICH'){setCell(X,g+r,{n:r2(entryVal(e,blk,sh))});if(e.l)setCell(X,lc+r,{s:e.l});return;}
-              if(e.f==='=RESTGEHALT'&&!zu)val={f:`=${sh==='TILL'?'Gehalt_Till':'Gehalt_Patrick'}${giroAus(blk,sh).map(x=>'-E'+(cm.first+x.i)).join('')}`};
+              if(e.f==='=RESTGEHALT'&&!zu)val={f:`=${hasGehIst(blk)?String(r2(gehOf(blk,sh))):sh==='TILL'?'Gehalt_Till':'Gehalt_Patrick'}${giroAus(blk,sh).map(x=>'-E'+(cm.first+x.i)).join('')}`};
               else if(e.f&&!zu)val={f:e.f};else if(e.f)val={n:r2(entryVal(e,blk,sh))};else if(e.v!=null&&e.v!=='')val={n:+e.v};
               setCell(X,g+r,val);if(e.l)setCell(X,lc+r,{s:e.l});});}
           if(cm.etf&&sh!=='HAUS'){const col=sh==='TILL'?'Q':'P';const idx=(blk.C||[]).findIndex(x=>/^etf$/i.test((x.l||'').trim()));
@@ -1431,6 +1629,24 @@ async function exportExcel(){
   btn.disabled=false;}
 $('#x-exp').onclick=exportExcel;
 window.__exportExcel=exportExcel;
+/* ---------- Einmalige Umstellungen ---------- */
+const SEP_PLAN={"TILL":{"C":[{"l":"Haus, sonst.","v":1368.21},{"l":"Pauschale","v":300},{"l":"Ioniq 6","v":512.71},{"l":"Ioniq 6 Tanken","v":80},{"l":"Kreditkarte","v":0},{"l":"ETF","v":100},{"l":"Sparen für Auto","v":50},{"l":"Whoop","v":150},{"l":"Strom Anteil Till","v":40},{"l":"Versicherungen","v":112.53}],"E":[{"l":"Giroausgleich","v":2300,"f":"=GIROAUSGLEICH"},{"l":"Rückgabe von Patrick","v":300}],"I":[{"l":"Whoop","v":530}],"K":[{"l":"Rest Gehalt","v":496.05,"f":"=RESTGEHALT"},{"l":"sonstiges","v":0},{"l":"sonstiges","v":null},{"l":"sonstiges","v":null}]},"PATRICK":{"C":[{"l":"Haus, sonst.","v":1368.21},{"l":"Pauschale","v":170},{"l":"Versicherungen","v":215.16},{"l":"Kreditkarte","v":50},{"l":"Strom Anteil Patrick","v":45},{"l":"ETF","v":50},{"l":"Rückgabe an Till","v":300},{"l":"Sparen für Auto","v":50}],"E":[{"l":"Giroausgleich","v":2248,"f":"=GIROAUSGLEICH"}],"I":[],"K":[{"l":"Rest Gehalt","v":300,"f":"=RESTGEHALT"},{"l":"sonstiges","v":null},{"l":"sonstiges","v":null},{"l":"sonstiges","v":null}]},"HAUS":{"G":[{"l":"Tilgung","v":1628},{"l":"Essen","v":350},{"l":"Internet","v":49.9},{"l":"sonstiges","v":235.97},{"l":"Risikolebensversicherung","v":28},{"l":"Rechtsschutzversicherung","v":41.93},{"l":"Heizölgeld","v":1000},{"l":"sonstiges","v":100}],"I":[{"l":"Anteil Patrick","v":1368.22},{"l":"Anteil Till","v":1368.22}],"notiz":"Nach Septemberanteil 1000€ für Öl zur Verfügung"}};
+let migRunning=false;
+async function migrate(){if(migRunning||!db)return;const M=S.einst?.mig||{};if(M.sep&&M.rueck&&M.pc&&M.gst)return;
+  const real=Object.keys(S.plan).filter(k=>!S.plan[k]._virt);if(real.length<12||!S.grund.items.length)return;migRunning=true;
+  try{const nm={...M};
+    if(!M.sep){if(!S.plan['2026-09']){const d=structuredClone(SEP_PLAN);S.plan['2026-09']=d;await save('plan/2026-09',d);if(CUR==='2026-09')month=CUR;}nm.sep=1;}
+    if(!M.rueck){const RX=/^rückgabe (an till|von patrick)$/i;const ms=[];let val=null;
+      Object.keys(S.plan).sort().forEach(ym=>{const P=S.plan[ym];if(P._virt||P.zu)return;let hit=false;['TILL','PATRICK'].forEach(sh=>{const b=P[sh];if(!b)return;['C','E'].forEach(g=>{(b[g]||[]).forEach(e=>{if(!e._c&&RX.test((e.l||'').trim())){hit=true;if(sh==='PATRICK'&&g==='C'&&val==null)val=+e.v||0;}});});});if(hit)ms.push(ym);});
+      if(ms.length&&!S.grund.items.some(i=>i.k==='c_rueck')){const items=[...S.grund.items,{k:'c_rueck',l:'Rückgabe an Till',g:'Patrick',v:val||300,cu:{art:'aus',rh:'m',ab:ms[0],an:'Till',lg:'Rückgabe von Patrick'},bis:ms.at(-1),am:TODAY}];S.grund={items};await save('config/grund',{items});
+        for(const ym of ms)await savePlan(ym,d=>{['TILL','PATRICK'].forEach(sh=>{const b=d[sh];if(!b)return;['C','E'].forEach(g=>{if(b[g])b[g]=b[g].filter(e=>!RX.test((e.l||'').trim()));});});});}
+      nm.rueck=1;}
+    if(!M.pc){if(S.grund.items.some(i=>i.k==='p_pc')){const items=S.grund.items.filter(i=>i.k!=='p_pc');S.grund={items};await save('config/grund',{items});}nm.pc=1;}
+    if(!M.gst){/* Grundsteuer wird 4× im Jahr abgebucht (15.02., 15.05., 15.08., 15.11.); im Februar fehlte sie im Plan */
+      for(const ym of Object.keys(S.plan).filter(k=>k.endsWith('-02')&&!S.plan[k]._virt&&!S.plan[k].zu).sort()){const G=S.plan[ym]?.HAUS?.G||[];if(!G.some(e=>/^grundsteuer/i.test((e.l||'').trim())))await savePlan(ym,d=>{const h=d.HAUS=d.HAUS||{};(h.G=h.G||[]).push({l:'Grundsteuer',f:'=Grundsteuer_jährlich/4',v:r2(gn('h_grundst')/4)});});}
+      nm.gst=1;}
+    S.einst={...S.einst,mig:nm};await save('config/einstellungen',S.einst);render();
+  }catch(err){console.error('Umstellung',err);}finally{migRunning=false;}}
 /* ---------- Tabs & Render ---------- */
 const ICO={heute:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
  monat:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -1446,7 +1662,7 @@ $('#nav').onclick=e=>{const t=e.target.closest('[data-t]')?.dataset.t;if(!t)retu
 const h0=(location.hash||'').slice(1);showTab(TABS.some(([k])=>k===h0)?h0:'heute');
 const R={heute:rHeute,monat:rMonat,fewo:rFewo,kredite:rKredite,vermoegen:rVerm,bald:rBald,strom:rStrom,einst:rEinst};
 let raf;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{try{calcAll();R[tab]();if(tab!=='bald')try{rBald();}catch(_){}}catch(err){console.error(err);}});}
-let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,150);});
+let rt,lastW=innerWidth;addEventListener('resize',()=>{if(Math.abs(innerWidth-lastW)<40)return;/* Handy-Tastatur ändert nur die Höhe */lastW=innerWidth;const a=document.activeElement;if(a&&a.matches('input,textarea,select'))return;clearTimeout(rt);rt=setTimeout(render,150);});
 $('#today').textContent='Heute: '+now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 $('#undo').onclick=doUndo;
 render();
@@ -1460,7 +1676,7 @@ render();
   if(!db){$('#nodb').hidden=false;flash('err','Offline');return;}
   const onErr=e=>{flash('err',e?.code==='revoked'?'Kein Zugriff':'Verbindung unterbrochen');};
   const editing=()=>document.activeElement&&document.activeElement.matches('input,select,textarea')&&document.activeElement.closest('main');
-  const later=()=>{if(editing()){clearTimeout(later.t);later.t=setTimeout(later,700);}else render();};
+  const later=()=>{if(editing()){clearTimeout(later.t);later.t=setTimeout(later,700);}else{render();clearTimeout(later.m);later.m=setTimeout(migrate,1500);}};
   const cfg=(p,f)=>db.doc('config/'+p).onSnapshot(s=>{const d=s.data();remember('config/'+p,d);if(d)f(d);later();flash('ok','Synchronisiert');},onErr);
   cfg('grund',d=>S.grund=d);cfg('archiv',d=>S.archiv=d);cfg('urlaub',d=>S.urlaub=d);cfg('strom',d=>S.strom=d);cfg('kredit',d=>S.kredit=d);
   cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);
@@ -1468,6 +1684,7 @@ render();
   db.collection('budget').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('budget/'+d.id,m[d.id]);});S.budget=m;later();},onErr);
   db.collection('fewo').onSnapshot(q=>{const f={};q.docs.forEach(d=>{const x=d.data();remember('fewo/'+d.id,x);f[d.id]=(x?.b)||[];});S.fewo=f;later();},onErr);
 })();
+window.__goto=ym=>{month=ym;render();};window.__dbg=()=>({ING_END});
 })();
 document.addEventListener('input',e=>{const t=e.target;if(t.tagName!=='TEXTAREA')return;t.classList.add('grow');t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,window.innerHeight*0.5)+'px';});
 </script></body></html>
