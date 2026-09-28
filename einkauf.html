@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1 vom 28.09.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.1 vom 28.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -98,6 +98,8 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .addrow input{flex:1;min-width:0;height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--paper);padding:0 16px;font-size:17px}
 .addrow input:focus{border-color:var(--leaf);outline:none}
 .addbtn{height:52px;padding:0 18px;border:0;border-radius:14px;background:var(--leaf);color:var(--leaf-ink);font-weight:700;font-size:16px}
+.cambtn.ping{position:relative}
+.cambtn.ping::after{content:"";position:absolute;top:6px;right:6px;width:11px;height:11px;border-radius:50%;background:var(--radish);border:2px solid var(--paper)}
 .cambtn{width:52px;height:52px;flex-shrink:0;border-radius:14px;border:1.5px solid var(--line);background:var(--paper);font-size:22px}
 
 /* Blätter */
@@ -216,7 +218,7 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.1</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -289,7 +291,8 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
   <p class="sub" id="setWho"></p>
   <p class="note">Die Einkaufsliste nutzt dieselbe Anmeldung, denselben KI-Zugang und dieselbe Datenbank wie das Haushaltsbuch. Den KI-Schlüssel ändert ihr im Haushaltsbuch unter Einstellungen → KI-Zugang.</p>
   <p class="note" id="setKi"></p>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1 vom 28.09.2026</p>
+  <p class="note" id="setLog"></p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.1 vom 28.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -306,7 +309,7 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1 vom 28.09.2026";
+const APP_VERSION = "Version 1.1 vom 28.09.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -746,6 +749,8 @@ $("#edDel").addEventListener("click", async () => {
 // ---------- Foto → Gemini ----------
 let scanMode = null, scanBusy = false, review = null;
 $("#camBtn").addEventListener("click", () => {
+  if (pendingScan) { openPending(); return; }
+  if (scanBusy) { scanBg = false; openSheet("#rvScrim"); return; }
   if (backend!=="fb") { showToast("Fotos gehen nur, wenn du angemeldet bist"); return; }
   $("#camStep1").hidden = false; $("#camStep2").hidden = true;
   openSheet("#camScrim");
@@ -769,25 +774,44 @@ async function onPicked(e){
   runScan();
 }
 function busyView(text){
-  $("#rvSheet").innerHTML = `<div class="busy"><div class="spin"></div><span id="busyText">${esc(text)}</span></div><div class="actions"><button class="btn-ghost" id="scanCancel">Abbrechen</button></div>`;
+  $("#rvSheet").innerHTML = `<div class="busy"><div class="spin"></div><span id="busyText">${esc(text)}</span><span class="note" id="busyTime">0 s</span></div>
+    <div class="actions"><button class="btn-ghost" id="scanCancel">Abbrechen</button><button class="btn-main" id="scanBgBtn">Im Hintergrund</button></div>
+    <p class="note" style="text-align:center">Du kannst die Liste währenddessen weiter benutzen – die Seite meldet sich, wenn alles gelesen ist.</p>`;
   $("#scanCancel").onclick = () => scanAbort && scanAbort.abort();
+  $("#scanBgBtn").onclick = () => { scanBg = true; $("#rvScrim").classList.remove("open"); showToast("Wird im Hintergrund gelesen …"); };
+}
+let scanBg = false, pendingScan = null, lastModelUsed = "";
+function markCam(on){ $("#camBtn").classList.toggle("ping", !!on); }
+function logScan(entry){
+  try { const L = JSON.parse(localStorage.getItem("einkauf-scanlog")||"[]"); L.unshift(entry); localStorage.setItem("einkauf-scanlog", JSON.stringify(L.slice(0,8))); } catch(e) {}
+}
+function openPending(){
+  const p = pendingScan; pendingScan = null; markCam(false); if (!p) return;
+  scanMode = p.mode; openSheet("#rvScrim");
+  if (p.err) showScanError(p.err, true); else (p.mode==="bon" ? showBonReview : showRezeptReview)(p.res);
 }
 async function runScan(){
-  scanBusy = true; scanAbort = new AbortController();
-  busyView(scanMode==="bon" ? "Kassenbon wird gelesen …" : "Rezept wird gelesen …");
+  scanBusy = true; scanBg = false; scanAbort = new AbortController(); lastModelUsed = "";
+  const mode = scanMode, t0 = Date.now();
+  busyView(mode==="bon" ? "Kassenbon wird gelesen …" : "Rezept wird gelesen …");
   openSheet("#rvScrim");
+  const tick = setInterval(() => { const el = $("#busyTime"); if (el) el.textContent = `${Math.round((Date.now()-t0)/1000)} s`; }, 1000);
   try {
-    const res = await askGemini(scanMode==="bon" ? bonPrompt() : rezeptPrompt(), lastDoc, {
-      signal: scanAbort.signal,
+    const res = normalizeScan(await askGemini(mode==="bon" ? bonPrompt() : rezeptPrompt(), lastDoc, {
+      signal: scanAbort.signal, schema: mode==="bon" ? BON_SCHEMA : REZEPT_SCHEMA,
       status: t => { const el = $("#busyText"); if (el) el.textContent = t; }
-    });
+    }));
+    logScan({t:Date.now(), mode, ok:true, sec:Math.round((Date.now()-t0)/1000), model:lastModelUsed});
     scanBusy = false;
-    scanMode==="bon" ? showBonReview(res) : showRezeptReview(res);
+    if (scanBg) { pendingScan = {mode, res}; markCam(true); showToast(mode==="bon" ? "Kassenbon ist gelesen" : "Rezept ist gelesen", openPending, "Prüfen", 20000); }
+    else (mode==="bon" ? showBonReview : showRezeptReview)(res);
   } catch(err) {
     scanBusy = false;
     if (err.name === "AbortError") { closeSheets(); showToast("Einlesen abgebrochen"); return; }
-    showScanError(err, true);
-  }
+    logScan({t:Date.now(), mode, ok:false, sec:Math.round((Date.now()-t0)/1000), model:lastModelUsed, detail:err.detail||err.message});
+    if (scanBg) { pendingScan = {mode, err}; markCam(true); showToast("Einlesen hat nicht geklappt", openPending, "Ansehen", 20000); }
+    else showScanError(err, true);
+  } finally { clearInterval(tick); }
 }
 function showScanError(err, canRetry){
   openSheet("#rvScrim");
@@ -813,10 +837,12 @@ async function shrink(file){
   const url = URL.createObjectURL(file);
   try {
     const im = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error("Das Foto konnte nicht geöffnet werden.")); i.src = url; });
-    const max = 1600, f = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+    const max = 2000, f = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
     const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth*f); c.height = Math.round(im.naturalHeight*f);
-    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
-    return c.toDataURL("image/jpeg", 0.8).split(",")[1];
+    const ctx = c.getContext("2d");
+    try { ctx.filter = "grayscale(1) contrast(1.15)"; } catch(e) {}   // Schrift wird klarer, Datei kleiner
+    ctx.drawImage(im, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.72).split(",")[1];
   } finally { URL.revokeObjectURL(url); }
 }
 async function kiCfg(){ const s = await fs.doc("privat/ki").get(); return s.exists ? s.data() : {}; }
@@ -834,39 +860,45 @@ async function fetchTimed(url, init, ms, signal){
   catch(e) { if (signal?.aborted) throw new DOMException("abgebrochen","AbortError"); throw kiError("timeout", e.name==="AbortError" ? "Zeitüberschreitung" : "Netzwerk"); }
   finally { clearTimeout(t); signal?.removeEventListener("abort", onAbort); }
 }
-async function askGemini(prompt, doc, {signal, status} = {}){
+async function askGemini(prompt, doc, {signal, status, schema} = {}){
   const c = await kiCfg();
   if (!c.key) throw kiError("Kein KI-Zugang eingerichtet. Bitte im Haushaltsbuch unter Einstellungen → KI-Zugang eintragen.");
   const say = t => status && status(t);
   let text = null;
   if (c.anbieter === "gemini") {
     let models = [...new Set([c.model, ...GEMINI_FALLBACK].filter(Boolean))];
-    const waits = [0, 8000, 20000];            // 3 Runden: sofort, nach 8 s, nach 20 s
+    const waits = [0, 5000, 12000];            // 3 Runden: sofort, nach 5 s, nach 12 s
+    // Stufe 0: kurzes Nachdenken + festes Antwortschema (schnell), 1: nur Schema, 2: einfach
+    let level = +(localStorage.getItem("einkauf-gemini-level") || 0) || 0;
+    const genCfg = lv => Object.assign({responseMimeType:"application/json", temperature:0, maxOutputTokens:4096},
+      lv < 2 && schema ? {responseSchema: schema} : {}, lv < 1 ? {thinkingConfig:{thinkingLevel:"minimal"}} : {});
     let last = "";
     for (let round = 0; round < waits.length && text == null; round++) {
       if (waits[round]) {
         for (let s = waits[round]/1000; s > 0; s--) { say(`Gemini ist ausgelastet – neuer Versuch in ${s} s (${round+1}/${waits.length})`); await sleep(1000, signal); }
       }
-      for (const m of [...models]) {
+      for (let i = 0; i < models.length; i++) {
+        const m = models[i];
         say(`${scanMode==="bon"?"Kassenbon":"Rezept"} wird gelesen …${round||m!==models[0] ? " (anderes Modell)" : ""}`);
         let r;
         try {
           r = await fetchTimed(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`, {
             method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":c.key},
             body: JSON.stringify({contents:[{role:"user",parts:[{text:prompt},{inline_data:{mime_type:doc.mime,data:doc.data}}]}],
-                                  generationConfig:{responseMimeType:"application/json",temperature:0.1}})
-          }, 75000, signal);
+                                  generationConfig: genCfg(level)})
+          }, 45000, signal);
         } catch(e) { if (e.name==="AbortError") throw e; last = `${m}: ${e.detail}`; continue; }
         const data = await r.json().catch(()=>({}));
         const msg = (data?.error?.message || "").slice(0, 160);
         if (r.ok) {
-          const t = (data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
-          if (t) { text = t; break; }
+          const t = (data.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");
+          if (t) { text = t; lastModelUsed = m; try { localStorage.setItem("einkauf-gemini-level", String(level)); } catch(e) {} break; }
           last = `${m}: leere Antwort (${data.candidates?.[0]?.finishReason || data.promptFeedback?.blockReason || "?"})`; continue;
         }
         last = `${m}: ${r.status} ${msg}`;
         if (/api key|API_KEY/i.test(msg)) throw kiError("Der Gemini-Schlüssel ist ungültig. Bitte im Haushaltsbuch prüfen.", last);
-        if (r.status === 404 || (r.status === 400 && /not (found|supported)|unsupported/i.test(msg))) { models = models.filter(x => x !== m); continue; } // Modell gibt es nicht oder kann keine Bilder
+        if (r.status === 400 && level < 2 && !/size|too large|payload/i.test(msg)) { level++; i--; say("Einlesen wird angepasst …"); continue; } // gleiches Modell, einfachere Einstellung
+        if (r.status === 404 || (r.status === 400 && /not (found|supported)|unsupported/i.test(msg))) { models.splice(i, 1); i--; continue; } // Modell gibt es nicht oder kann keine Bilder
         if (r.status === 400 && /size|too large|payload/i.test(msg)) throw kiError("Die Datei ist zu groß für Gemini. Bitte ein kleineres Foto oder eine kürzere PDF verwenden.", last);
         if (r.status === 400) throw kiError("Gemini konnte die Datei nicht verarbeiten.", last);
         // 429, 500, 503 usw.: vorübergehend – nächstes Modell bzw. nächste Runde
@@ -894,27 +926,39 @@ async function askGemini(prompt, doc, {signal, status} = {}){
   }
   try { return parseJson(text); } catch(e) { throw kiError("Die Antwort war nicht lesbar. Bitte ein schärferes Foto versuchen.", text.slice(0,120)); }
 }
-const knownNames = () => [...new Set([...Object.values(products).map(p=>p.name), ...items.map(i=>i.name)])].slice(0,250);
-
+const knownNames = () => [...new Set([...Object.values(products).sort((a,b)=>(b.count||0)-(a.count||0)).map(p=>p.name), ...items.map(i=>i.name)])].slice(0,150);
 function bonPrompt(){
-  return `Du liest einen deutschen Supermarkt-Kassenbon aus (Foto oder PDF). Antworte NUR mit JSON in genau dieser Form:
-{"laden": "Name des Geschäfts oder null", "datum": "YYYY-MM-DD oder null", "summe": Gesamtbetrag als Zahl oder null,
- "artikel": [{"bon": "Text wie auf dem Bon", "name": "kurzer, verständlicher Artikelname wie auf einer Einkaufsliste", "menge": Stückzahl als Zahl, "einzelpreis": Preis pro Stück als Zahl, "gesamt": Zeilenbetrag als Zahl, "kategorie": "eine von ${CAT_IDS.join(", ")}"}]}
+  return `Lies diesen deutschen Kassenbon (Foto oder PDF). Gib NUR dieses JSON zurück:
+{"l":"Geschäft oder null","d":"YYYY-MM-DD oder null","s":Gesamtsumme als Zahl oder null,"a":[{"n":"Artikelname","m":Stückzahl,"p":Preis pro Stück,"k":"Kategorie"}]}
+k ist eine von: ${CAT_IDS.join(", ")}
 Regeln:
-- Übersetze Bon-Abkürzungen in normale Namen (z. B. "H-MILCH 3,5% 1L" → "Milch", "BIO BANANE" → "Bananen").
-- Diese Namen stehen schon auf unserer Liste. Ist es dasselbe Produkt, verwende GENAU diesen Namen: ${JSON.stringify(knownNames())}
-- Rabatte und Preisnachlässe ziehst du beim vorherigen Artikel ab.
-- Pfand, Pfandrückgabe, Tüten, Zahlungs-, Steuer- und Summenzeilen sind KEINE Artikel.
-- Gewichtsware (z. B. 0,734 kg x 2,99 €/kg): menge 1, einzelpreis = Zeilenbetrag.
-- Beträge als Zahl mit Punkt (1.19), ohne Währungszeichen.`;
+- n: kurzer normaler Name wie auf einer Einkaufsliste ("H-MILCH 3,5% 1L" → "Milch", "BIO BANANE" → "Bananen").
+- Wenn dasselbe Produkt, schreibe n GENAU wie hier: ${knownNames().join("; ")}
+- Rabatte beim vorherigen Artikel abziehen. Pfand, Tüten, Zahlungs-, Steuer- und Summenzeilen weglassen.
+- Gewichtsware: m 1, p = Zeilenbetrag. Zahlen mit Punkt, ohne €.`;
 }
 function rezeptPrompt(){
-  return `Du liest ein Rezept aus (Foto oder PDF; Kochbuch, Zeitschrift, Handschrift oder Bildschirm). Antworte NUR mit JSON in dieser Form:
-{"titel": "Name des Gerichts", "portionen": Zahl oder null,
- "zutaten": [{"name": "Zutat, so wie man sie auf eine Einkaufsliste schreibt", "menge": "Menge mit Einheit als Text, z. B. 500 g oder 2", "kategorie": "eine von ${CAT_IDS.join(", ")}", "vorrat": true wenn es fast immer im Haus ist (Salz, Pfeffer, Öl, Wasser, Zucker, Mehl, Gewürze), sonst false}]}
-Regeln:
-- Diese Namen kennen wir schon. Ist es dieselbe Zutat, verwende GENAU diesen Namen: ${JSON.stringify(knownNames())}
-- Fasse gleiche Zutaten zusammen. Keine Zubereitungsschritte.`;
+  return `Lies dieses Rezept (Foto oder PDF). Gib NUR dieses JSON zurück:
+{"t":"Name des Gerichts","p":Portionen oder null,"z":[{"n":"Zutat wie auf einer Einkaufsliste","m":"Menge mit Einheit, z. B. 500 g","k":"Kategorie","v":true wenn fast immer im Haus (Salz, Pfeffer, Öl, Zucker, Mehl, Gewürze)}]}
+k ist eine von: ${CAT_IDS.join(", ")}
+Gleiche Zutaten zusammenfassen, keine Zubereitung. Wenn dieselbe Zutat, schreibe n GENAU wie hier: ${knownNames().join("; ")}`;
+}
+const BON_SCHEMA = {type:"OBJECT", properties:{
+  l:{type:"STRING", nullable:true}, d:{type:"STRING", nullable:true}, s:{type:"NUMBER", nullable:true},
+  a:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"NUMBER"}, p:{type:"NUMBER"}, k:{type:"STRING", enum:CAT_IDS}}, required:["n","p"]}}},
+  required:["a"]};
+const REZEPT_SCHEMA = {type:"OBJECT", properties:{
+  t:{type:"STRING"}, p:{type:"NUMBER", nullable:true},
+  z:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"STRING"}, k:{type:"STRING", enum:CAT_IDS}, v:{type:"BOOLEAN"}}, required:["n"]}}},
+  required:["z"]};
+// Kurzform in die gewohnte Form übersetzen (alte Langform geht weiterhin)
+function normalizeScan(r){
+  r = r || {};
+  if (Array.isArray(r.a)) return {laden:r.l ?? r.laden, datum:r.d ?? r.datum, summe:r.s ?? r.summe,
+    artikel:r.a.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, einzelpreis:x.p ?? x.einzelpreis, kategorie:x.k ?? x.kategorie, bon:""}))};
+  if (Array.isArray(r.z)) return {titel:r.t ?? r.titel, portionen:r.p ?? r.portionen,
+    zutaten:r.z.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, kategorie:x.k ?? x.kategorie, vorrat:!!(x.v ?? x.vorrat)}))};
+  return r;
 }
 
 function showBonReview(res){
@@ -1047,6 +1091,10 @@ function showRezeptReview(res){
 async function openSettings(){
   $("#setWho").textContent = user ? "Angemeldet als " + (user.email||user.displayName||"") : "Nicht angemeldet (Demo)";
   $("#logout").hidden = !user; $("#setKi").textContent = "";
+  try {
+    const L = JSON.parse(localStorage.getItem("einkauf-scanlog")||"[]");
+    $("#setLog").innerHTML = L.length ? "<b>Letzte Fotos:</b><br>" + L.map(x => `${new Date(x.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} ${x.mode==="bon"?"Bon":"Rezept"} ${x.ok?"✓":"✗"} ${x.sec} s${x.model?` (${esc(x.model)})`:""}${x.ok?"":` – ${esc(String(x.detail||"").slice(0,90))}`}`).join("<br>") : "";
+  } catch(e) {}
   openSheet("#setScrim");
   if (user) try { const c = await kiCfg(); $("#setKi").textContent = c.key ? `KI-Zugang: ${c.anbieter==="gemini"?"Gemini":"Claude"}${c.model?` (${c.model})`:""} ist eingerichtet.` : "Noch kein KI-Zugang eingerichtet – Fotos funktionieren erst danach."; } catch(e) {}
 }
@@ -1055,11 +1103,11 @@ $("#logout").addEventListener("click", () => { closeSheets(); auth && auth.signO
 
 // ---------- Hinweis mit Rückgängig ----------
 let toastTimer, toastUndo = null;
-function showToast(text, undo){
+function showToast(text, undo, label = "Rückgängig", ms = 4500){
   $("#toastText").textContent = text; toastUndo = undo || null;
-  $("#toastUndo").hidden = !undo;
+  $("#toastUndo").hidden = !undo; $("#toastUndo").textContent = label;
   $("#toast").classList.add("show");
-  clearTimeout(toastTimer); toastTimer = setTimeout(()=>$("#toast").classList.remove("show"), 4500);
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>$("#toast").classList.remove("show"), ms);
 }
 $("#toastUndo").addEventListener("click", () => { const u = toastUndo; toastUndo = null; $("#toast").classList.remove("show"); if (u) u(); });
 
