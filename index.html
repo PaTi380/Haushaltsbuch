@@ -384,6 +384,13 @@ details.row.goldsep{border-bottom:1px solid color-mix(in srgb,var(--gold) 30%,tr
 .mp-g button{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:8px 0;font:inherit;font-size:13px;cursor:pointer}.mp-g button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}.mp-g button.cur{outline:2px solid color-mix(in srgb,var(--acc) 40%,transparent)}.mp-g button:disabled{opacity:.35;cursor:default}
 .mp-f{margin-top:8px;text-align:right}
 .card.monthbar{overflow:visible;position:relative;z-index:5}
+.hl-list{margin-top:10px}.hl-t{font-size:14px;line-height:1.55;padding:4px 0 10px 14px;color:var(--ink2)}
+.hl-a{margin-top:10px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--acc) 7%,var(--card));border:1px solid color-mix(in srgb,var(--acc) 30%,transparent);font-size:14px;line-height:1.55}
+.hdr-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+#closed{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8;text-align:center}#closed[hidden]{display:none}
+.cl-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.cl-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.cl-n{margin-top:14px;font-size:13px;opacity:.8;max-width:260px}
+#closed .btn{background:#d9bd74;color:#0c231b;border:0}
+body.is-closed main,body.is-closed header{visibility:hidden}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
@@ -394,7 +401,7 @@ body{margin:0;padding:0 16px}
 <div class="wrap">
 <header>
   <div><h1>Haushaltsbuch Till &amp; Patrick</h1><div class="sub"><span id="today"></span> · Alles an einem Ort · <span class="appv" id="appv"></span></div></div>
-  <div class="status" id="status"><span class="dot"></span><span>Verbinde …</span></div>
+  <div class="hdr-r"><div class="status" id="status"><span class="dot"></span><span>Verbinde …</span></div><button type="button" class="btn sec sm" id="app-close" title="App schließen">✕ Schließen</button></div>
 </header>
 <nav role="tablist" id="nav"></nav>
 <main>
@@ -576,8 +583,10 @@ body{margin:0;padding:0 16px}
   <div class="card"><div class="head"><h2>Excel herunterladen</h2></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn" id="x-exp">Excel erstellen</button><span class="note" id="x-msg" style="margin:0">Erzeugt deine Finanzierungspläne mit allem aus der App: Monatsblöcke, Grundbeträge, Ferienwohnung, Urlaubskonto, Strom. Kommt als ZIP, darin die .xlsm mit deinen Makros.</span></div></div>
   </div>
+  <div class="card" id="hl-card"><div class="head"><h2>❓ Hilfe</h2></div><div class="hl-body"></div></div>
 </section>
 </main>
+<div id="closed" hidden><div class="cl-c"><div class="cl-t">Haushaltsbuch</div><div class="cl-s">geschlossen</div><button type="button" class="btn" id="app-reopen">Wieder öffnen</button><div class="cl-n">Du kannst das Fenster jetzt wegwischen oder den Tab schließen.</div></div></div>
 </div>
 <div id="tip" hidden></div>
 <button type="button" id="undo" class="undo" hidden>↶ Rückgängig</button>
@@ -794,9 +803,10 @@ function barChart(el,labels,vals,o={}){
 }
 const kpi=(l,v,n,cls='')=>`<div class="card kpi"><span class="l">${l}</span><span class="v ${cls}">${v}</span><span class="n">${n||''}</span></div>`;
 const sign=v=>v<-0.005?'neg':v>0.005?'pos':'';
+const BLN={TILL:'Tills Giro',PATRICK:'Patricks Giro',HAUS:'Haushaltskonto'};
 /* ---------- Monatsnavigation ---------- */
-function mState(ym){const P=S.plan[ym];if(ym<planStart())return 'vor Planbeginn';if(!P)return 'kein Plan';if(P.zu||SH.every(sh=>P[sh]?.zu))return '🔒 abgeschlossen';{const cz=SH.filter(sh=>P[sh]?.zu).map(sh=>SHN[sh]);if(cz.length)return '🔒 '+cz.join(' + ')+' abgeschlossen';}const fx=['TILL','PATRICK'].filter(sh=>fixInfo(sh,P[sh])?.fixed).length;const base=ym<CUR?'offen (vergangen)':ym===CUR?'laufender Monat':P._virt?'fortgeschrieben':'Planung';return fx===2?'📌 festgeschrieben · '+base:fx===1?'📌 teilweise festgeschrieben · '+base:base;}
-function renderMonthBar(){$$('.mtitle').forEach(e=>e.textContent=ymName(month));$$('.mstate').forEach(e=>{const t=mState(month);e.textContent=t;e.classList.toggle('fixed',t.startsWith('📌 fest'));e.classList.toggle('part',t.startsWith('📌 teil'));e.classList.toggle('zu',t.startsWith('🔒'));});const c=$('#m-close');if(c)c.textContent=bzu(S.plan[month],mWho)?`Abschluss aufheben (${SHN[mWho]})`:`${SHN[mWho]} abschließen`;}
+function mState(ym){const P=S.plan[ym];if(ym<planStart())return 'vor Planbeginn';if(!P)return 'kein Plan';if(P.zu||SH.every(sh=>P[sh]?.zu))return '🔒 abgeschlossen';{const cz=SH.filter(sh=>P[sh]?.zu).map(sh=>BLN[sh]);if(cz.length)return '🔒 '+cz.join(' + ')+' abgeschlossen';}const fx=['TILL','PATRICK'].filter(sh=>fixInfo(sh,P[sh])?.fixed).length;const base=ym<CUR?'offen (vergangen)':ym===CUR?'laufender Monat':P._virt?'fortgeschrieben':'Planung';return fx===2?'📌 festgeschrieben · '+base:fx===1?'📌 teilweise festgeschrieben · '+base:base;}
+function renderMonthBar(){$$('.mtitle').forEach(e=>e.textContent=ymName(month));$$('.mstate').forEach(e=>{const t=mState(month);e.textContent=t;e.classList.toggle('fixed',t.startsWith('📌 fest'));e.classList.toggle('part',t.startsWith('📌 teil'));e.classList.toggle('zu',t.startsWith('🔒'));});const c=$('#m-close');if(c)c.textContent=bzu(S.plan[month],mWho)?`Abschluss aufheben (${BLN[mWho]})`:`${BLN[mWho]} abschließen`;}
 document.addEventListener('click',e=>{const t=e.target.closest('.mtitle');const pk=e.target.closest('.mpick');
   if(pk){e.stopPropagation();const yb=e.target.closest('[data-py]');if(yb){pk.dataset.y=+pk.dataset.y+(+yb.dataset.py);pk.outerHTML=mPick(+pk.dataset.y);return;}const mb=e.target.closest('[data-pm]');if(mb&&!mb.disabled){month=mb.dataset.pm;$$('.mpick').forEach(x=>x.remove());render();}return;}
   if(t){const open=t.parentElement.querySelector('.mpick');$$('.mpick').forEach(x=>x.remove());if(!open)t.insertAdjacentHTML('afterend',mPick(+month.slice(0,4)));return;}
@@ -895,7 +905,7 @@ function depotHTML(c,sh){const gain=c.etf-c.einz;let h=`<div class="dep"><div cl
   if(sh==='TILL'){h+=`<div class="row" style="margin-top:6px"><span>Gold <span class="muted">zu ${eur(gn('goldpreis'))} je Unze${gv('goldpreis')&&goldAm()?' · Stand '+dDE(goldAm())+(liveGold()?' (automatisch)':''):''}</span></span><b class="num">${eur(c.gold)}</b></div>`+goldList(goldRows());}
   return h+'</div>';}
 function fixInfo(sh,blk){const E=blk?.E||[];const i=E.findIndex(e=>GIROAUS.test((e.l||'').trim()));if(i<0)return null;const e=E[i];return {i,fixed:e.f!=='=GIROAUSGLEICH',am:e.fix||blk.snap?.am||null};}
-function fixBanner(sh,blk){if(!blk)return '';const P=S.plan[month];if(bzu(P,sh))return `<div class="fixb done">🔒 <div><b>${SHN[sh]}: Monat abgeschlossen</b><small>am ${dDE(bzuAm(P,sh))} · alle Beträge sind fest. Aufheben oben mit „Abschluss aufheben“.</small></div>${(S.sich?.am||'').slice(0,10)<bzuAm(P,sh)?'<button type="button" class="btn sm" data-bknow="1">💾 Jetzt sichern</button>':''}</div>`;if(sh==='HAUS')return '';const f=fixInfo(sh,blk);if(!f)return '';
+function fixBanner(sh,blk){if(!blk)return '';const P=S.plan[month];if(bzu(P,sh))return `<div class="fixb done">🔒 <div><b>${BLN[sh]}: Monat abgeschlossen</b><small>am ${dDE(bzuAm(P,sh))} · alle Beträge sind fest. Aufheben oben mit „Abschluss aufheben“.</small></div>${(S.sich?.am||'').slice(0,10)<bzuAm(P,sh)?'<button type="button" class="btn sm" data-bknow="1">💾 Jetzt sichern</button>':''}</div>`;if(sh==='HAUS')return '';const f=fixInfo(sh,blk);if(!f)return '';
   return f.fixed?`<div class="fixb on">📌 <div><b>Plan festgeschrieben</b><small>${f.am?'am '+dDE(f.am)+' · ':''}Giroausgleich ${eur(entryVal(blk.E[f.i],blk,sh))} ist fix. Abweichungen siehst du unten bei der Tendenz.</small></div><button type="button" class="btn sec sm" data-auto="${f.i}" title="Wieder automatisch rechnen lassen">↺ lösen</button></div>`
    :`<div class="fixb off">✏️ <div><b>Noch in Planung</b><small>Der Giroausgleich rechnet sich noch automatisch. Wenn alles passt und überwiesen ist: festschreiben.</small></div><button type="button" class="btn sm" data-fix="${f.i}">📌 Festschreiben</button></div>`;}
 function gehInfo(sh,blk){if(sh==='HAUS'||!blk)return'';useYm(month);const k=sh==='TILL'?'t_gehalt':'p_gehalt';const it=S.grund.items.find(i=>i.k===k);if(!it)return'';
@@ -945,14 +955,14 @@ $('#m-close').onclick=()=>{const P=S.plan[month];if(!P)return;const sh=mWho;
   const stripCm=b=>{if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g]=b[g].filter(e=>!e.cm);});};
   if(bzu(P,sh)){savePlan(month,d=>{if(d.zu){const am=d.zuAm;SH.forEach(x=>{if(x!==sh&&d[x]){d[x].zu=true;d[x].zuAm=d[x].zuAm||am;}});if(d.gold&&d.TILL&&sh!=='TILL')d.TILL.gold=d.TILL.gold||d.gold;delete d.zu;delete d.zuAm;delete d.gold;}
     const b=d[sh];if(b){delete b.zu;delete b.zuAm;delete b.gold;stripCm(b);}});return;}
-  const bt=$('#m-close');if(!bt.dataset.armed){bt.dataset.armed='1';bt.textContent=`${SHN[sh]} wirklich abschließen? Nochmal tippen`;bt.classList.add('danger');setTimeout(()=>{bt.dataset.armed='';bt.classList.remove('danger');renderMonthBar();},4000);return;}
+  const bt=$('#m-close');if(!bt.dataset.armed){bt.dataset.armed='1';bt.textContent=`${BLN[sh]} wirklich abschließen? Nochmal tippen`;bt.classList.add('danger');setTimeout(()=>{bt.dataset.armed='';bt.classList.remove('danger');renderMonthBar();},4000);return;}
   bt.dataset.armed='';bt.classList.remove('danger');
   const CST=[];useYm(month);{const b=P[sh];if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g].filter(e=>e._c).forEach(e=>CST.push([g,{l:e.l,v:r2(entryVal(e,b,sh)),fest:true,cm:1}]));});}
   savePlan(month,d=>{const b=d[sh]=d[sh]||{};CST.forEach(([g,e])=>{(b[g]=b[g]||[]).push(e);});
     Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;b[g].forEach(e=>{if(e.f){e.v=r2(isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));if(e.f==='=GIROAUSGLEICH')e.fix=TODAY;delete e.f;}});});
     b.zu=true;b.zuAm=TODAY;if(sh==='TILL')b.gold=gn('goldpreis');
     if(SH.every(x=>d[x]?.zu)){d.zu=true;d.zuAm=TODAY;d.gold=d.TILL?.gold||gn('goldpreis');}});
-  flash('ok',`${SHN[sh]} für ${ymName(month)} abgeschlossen`);};
+  flash('ok',`${BLN[sh]} für ${ymName(month)} abgeschlossen`);};
 
 /* ---------- Schnelleingabe ---------- */
 const BER={giro_aus:['C','Girokonto Ausgabe'],giro_ein:['E','Girokonto Eingang'],tg_raus:['I','vom Tagesgeld genommen'],tg_kauf:['I','vom Tagesgeld für einen Kauf (Tagesgeld → Giro → Ausgabe)'],tg_rein:['K','aufs Tagesgeld'],haus_ab:['G','Abbuchung Haushaltskonto'],haus_ein:['I','Einzahlung Haushaltskonto']};
@@ -1836,6 +1846,55 @@ async function migrate(){if(migRunning||!db)return;const M=S.einst?.mig||{};if(M
       nm.gstrate=1;}
     S.einst={...S.einst,mig:nm};await save('config/einstellungen',S.einst);render();
   }catch(err){console.error('Umstellung',err);}finally{migRunning=false;}}
+/* ---------- Hilfe (Einstellungen ganz unten) ---------- */
+/* HILFE: Bedienungsanleitung als Abschnitte. Wird als Klapp-Liste angezeigt und der KI als Wissen mitgegeben.
+   Bei neuen Funktionen hier ergänzen! */
+const HILFE=[
+['Der Monat Schritt für Schritt',`1. Planen (Reiter Monat): Till, Patrick und Haushaltskonto durchgehen, einmalige Ausgaben mit „+ Zeile“ ergänzen. Patricks Gehalt schwankt: oben im Feld „echtes Gehalt diesen Monat“ eintragen, sobald es da ist (gilt nur für diesen Monat).
+2. Überweisen und festschreiben: In der Übersicht steht, was vom Haushaltskonto aufs Girokonto überwiesen wird. Daueraufträge (Wasser, Grundsteuer) stehen ausgegraut dabei und zählen nicht zur Summe. Danach beim Giroausgleich jeder Person auf „📌 Festschreiben“ tippen (grüner Kasten „Plan festgeschrieben“). Lösen mit „↺ lösen“.
+3. Im Monat: Einkäufe bei Essen & Sonstiges abziehen oder per „Schnell eintragen“. Unten im Monat zeigt die Tendenz, ob mehr oder weniger ausgegeben wurde als geplant.
+4. Monatsende: rechts unten im Monat die echten Kontostände (Girokonto, Tagesgeld, ETF-Depotwert) eintragen. Die Differenz wird als „Abgleich Kontostand“ gebucht, die Tendenz wird zum Endergebnis.
+5. Abschließen: oben „Tills Giro abschließen“, „Patricks Giro abschließen“, „Haushaltskonto abschließen“ – jeder Block einzeln, zweimal tippen. Danach sind die Beträge fest (auch Goldpreis und eigene Posten). „Abschluss aufheben“ öffnet nur den gewählten Block wieder.
+6. Sichern: Einstellungen → Sicherung speichern und Excel erstellen. Die Übersicht erinnert, wenn die letzte Sicherung älter als 30 Tage ist.`],
+['Monat wechseln',`Pfeile ← → neben dem Monatsnamen oder auf den Monatsnamen tippen: Es öffnet sich ein Kalender (Jahr mit ‹ › wählen, dann Monat). „Heute“ springt zum aktuellen Monat. Monate ab 2033 sind „fortgeschrieben“ (Kopie des Vorjahresmonats), bis dort etwas geändert wird.`],
+['Symbole im Monat',`🔒 fester Betrag (zum Ändern antippen = aufschließen). ⚙️ kommt aus den Einstellungen (eigener Posten, Bescheid-Ausgleich) – dort ändern. P = aus der Pauschale bezahlt (Pauschale schrumpft entsprechend). 📌 Giroausgleich festschreiben. Ein Betrag, der im Monat von Hand geändert wird, gilt nur für diesen Monat.`],
+['Grundbeträge ändern (Einstellungen)',`Einstellungen → Spalten Till / Patrick / Gemeinsam. Betrag im Feld ändern → Dialog „Was passiert, wenn du das änderst?“ → „ab sofort“ (alle offenen Monate) oder „erst ab Monat …“. Monate davor bleiben beim alten Betrag, abgeschlossene Monate ändern sich nie. ⋯ neben einem Betrag: „endet nach“ Monat setzen (danach 0 €) oder „Entfernen“. „+ Neuer Posten“ ganz unten: Wer, Bezeichnung, Betrag, monatlich/jährlich, Ausgabe/Eingang, „geht an“ (z. B. Patrick an Till), ab/bis – erscheint automatisch im Monat mit ⚙️. „Haus, sonst.“ = Hälfte aller gemeinsamen Grundbeträge (Tilgung, Versicherungen, Wasser, Grundsteuer, Abfall, Internet, GEZ, Essen, Sonstiges); ändert sich einer davon, ändert sich „Haus, sonst.“ bei beiden automatisch. Die Übersicht zeigt, wann und warum sich „Haus, sonst.“ als Nächstes ändert.`],
+['Neuer Wasser- oder Grundsteuerbescheid',`Einstellungen → Gemeinsam → „📄 Bescheide & neue Beiträge“ → „+ Neuer Bescheid“ → Posten Wasser bzw. Grundsteuer, Jahr, Rate Februar und Rate für Mai/August/November je (steht im Bescheid unter „fällig am …“) → Vorschau prüfen → Übernehmen. Die App:
+- trägt die Raten in alle Monate ein (Februar = Februar-Rate, danach die normale Rate, auch in den Folgejahren),
+- vergleicht, was im Vorjahr für dieses Jahr angespart wurde, mit dem Gesamtbetrag des Bescheids (Februar + 3 × Rate). Differenz: Nachzahlung bzw. „übrig vom Ansparen“, je zur Hälfte im Februar bei Till und Patrick (eigene Zeilen) und beim Haushaltskonto,
+- spart ab Februar für das nächste Jahr den Gesamtbetrag des Bescheids an. Der Januar (noch alter Bescheid, meist schon abgeschlossen) wird verrechnet, damit bis Dezember genau der Gesamtbetrag zusammenkommt; ab Januar des Folgejahres Gesamtbetrag ÷ 12.
+Wasser und Grundsteuer werden immer im Vorjahr angespart (Januar–Dezember für die Raten des Folgejahres); der Balken im Ausblick („Wasser 2027“) wächst bis Dezember auf 100 %. Geht auch per Schnell eintragen: „Wasserbescheid 2027: Februar 297 €, danach 280 €“. Falsch eingetragen: Bescheid in der Liste mit × löschen und neu eintragen.`],
+['Neuer Beitrag Versicherung, Abfall, ADAC',`Einstellungen → Gemeinsam → „+ Neuer Bescheid“ → Posten (Wohngebäude-, Hausrat-, Haftpflichtversicherung, Abfallgebühr, ADAC) → neuer Jahresbetrag und Fälligkeitsmonat (vorausgefüllt) → Übernehmen. Die Zahlung im Fälligkeitsmonat wird angepasst. Reicht das in den 12 Monaten davor Angesparte nicht (oder ist etwas übrig), zahlen Till und Patrick im Fälligkeitsmonat je die Hälfte nach (bzw. weniger). Danach wird der neue Betrag ÷ 12 angespart. Diese Posten werden jeweils bis zur nächsten Zahlung angespart. Per Schnell eintragen: „Wohngebäudeversicherung kostet ab April 2027 2.000 €“.`],
+['Schnell eintragen (KI)',`In der Übersicht oben einfach schreiben, was sich geändert hat, z. B. „Essen 36,34“, „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“, „Till Tanken im Oktober 60 statt 115“, „Patrick hat im Oktober 2.610 € bekommen“, „Goldpreis 3.820“, „ING-Rate ab November 2030 auf 0“. Die KI schlägt die Einträge vor, du bestätigst. Ohne KI geht alles auch von Hand.`],
+['Essen & Sonstiges',`Budget Essen = Grundbetrag Essen, Sonstiges = „sonstiges: freie Verwendung“ minus 100 € fürs Kredit-Sparen bis April 2027. Einkauf: Betrag eintragen → „− Essen“ oder „− Sonstiges“. Ausgleichen: Betrag mit Minus (−2,89); mit „Wer“ wird er auch bei dessen Girokonto abgezogen.`],
+['Ferienwohnung',`Buchung einfügen (Text aus der Booking-/Airbnb-App kopieren) → Übernehmen → Felder prüfen → speichern. Tippen auf eine Buchung öffnet den Auszahlungs-Zettel: Brutto, Gebühren, Auszahlung, Gästebeitrag (nur Erwachsene × Nächte), Spartopf (30 % + 5 €), aufs Urlaubskonto. Beträge antippen = von Hand ändern (✎), Feld leeren = wieder automatisch. Bargeld vor Ort: „wie Auszahlung aufteilen“, „komplett aufs Urlaubskonto“ oder „nicht aufs Urlaubskonto“. Buchungen, deren Abreise mehr als 2 Wochen zurückliegt, sind nur noch lesbar. Die Übersicht zeigt die nächste Gutschrift mit Aufteilung.`],
+['Kredite',`Karten Sparda (blau), ING (orange), Bausparvertrag (gelb). Diagramm: Linien an/aus, Zeitraum. Sondertilgungen bei Sparda/ING hinzufügen; „Rate Sondertilgung Haus“ aus den Monatsplänen wird automatisch als Sondertilgung gerechnet. Die ING-Rate endet automatisch nach der letzten Rate (in fortgeschriebenen Jahren); vorher auf 0 setzen: Grundbetrag „Gemeinschaftskredit ING Rate“ → „erst ab“.`],
+['Ausblick, Vermögen, Strom',`Ausblick: Fragen & Was wäre wenn (KI rechnet durch, speichert nichts), Kontoverlauf bis 2040 (Linien, Werte, Zeitraum wählbar), dauerhafte Änderungen, Rücklagen-Balken, was demnächst ansteht. Vermögen: ETF und Gold, Verlauf mit Rückblick/Zukunft oder einzelnem Jahr. Strom: je Jahr Einzahlung, Verbrauch geplant, Verbrauch echt (rot = mehr, grün = weniger), Vergütung, Kontostand; graue Werte sind vom Vorjahr übernommen.`],
+['Goldpreis',`Wird täglich automatisch beim Öffnen der App aktualisiert (Stand steht unter dem Feld). Von Hand ändern geht auch; gilt überall außer in abgeschlossenen Monaten.`],
+['Sicherung, Excel, Updates',`Sicherung speichern: Datei mit allen Daten (ohne KI-Schlüssel). Wiederherstellen ersetzt alles. Excel erstellen: Finanzierungspläne als .xlsm bis 2040. Neue Version einspielen: nur die neue index.html bei GitHub hochladen (Add file → Upload files → Commit), config.js nie ersetzen. Vorher sichern. Die Versionsnummer steht oben in der App.`],
+['App schließen',`Oben rechts „✕ Schließen“. Wenn der Browser das Fenster nicht selbst schließen darf, wird die App verdeckt (nichts mehr lesbar); dann einfach wegwischen oder den Tab schließen. „Wieder öffnen“ zeigt sie wieder.`],
+['Wenn etwas nicht geht',`Rückgängig: unten rechts „↶ Rückgängig“ direkt nach einer Änderung. KI antwortet nicht: Einstellungen → KI-Zugang → Testen; bei „high demand“ weicht die App automatisch auf andere Gemini-Modelle aus, sonst später nochmal. Anmeldefehler „unauthorized-domain“: Firebase → Authentication → Autorisierte Domains. Patrick sieht nichts: seine Google-Adresse muss in den Firestore-Regeln stehen.`],
+];
+function hilfeHTML(){return `<div class="note" style="margin-top:0">Frag einfach, wie etwas in der App geht – die KI kennt die Anleitung unten und euren aktuellen Stand. Oder die Themen aufklappen.</div>
+  <div class="quick" style="margin-top:8px"><textarea id="hl-text" rows="2" placeholder="z. B. Wie trage ich den neuen Wasserbescheid ein?"></textarea><div class="qbtns"><button class="btn" id="hl-go">Fragen</button></div></div><div id="hl-out"></div>
+  <div class="hl-list">${HILFE.map(([t,x])=>`<details class="ggrp"><summary><span>${esc(t)}</span></summary><div class="hl-t">${esc(x).replace(/\n/g,'<br>')}</div></details>`).join('')}</div>`;}
+function hilfeKontext(){const it=k=>S.grund.items.find(i=>i.k===k);const bs=[...Object.keys(BSN).flatMap(k=>bsList(k).map(b=>`${BSN[k]} ${b.y}: Februar ${b.f} €, weitere Raten ${b.r} €`)),...Object.keys(BSJ).flatMap(k=>bjList(k).map(b=>`${BSJ[k][0]} ab ${b.ab}: ${b.j} €/Jahr`))];
+  return `Heute ${TODAY}, App-Version ${APPV.nr}. Angezeigter Monat ${month}. Wasser jährlich ${gn('h_wasser')} €, Wasser-Abschlag ${gn('h_wasser_ab')} €, Grundsteuer jährlich ${gn('h_grundst')} €. Eingetragene Bescheide: ${bs.join('; ')||'keine'}. Haus, sonst. je Person diesen Monat: ${(()=>{try{return hsOf(month)?.toFixed(2)}catch(_){return '?'}})()} €.`;}
+async function hilfeGo(){const q=$('#hl-text').value.trim();const out=$('#hl-out');if(!q)return;if(!sampleFn){out.innerHTML='<div class="note">Die KI ist hier nicht verfügbar. Schau in die Themen unten.</div>';return;}
+  $('#hl-go').disabled=true;out.innerHTML='<div class="note">Die KI schaut in die Anleitung …</div>';
+  const prompt=`Du bist die Hilfe im Haushaltsbuch von Till und Patrick (eine Web-App). Beantworte die Frage kurz, freundlich und in einfachem Deutsch, als Schritt-für-Schritt-Anleitung, wo es passt (Reiter → Bereich → Knopf). Nutze NUR die Anleitung unten und den aktuellen Stand; erfinde keine Funktionen. Wenn die Anleitung die Frage nicht beantwortet, sag das ehrlich und schlage vor, Claude mit dem Komplettpaket zu fragen. Keine Überschriften, höchstens kurze nummerierte Schritte. Antworte als reiner Text ohne Markdown-Sternchen.
+
+ANLEITUNG:
+${HILFE.map(([t,x])=>'## '+t+'\n'+x).join('\n\n')}
+
+AKTUELLER STAND:
+${hilfeKontext()}
+
+FRAGE: ${q}`;
+  try{const r=await sampleFn.json(prompt+'\n\nGib die Antwort als JSON zurück: {"antwort":"…"} (Zeilenumbrüche als \\n).',{modelTier:'default',cache:false});const t=String(r?.antwort||r?.text||'').trim()||'Keine Antwort erhalten.';out.innerHTML=`<div class="hl-a">${esc(t).replace(/\*\*/g,'').replace(/\n/g,'<br>')}</div>`;}
+  catch(e){out.innerHTML=`<div class="note">${esc(e?.message||'Das hat nicht geklappt. Bitte gleich nochmal versuchen.')}</div>`;}
+  $('#hl-go').disabled=false;}
+{const c=$('#hl-card');if(c){c.querySelector('.hl-body').innerHTML=hilfeHTML();c.addEventListener('click',e=>{if(e.target.id==='hl-go')hilfeGo();});c.addEventListener('keydown',e=>{if(e.target.id==='hl-text'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();hilfeGo();}});}}
 /* ---------- Tabs & Render ---------- */
 const ICO={heute:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
  monat:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -1874,6 +1933,8 @@ render();
   db.collection('budget').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('budget/'+d.id,m[d.id]);});S.budget=m;later();},onErr);
   db.collection('fewo').onSnapshot(q=>{const f={};q.docs.forEach(d=>{const x=d.data();remember('fewo/'+d.id,x);f[d.id]=(x?.b)||[];});S.fewo=f;later();},onErr);
 })();
+$('#app-close').onclick=()=>{document.activeElement?.blur();try{window.close();}catch(_){}setTimeout(()=>{$('#closed').hidden=false;document.body.classList.add('is-closed');},250);};
+$('#app-reopen').onclick=()=>{$('#closed').hidden=true;document.body.classList.remove('is-closed');};
 window.__goto=ym=>{month=ym;render();};window.__dbg=()=>({ING_END});
 })();
 document.addEventListener('input',e=>{const t=e.target;if(t.tagName!=='TEXTAREA')return;t.classList.add('grow');t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,window.innerHeight*0.5)+'px';});
