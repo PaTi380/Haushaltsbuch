@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.5 vom 28.09.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.7 vom 28.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -215,6 +215,14 @@ button.rv-li{text-decoration:underline dotted}
 .hist td{padding:8px 4px;border-top:1px solid var(--line)}
 .hist td:last-child{text-align:right;font-weight:600}
 .hist td:nth-child(2){color:var(--mute)}
+#bye{position:fixed;inset:0;z-index:70;display:grid;place-items:center;text-align:center;padding:24px;background:radial-gradient(ellipse at 50% 45%,#14221b 0,#070b09 75%);color:#cfd8d2;animation:byeIn .35s ease}
+#bye[hidden]{display:none}
+#bye p{margin:0 0 26px;font-size:15px;line-height:1.6;color:#9fb0a6}
+.bye-t{font-family:Figtree,system-ui,sans-serif;font-size:20px;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(100deg,#9c7a34 0,#f3dc9a 45%,#b8903f 55%,#f3dc9a 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+#byeBack{border:1px solid rgba(217,189,116,.55);background:none;color:#e6cf8e;border-radius:12px;padding:12px 22px;font-size:15px;letter-spacing:.06em}
+@keyframes byeIn{from{opacity:0}}
+.head-r .iconbtn{flex-shrink:0}
+@media (max-width:420px){.head-r{gap:5px}.head-r .iconbtn{width:34px;height:34px;font-size:15px}.who button{padding:6px 9px}h1{font-size:36px}}
 .toast{position:fixed;left:50%;width:max-content;bottom:170px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;display:none;align-items:center;gap:14px;z-index:30;max-width:calc(100% - 32px)}
 .toast.show{display:flex}
 .toast button{border:0;background:none;color:var(--bg);font-weight:700;text-decoration:underline;padding:0}
@@ -224,7 +232,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.5</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.7</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -241,6 +249,7 @@ button.rv-li{text-decoration:underline dotted}
         <button data-n="Patrick" aria-pressed="false">Patrick</button>
       </div>
       <button class="iconbtn" id="openSettings" aria-label="Einstellungen">⚙️</button>
+      <button class="iconbtn" id="closeApp" aria-label="App schließen">✕</button>
     </div>
   </header>
   <div class="status" id="status"><span class="dot"></span><span id="statusText">Verbinde …</span></div>
@@ -299,7 +308,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.5 vom 28.09.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.7 vom 28.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -307,6 +316,11 @@ button.rv-li{text-decoration:underline dotted}
 
 <div class="scrim" id="stScrim"><div class="sheet" role="dialog" aria-modal="true" id="stSheet"></div></div>
 
+<div id="bye" hidden><div>
+  <div class="bye-t">Bis zum nächsten Einkauf</div><div class="nb-rule" style="margin:14px auto"></div>
+  <p>Alles ist gespeichert.<br>Du kannst die App jetzt wegwischen.</p>
+  <button id="byeBack">Wieder öffnen</button>
+</div></div>
 <div class="toast" id="toast"><span id="toastText"></span><button id="toastUndo">Rückgängig</button></div>
 
 <script type="module">
@@ -316,7 +330,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.5 vom 28.09.2026";
+const APP_VERSION = "Version 1.7 vom 28.09.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -969,10 +983,43 @@ async function runScan(){
 function showScanError(err, canRetry){
   openSheet("#rvScrim");
   $("#rvSheet").innerHTML = `<h3>Das hat nicht geklappt</h3><p class="sub">${esc(err.message)}</p>${err.detail?`<p class="note">Technisch: ${esc(err.detail)}</p>`:""}
-    <div class="actions"><button class="btn-ghost" id="otherPic">Anderes Foto</button>${canRetry?`<button class="btn-main" id="retry">Nochmal versuchen</button>`:""}</div>
+    <div class="actions"><button class="btn-ghost" id="otherPic">Anderes Foto</button>${canRetry?`<button class="btn-main" id="retry">${err.quota ? "Trotzdem versuchen" : "Nochmal versuchen"}</button>`:""}</div>
+    ${err.quota ? `<p class="note" style="text-align:center">„Trotzdem versuchen“ fragt Gemini sofort wieder an – sinnvoll, wenn ihr gerade Guthaben aufgeladen habt.</p>` : ""}
     <div class="actions" style="margin-top:8px"><button class="btn-ghost" data-close>Schließen</button></div>`;
+  if (scanMode === "bon" && backend === "fb") {
+    $("#rvSheet .actions").insertAdjacentHTML("beforebegin", `<button class="choice" id="manualBon" style="margin-bottom:6px"><span>✍️</span><span><b>Nur Betrag eintragen</b><small>Summe von Hand buchen – geht ohne KI</small></span></button>`);
+    $("#manualBon").onclick = showManualBon;
+  }
   $("#otherPic").onclick = () => { closeSheets(); pick(lastSrc); };
-  if (canRetry) $("#retry").onclick = () => runScan();   // gleiches Foto, kein neues Auswählen
+  if (canRetry) $("#retry").onclick = () => {   // gleiches Foto, kein neues Auswählen
+    if (err.quota) try { localStorage.removeItem("einkauf-gemini-spent"); } catch(e) {}   // Sperre für heute aufheben
+    runScan();
+  };
+}
+// Ohne KI: Laden, Datum und Summe von Hand, Buchung wie beim Scan
+function showManualBon(){
+  review = {type:"manuell", rows:[], summe:null, monthNext:false};
+  $("#rvSheet").innerHTML = `<h3>Betrag eintragen</h3><p class="sub">Die Preise einzelner Artikel fehlen dann, der Einkauf wird aber im Haushaltsbuch gebucht.</p>
+    <div class="rv-head"><div><label for="rvLaden">Laden</label><input id="rvLaden" type="text" placeholder="z. B. REWE"></div><div><label for="rvDatum">Datum</label><input id="rvDatum" type="date" value="${today()}"></div></div>
+    <label for="mnSumme">Summe laut Bon</label><input id="mnSumme" type="text" inputmode="decimal" placeholder="0,00">
+    <div class="hb" id="rvHb"><label class="toggle"><input type="checkbox" id="rvBook" checked> <span id="rvBookTxt">Im Haushaltsbuch bei Essen abziehen</span></label>
+      <div class="seg" id="rvMonth" role="group" aria-label="Monat im Haushaltsbuch"></div><p class="note" id="rvBookNote"></p></div>
+    <div class="actions"><button class="btn-ghost" data-close>Abbrechen</button><button class="btn-main" id="mnSave">Buchen</button></div>`;
+  const upd = () => { review.summe = num($("#mnSumme").value); checkBooked(); };
+  $("#mnSumme").addEventListener("input", upd); $("#rvDatum").addEventListener("change", upd);
+  $("#rvMonth").addEventListener("click", e => { const b = e.target.closest("[data-next]"); if (!b) return; review.monthNext = b.dataset.next === "1"; checkBooked(); });
+  checkBooked(); $("#mnSumme").focus();
+  $("#mnSave").onclick = async () => {
+    const betrag = num($("#mnSumme").value), laden = $("#rvLaden").value.trim(), datum = $("#rvDatum").value || today();
+    if (!betrag || betrag <= 0) { showToast("Bitte die Summe eintragen"); return; }
+    $("#mnSave").disabled = true;
+    const bonId = await safe(store.receipt({store: laden, date: datum, total: Math.round(betrag*100)/100, items: [], by: S.me||"", createdAt: Date.now(), manuell: true, gebucht: $("#rvBook").checked}));
+    if ($("#rvBook").checked) {
+      try { await bookEssen({ym: bookingYm(), datum, betrag, notiz: laden ? `${laden} (Bon)` : "Einkauf (Bon)", wer: S.me, bonId: bonId||""}); }
+      catch(e) { showToast("Buchung im Haushaltsbuch fehlgeschlagen"); $("#mnSave").disabled = false; return; }
+    }
+    closeSheets(); showToast($("#rvBook").checked ? `${eur(betrag)} bei Essen abgezogen` : "Einkauf gespeichert");
+  };
 }
 // Foto verkleinern, PDF unverändert weitergeben
 async function prepareFile(file){
@@ -1019,7 +1066,13 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
   const say = t => status && status(t);
   let text = null;
   if (c.anbieter === "gemini") {
-    let models = [...new Set([c.model, ...GEMINI_FALLBACK].filter(Boolean))];
+    // Modelle, deren Tageskontingent heute schon aufgebraucht ist, gar nicht erst anfragen – spart Kontingent
+    const dayKey = new Date().toLocaleDateString("sv-SE", {timeZone:"America/Los_Angeles"});   // Google setzt um Mitternacht Pazifikzeit zurück
+    let spent = {}; try { spent = JSON.parse(localStorage.getItem("einkauf-gemini-spent")||"{}"); } catch(e) {}
+    const markSpent = m => { spent[m] = dayKey; try { localStorage.setItem("einkauf-gemini-spent", JSON.stringify(spent)); } catch(e) {} };
+    const all = [...new Set([c.model, ...GEMINI_FALLBACK].filter(Boolean))];
+    let models = all.filter(m => spent[m] !== dayKey);
+    let waitHint = 0, dailyHit = false;
     const waits = [0, 5000, 12000];            // 3 Runden: sofort, nach 5 s, nach 12 s
     // Stufe 0: kurzes Nachdenken + festes Antwortschema (schnell), 1: nur Schema, 2: einfach
     let level = +(localStorage.getItem("einkauf-gemini-level") || 0) || 0;
@@ -1027,8 +1080,10 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
       lv < 2 && schema ? {responseSchema: schema} : {}, lv < 1 ? {thinkingConfig:{thinkingLevel:"minimal"}} : {});
     let last = "";
     for (let round = 0; round < waits.length && text == null; round++) {
+      if (!models.length) break;
       if (waits[round]) {
-        for (let s = waits[round]/1000; s > 0; s--) { say(`Gemini ist ausgelastet – neuer Versuch in ${s} s (${round+1}/${waits.length})`); await sleep(1000, signal); }
+        const w = Math.max(waits[round], Math.min(waitHint, 60000)); waitHint = 0;
+        for (let s = Math.ceil(w/1000); s > 0; s--) { say(`Gemini ist ausgelastet – neuer Versuch in ${s} s (${round+1}/${waits.length})`); await sleep(1000, signal); }
       }
       for (let i = 0; i < models.length; i++) {
         const m = models[i];
@@ -1054,13 +1109,23 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
         if (r.status === 404 || (r.status === 400 && /not (found|supported)|unsupported/i.test(msg))) { models.splice(i, 1); i--; continue; } // Modell gibt es nicht oder kann keine Bilder
         if (r.status === 400 && /size|too large|payload/i.test(msg)) throw kiError("Die Datei ist zu groß für Gemini. Bitte ein kleineres Foto oder eine kürzere PDF verwenden.", last);
         if (r.status === 400) throw kiError("Gemini konnte die Datei nicht verarbeiten.", last);
-        // 429, 500, 503 usw.: vorübergehend – nächstes Modell bzw. nächste Runde
+        if (r.status === 429) {
+          // Tageslimit oder Minutenlimit? Google schickt das in den Details mit
+          const det = JSON.stringify(data?.error?.details || []);
+          const retry = parseFloat((det.match(/"retryDelay":"([\d.]+)s"/) || [])[1] || "0");
+          if (/PerDay|per day|daily/i.test(det + msg) || (!retry && /quota/i.test(msg))) { markSpent(m); dailyHit = true; models.splice(i, 1); i--; continue; }
+          waitHint = Math.max(waitHint, retry * 1000);
+        }
+        // 500, 503 oder Minutenlimit: vorübergehend – nächstes Modell bzw. nächste Runde
       }
       if (!models.length) break;
     }
     if (text == null) {
-      const quota = /429/.test(last) && /quota|exhaust|per day|daily/i.test(last);
-      throw kiError(quota ? "Das kostenlose Tageskontingent von Gemini ist aufgebraucht. Morgen geht es wieder." : "Gemini ist gerade nicht erreichbar oder ausgelastet. Tippe gleich auf „Nochmal versuchen“ – das Foto bleibt gespeichert.", last);
+      if (!models.length && (dailyHit || all.every(m => spent[m] === dayKey))) {
+        const e = kiError("Das kostenlose Tageskontingent von Gemini ist für heute aufgebraucht (bei allen Modellen). Ab 9 Uhr morgens geht es wieder – den Betrag kannst du aber schon jetzt eintragen.", last || "alle Modelle heute schon ausgeschöpft");
+        e.quota = true; throw e;
+      }
+      throw kiError("Gemini ist gerade nicht erreichbar oder ausgelastet. Tippe gleich auf „Nochmal versuchen“ – das Foto bleibt gespeichert.", last);
     }
   } else {
     const r = await fetchTimed("https://api.anthropic.com/v1/messages", {
@@ -1334,6 +1399,13 @@ $("#chips").addEventListener("click", e => {
   if (suggest) { $("#addInput").value = ""; renderChips(); $("#addInput").focus(); }
 });
 $("#addInput").addEventListener("input", renderChips);
+// App schließen: Browser erlauben das nur manchmal – sonst ein ruhiger Abschluss-Bildschirm
+$("#closeApp").addEventListener("click", () => {
+  closeSheets();
+  try { window.close(); } catch(e) {}
+  setTimeout(() => { if (!window.closed) $("#bye").hidden = false; }, 250);
+});
+$("#byeBack").addEventListener("click", () => { $("#bye").hidden = true; });
 function drawWho(){ document.querySelectorAll(".who button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.n===S.me))); }
 document.querySelector(".who").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.me = b.dataset.n; saveS(); drawWho(); });
 drawWho();
