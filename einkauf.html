@@ -148,6 +148,9 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .hb .toggle{margin-top:0;font-weight:600}
 .hb .note{margin:6px 0 0 30px}
 .hb .warn{color:var(--warn)}
+.seg{display:flex;background:var(--soft);border-radius:12px;padding:3px;margin:10px 0 0 30px}
+.seg button{flex:1;border:0;background:none;border-radius:9px;padding:8px 6px;font-size:14px;font-weight:600;color:var(--mute)}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .toast{position:fixed;left:50%;bottom:170px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;display:none;align-items:center;gap:14px;z-index:30;max-width:calc(100% - 32px)}
 .toast.show{display:flex}
 .toast button{border:0;background:none;color:var(--bg);font-weight:700;text-decoration:underline;padding:0}
@@ -352,8 +355,8 @@ async function budgetMonth(ym){
 function findBooked(B, datum, betrag){
   return (B?.e||[]).find(x => x.d === datum && Math.abs((x.b||0) - betrag) < 0.005) || null;
 }
-async function bookEssen({datum, betrag, notiz, wer, bonId}){
-  const ym = datum.slice(0,7), ref = fs.doc("budget/"+ym);
+async function bookEssen({ym, datum, betrag, notiz, wer, bonId}){
+  ym = ym || datum.slice(0,7); const ref = fs.doc("budget/"+ym);
   const entry = clean({id: uid(), b: Math.round(betrag*100)/100, n: notiz, w: wer || "", d: datum, bon: bonId});
   await fs.runTransaction(async tx => {
     const s = await tx.get(ref);
@@ -649,12 +652,15 @@ function showBonReview(res){
     <label class="toggle"><input type="checkbox" id="rvTick" checked> Gekaufte Artikel auf der Liste abhaken</label>
     <div class="hb" id="rvHb"${backend==="fb"?"":" hidden"}>
       <label class="toggle"><input type="checkbox" id="rvBook" checked> <span id="rvBookTxt">Im Haushaltsbuch bei Essen abziehen</span></label>
+      <div class="seg" id="rvMonth" role="group" aria-label="Monat im Haushaltsbuch"></div>
       <p class="note" id="rvBookNote"></p>
     </div>
     <div class="actions"><button class="btn-ghost" data-close>Verwerfen</button><button class="btn-main" id="rvSave">Preise speichern</button></div>`;
   bindReview(); updateBonSum();
   $("#rvSave").onclick = saveBon;
+  review.monthNext = false;
   $("#rvDatum").addEventListener("change", checkBooked);
+  $("#rvMonth").addEventListener("click", e => { const b = e.target.closest("[data-next]"); if (!b) return; review.monthNext = b.dataset.next === "1"; checkBooked(); });
   checkBooked();
 }
 function bindReview(){
@@ -668,17 +674,26 @@ function bindReview(){
   });
 }
 const bonTotal = () => review.summe ?? review.rows.filter(r=>r.on && r.price!=null).reduce((a,r)=>a + r.price*r.menge, 0);
+const nextYm = ym => { let [y,m] = ym.split("-").map(Number); m++; if (m>12){ m=1; y++; } return `${y}-${String(m).padStart(2,"0")}`; };
+const ymLabel = ym => new Date(ym+"-15T12:00").toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+const bookingYm = () => { const ym = ($("#rvDatum").value || today()).slice(0,7); return review.monthNext ? nextYm(ym) : ym; };
 async function checkBooked(){
   if (backend!=="fb" || !$("#rvHb")) return;
-  const datum = $("#rvDatum").value || today(), betrag = bonTotal();
+  const datum = $("#rvDatum").value || today(), betrag = bonTotal(), ym = datum.slice(0,7), nx = nextYm(ym);
   $("#rvBookTxt").textContent = `${eur(betrag)} im Haushaltsbuch bei Essen abziehen`;
-  $("#rvBookNote").className = "note"; $("#rvBookNote").textContent = `Wird im ${new Date(datum+"T12:00").toLocaleDateString("de-DE",{month:"long",year:"numeric"})} gebucht.`;
+  $("#rvMonth").innerHTML = `<button type="button" data-next="0" aria-pressed="${!review.monthNext}">${ymLabel(ym)}</button><button type="button" data-next="1" aria-pressed="${review.monthNext}">${ymLabel(nx)}</button>`;
+  $("#rvBookNote").className = "note";
+  $("#rvBookNote").textContent = review.monthNext ? `Wird schon vom Budget für ${ymLabel(nx)} abgezogen.` : "Wird im Monat des Einkaufs abgezogen.";
   try {
-    const hit = findBooked(await budgetMonth(datum.slice(0,7)), datum, betrag);
-    if (hit) {
-      $("#rvBook").checked = false;
-      $("#rvBookNote").className = "note warn";
-      $("#rvBookNote").textContent = `Am ${fmtDate(datum)} ist schon ${eur(hit.b)} bei Essen eingetragen${hit.n?` („${hit.n}“)`:""}. Nur ankreuzen, wenn das ein anderer Einkauf war.`;
+    // In beiden Monaten nachsehen, damit auch vorgezogene Buchungen erkannt werden
+    for (const m of [ym, nx]) {
+      const hit = findBooked(await budgetMonth(m), datum, betrag);
+      if (hit) {
+        $("#rvBook").checked = false;
+        $("#rvBookNote").className = "note warn";
+        $("#rvBookNote").textContent = `Im ${ymLabel(m)} steht vom ${fmtDate(datum)} schon ${eur(hit.b)} bei Essen${hit.n?` („${hit.n}“)`:""}. Nur ankreuzen, wenn das ein anderer Einkauf war.`;
+        break;
+      }
     }
   } catch(e) {}
 }
@@ -709,13 +724,13 @@ async function saveBon(){
   const book = backend==="fb" && $("#rvBook")?.checked && betrag > 0;
   const bonId = await safe(store.receipt({store: laden, date: datum, total: betrag,
     items: rows.map(r => ({name: r.name, qty: r.menge, price: r.price})), by: S.me||"", createdAt: now, gebucht: !!book}));
-  let booked = false;
+  let booked = false; const bookedYm = review.monthNext ? nextYm(datum.slice(0,7)) : datum.slice(0,7);
   if (book) {
-    try { await bookEssen({datum, betrag, notiz: laden ? `${laden} (Bon)` : "Einkauf (Bon)", wer: S.me, bonId: bonId||""}); booked = true; }
+    try { await bookEssen({ym: bookingYm(), datum, betrag, notiz: laden ? `${laden} (Bon)` : "Einkauf (Bon)", wer: S.me, bonId: bonId||""}); booked = true; }
     catch(e) { closeSheets(); showToast(e.code==="permission-denied" ? "Preise gespeichert, aber keine Berechtigung fürs Haushaltsbuch" : "Preise gespeichert, Buchung im Haushaltsbuch fehlgeschlagen"); return; }
   }
   closeSheets();
-  showToast(booked ? `${eur(betrag)} bei Essen abgezogen, ${rows.length} Preise gespeichert` : `${rows.length} Preise gespeichert${ticked?`, ${ticked} abgehakt`:""}`);
+  showToast(booked ? `${eur(betrag)} bei Essen (${ymLabel(bookedYm)}) abgezogen, ${rows.length} ${rows.length===1?"Preis":"Preise"} gespeichert` : `${rows.length} ${rows.length===1?"Preis":"Preise"} gespeichert${ticked?`, ${ticked} abgehakt`:""}`);
 }
 
 function showRezeptReview(res){
