@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.1 vom 28.09.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.5 vom 28.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -92,6 +92,7 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .chips{display:flex;gap:8px;overflow-x:auto;padding:0 2px 10px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip b{font-weight:700}
+.chip-p{color:var(--mute);font-weight:500;margin-left:2px}
 .chips.suggest .chip{border-color:var(--leaf)}
 .chip{flex-shrink:0;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 13px;font-size:14px;font-weight:500;white-space:nowrap}
 .addrow{display:flex;gap:8px}
@@ -137,6 +138,8 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .sheet .rv-row input.rv-name{flex:1;width:auto;min-width:0;min-height:40px!important;padding:6px 10px!important;font-size:15px!important}
 .sheet .rv-row input.rv-small{width:86px;flex-shrink:0;min-height:40px!important;padding:6px 8px!important;font-size:15px!important;text-align:right}
 .rv-raw{font-size:11px;color:var(--mute);display:block;padding-left:30px;margin-top:-6px;margin-bottom:4px}
+.rv-li{display:inline-block;margin-left:6px;color:var(--leaf);font-weight:600;border:0;background:none;padding:2px 0;font-size:inherit}
+button.rv-li{text-decoration:underline dotted}
 .rv-sum{display:flex;justify-content:space-between;font-weight:600;margin-top:10px;font-variant-numeric:tabular-nums}
 .rv-sum.off{color:var(--warn)}
 .toggle{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:15px}
@@ -192,7 +195,10 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .st-tools{display:flex;gap:8px;margin-bottom:10px}
 .st-tools input{flex:1;min-width:0;height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);padding:0 14px;font-size:16px}
 .st-tools select{height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);padding:0 10px;font-size:14px}
-.st-row{display:flex;align-items:center;gap:10px;width:100%;min-height:62px;border:0;border-top:1px solid var(--line);background:none;text-align:left;padding:8px 14px}
+.st-row{display:flex;align-items:center;border-top:1px solid var(--line)}
+.st-open{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:62px;border:0;background:none;text-align:left;padding:8px 6px 8px 14px}
+.st-add{flex-shrink:0;width:40px;height:40px;margin-right:10px;border-radius:50%;border:1.5px solid var(--leaf);background:none;color:var(--leaf);font-size:22px;font-weight:600;line-height:1;display:grid;place-items:center}
+.st-add.on{background:var(--leaf);color:var(--leaf-ink);font-size:17px}
 .st-row:first-child{border-top:0}
 .st-row .txt{flex:1;min-width:0}
 .st-row .name{font-size:16px;font-weight:500;display:block;overflow-wrap:anywhere}
@@ -209,7 +215,7 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .hist td{padding:8px 4px;border-top:1px solid var(--line)}
 .hist td:last-child{text-align:right;font-weight:600}
 .hist td:nth-child(2){color:var(--mute)}
-.toast{position:fixed;left:50%;bottom:170px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;display:none;align-items:center;gap:14px;z-index:30;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;width:max-content;bottom:170px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;display:none;align-items:center;gap:14px;z-index:30;max-width:calc(100% - 32px)}
 .toast.show{display:flex}
 .toast button{border:0;background:none;color:var(--bg);font-weight:700;text-decoration:underline;padding:0}
 </style>
@@ -218,7 +224,7 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.1</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.5</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -292,7 +298,8 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
   <p class="note">Die Einkaufsliste nutzt dieselbe Anmeldung, denselben KI-Zugang und dieselbe Datenbank wie das Haushaltsbuch. Den KI-Schlüssel ändert ihr im Haushaltsbuch unter Einstellungen → KI-Zugang.</p>
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.1 vom 28.09.2026</p>
+  <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.5 vom 28.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -309,8 +316,8 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.1 vom 28.09.2026";
-const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons"};
+const APP_VERSION = "Version 1.5 vom 28.09.2026";
+const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
 const CATS = [
@@ -328,6 +335,8 @@ const CATS = [
 
 // Kleine Symbole: erst passendes Produkt, sonst Symbol des Bereichs
 const ICONS = [
+  ["tortellini","🥟"],["ravioli","🥟"],["gnocchi","🥟"],["maultasche","🥟"],
+  ["rucola","🥬"],["lollo","🥬"],["salatherz","🥬"],["babyspinat","🥬"],["schalotte","🧅"],["cherrytomate","🍅"],["drilling","🥔"],["elstar","🍎"],["braeburn","🍎"],["pink lady","🍎"],["granny","🍏"],["penne","🍝"],["fusilli","🍝"],["farfalle","🍝"],["tagliatelle","🍝"],["makkaroni","🍝"],["lasagne","🍝"],["gouda","🧀"],["emmentaler","🧀"],["camembert","🧀"],["cheddar","🧀"],["ciabatta","🥖"],["skyr","🥣"],["mortadella","🍖"],["lyoner","🍖"],["seelachs","🐟"],["forelle","🐟"],["kaffeekapsel","☕"],["kaffeepad","☕"],
   ["äpfel","🍎"],["apfel","🍎"],["banane","🍌"],["birne","🍐"],["orange","🍊"],["mandarine","🍊"],["zitrone","🍋"],["limette","🍋"],["traube","🍇"],["erdbeer","🍓"],["heidelbeer","🫐"],["blaubeer","🫐"],["beere","🫐"],["kirsch","🍒"],["pfirsich","🍑"],["kiwi","🥝"],["mango","🥭"],["ananas","🍍"],["melone","🍉"],["kokos","🥥"],
   ["tomatenmark","🥫"],["tomate","🍅"],["gurke","🥒"],["paprika","🫑"],["chili","🌶️"],["salat","🥬"],["kohl","🥬"],["spinat","🥬"],["brokkoli","🥦"],["zwiebel","🧅"],["knoblauch","🧄"],["süßkartoffel","🍠"],["kartoffel","🥔"],["pommes","🍟"],["karotte","🥕"],["möhre","🥕"],["mais","🌽"],["aubergine","🍆"],["pilz","🍄"],["champignon","🍄"],["avocado","🥑"],["ingwer","🫚"],["kräuter","🌿"],["petersilie","🌿"],["basilikum","🌿"],["erbsen","🫛"],["bohnen","🫘"],["linsen","🫘"],["kichererbsen","🫘"],
   ["brötchen","🥖"],["baguette","🥖"],["croissant","🥐"],["brezel","🥨"],["laugen","🥨"],["toast","🍞"],["brot","🍞"],["kuchen","🍰"],["torte","🎂"],["waffel","🧇"],["pfannkuchen","🥞"],
@@ -384,6 +393,7 @@ const clean = d => JSON.parse(JSON.stringify(d ?? null));
 
 // ---------- Zustand ----------
 let bons = [];      // eingelesene Kassenbons {store,date,total,items:[{name,qty,price}]}
+let learned = {};   // Listeneintrag → was tatsächlich gekauft wurde {list, bought:{key:{name,count,last}}}
 let items = [];     // {id,name,qty,cat,done,by,createdAt,doneAt,recipe}
 let products = {};  // key → {name,cat,count,last,price,priceDate,store}
 let backend = "local";
@@ -391,8 +401,8 @@ let fs = null, auth = null, user = null;
 
 // ---------- Speicher: Firebase oder Demo auf diesem Gerät ----------
 const LKEY = "einkauf-demo-v1";
-function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; bons = d.bons||[]; } catch(e){} }
-function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products, bons})); } catch(e){} }
+function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; bons = d.bons||[]; learned = d.learned||{}; } catch(e){} }
+function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products, bons, learned})); } catch(e){} }
 
 const store = {
   async add(data){
@@ -412,6 +422,21 @@ const store = {
     const rec = {...(products[k]||{}), name, ...patch};
     if (backend==="fb") return fs.doc(`${COL.prod}/${k}`).set(clean(rec));
     products[k] = rec; saveLocal(); render();
+  },
+  // Merkt sich: auf der Liste stand „listName“, gekauft wurde „boughtName“
+  async learn(listName, boughtName){
+    const k = keyOf(listName), b = keyOf(boughtName); if (!k || !b || k === b) return;
+    const rec = JSON.parse(JSON.stringify(learned[k] || {list: listName, bought: {}}));
+    rec.list = listName; const e = rec.bought[b] || {name: boughtName, count: 0};
+    e.name = boughtName; e.count++; e.last = Date.now(); rec.bought[b] = e;
+    if (backend==="fb") return fs.doc(`${COL.zuord}/${k}`).set(clean(rec));
+    learned[k] = rec; saveLocal();
+  },
+  async unlearn(k, b){
+    const rec = JSON.parse(JSON.stringify(learned[k] || null)); if (!rec) return;
+    delete rec.bought[b];
+    if (backend==="fb") return Object.keys(rec.bought).length ? fs.doc(`${COL.zuord}/${k}`).set(clean(rec)) : fs.doc(`${COL.zuord}/${k}`).delete();
+    if (Object.keys(rec.bought).length) learned[k] = rec; else delete learned[k]; saveLocal();
   },
   async receipt(data){
     if (backend==="fb") { const ref = fs.collection(COL.bons).doc(); await ref.set(clean(data)); return ref.id; }
@@ -476,6 +501,7 @@ function connect(){
     subs.push(fs.collection(COL.items).onSnapshot(q => { items = q.docs.map(d => ({id:d.id, ...d.data()})); render(); }, err));
     subs.push(fs.collection(COL.prod).onSnapshot(q => { products = Object.fromEntries(q.docs.map(d => [d.id, d.data()])); render(); }, () => {}));
     subs.push(fs.collection(COL.bons).onSnapshot(q => { bons = q.docs.map(d => ({id:d.id, ...d.data()})); if (tab==="stat") renderStats(); }, () => {}));
+  subs.push(fs.collection(COL.zuord).onSnapshot(q => { learned = Object.fromEntries(q.docs.map(d => [d.id, d.data()])); render(); }, () => {}));
   });
 }
 
@@ -494,7 +520,8 @@ async function addItem(raw, opts={}){
     return false;
   }
   const p = products[keyOf(name)];
-  const cat = opts.cat || p?.cat || guessCat(name);
+  const usualCat = learnedFor(name).map(e => products[keyOf(e.name)]?.cat).find(Boolean);
+  const cat = opts.cat || (p?.cat && p.cat !== "sonst" ? p.cat : null) || usualCat || p?.cat || guessCat(name);
   await safe(store.add({name, qty, cat, done:false, by:S.me||"", createdAt:Date.now(), doneAt:0, recipe: opts.recipe||""}));
   safe(store.product(name, {cat, count:(p?.count||0)+1, last:Date.now()}));
   return true;
@@ -595,12 +622,13 @@ function renderStats(){
       </select>
     </div>
     <div class="list">${list.length ? list.map(h => `
-      <button class="st-row" data-k="${esc(h.key)}">
+      <div class="st-row"><button class="st-open" data-k="${esc(h.key)}" aria-label="${esc(h.name)}: Preisverlauf">
         <span class="ico" aria-hidden="true">${iconFor(h.name, h.cat)}</span>
         <span class="txt"><span class="name">${esc(h.name)}</span><span class="meta">${[h.last.s, fmtDate(h.last.d)].filter(Boolean).map(esc).join(", ")}${h.pts.length>1?`, ${h.pts.length} Preise`:""}</span></span>
         ${h.pts.length > 1 ? chartSvg(h.pts, {w:64, h:26}) : ""}
-        <span class="st-p">${eur(h.last.p)}${h.pts.length>1 ? trendHtml(h.diff) : ""}</span>
-      </button>`).join("") : `<div class="empty" style="padding:24px">Kein Artikel gefunden</div>`}</div>
+        <span class="st-p">${eur(h.last.p)}${h.pts.length>1 ? trendHtml(h.diff) : ""}</span></button>
+        ${isOnList(h.name) ? `<button class="st-add on" data-add="${esc(h.key)}" aria-label="${esc(h.name)} steht auf der Liste">✓</button>` : `<button class="st-add" data-add="${esc(h.key)}" aria-label="${esc(h.name)} auf die Liste">+</button>`}
+      </div>`).join("") : `<div class="empty" style="padding:24px">Kein Artikel gefunden</div>`}</div>
     <p class="st-foot">Nur Einkäufe mit eingelesenem Bon fließen ein. Bei loser Ware nach Gewicht (z. B. Äpfel) hängt der Preis von der Menge ab.</p>`;
 }
 function openHistory(k){
@@ -612,7 +640,7 @@ function openHistory(k){
     ${h.pts.length > 1 ? chartSvg(h.pts, {w:340, h:170, big:true, stores}) : ""}
     ${stores.length > 1 || stores[0] !== "–" ? `<div class="legend">${stores.map(s => `<span><i style="background:${storeColor(s, stores)}"></i>${esc(s)}</span>`).join("")}</div>` : ""}
     <table class="hist"><tbody>${[...h.pts].reverse().map(p => `<tr><td>${p.d ? new Date(p.d+"T12:00").toLocaleDateString("de-DE") : "–"}</td><td>${esc(p.s || "")}</td><td>${eur(p.p)}</td></tr>`).join("")}</tbody></table>
-    <div class="actions"><button class="btn-main" data-close>Schließen</button></div>`;
+    <div class="actions"><button class="btn-ghost" data-close>Schließen</button>${isOnList(h.name) ? `<button class="btn-main" disabled>Steht auf der Liste ✓</button>` : `<button class="btn-main" data-add="${esc(h.key)}">Auf die Liste</button>`}</div>`;
   openSheet("#stScrim");
 }
 function setTab(t){
@@ -628,13 +656,31 @@ $("#stat").addEventListener("input", e => {
   if (e.target.id === "stSearch") { stQuery = e.target.value; const pos = e.target.selectionStart; renderStats(); const i = $("#stSearch"); i.focus(); i.setSelectionRange(pos, pos); }
 });
 $("#stat").addEventListener("change", e => { if (e.target.id === "stSortSel") { stSort = e.target.value; renderStats(); } });
-$("#stat").addEventListener("click", e => { const r = e.target.closest(".st-row"); if (r) openHistory(r.dataset.k); });
+const isOnList = name => items.some(i => !i.done && fold(i.name) === fold(name));
+// Aus der Preisliste mit einem Tipp auf die Einkaufsliste
+async function addFromStats(k){
+  const h = histories().find(x => x.key === k); if (!h) return;
+  if (isOnList(h.name)) { showToast(`${h.name} steht schon auf der Liste`); return; }
+  await addItem("", {name: h.name, qty: "", cat: products[k]?.cat, quiet: true});
+  if (tab === "stat") renderStats();
+  showToast(`${h.name} ist auf der Liste`, async () => {
+    const it = items.find(i => !i.done && fold(i.name) === fold(h.name));
+    if (it) await safe(store.remove(it.id));
+    if (tab === "stat") renderStats();
+  });
+}
+$("#stat").addEventListener("click", e => {
+  const a = e.target.closest("[data-add]"); if (a) { addFromStats(a.dataset.add); return; }
+  const r = e.target.closest(".st-open"); if (r) openHistory(r.dataset.k);
+});
+$("#stSheet").addEventListener("click", e => { const a = e.target.closest("[data-add]"); if (a) { closeSheets(); addFromStats(a.dataset.add); } });
 
 function render(){
+  if (tab === "stat" && document.activeElement?.id !== "stSearch") renderStats();   // ✓-Markierungen aktuell halten
   const open = items.filter(i=>!i.done);
   const done = items.filter(i=>i.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
   let sum = 0, priced = 0;
-  for (const i of open) { const p = products[keyOf(i.name)]; if (p?.price) { sum += p.price * multiplier(i.qty); priced++; } }
+  for (const i of open) { const pr = priceFor(i.name); if (pr) { sum += pr.p * multiplier(i.qty); priced++; } }
   let c = open.length ? `<b>${open.length}</b> ${open.length===1?"Artikel fehlt":"Artikel fehlen"}` : (done.length ? "Alles im Wagen" : "Liste ist leer");
   if (priced) c += `<br><span style="font-size:15px">rund ${eur(sum)}${priced<open.length?` (${priced} von ${open.length} mit Preis)`:""}</span>`;
   $("#count").innerHTML = c;
@@ -651,8 +697,8 @@ function render(){
   renderChips();
 }
 function row(i){
-  const p = products[keyOf(i.name)];
-  const price = p?.price ? `<span class="price">${eur(p.price * multiplier(i.qty))}${multiplier(i.qty)>1?`<small>${eur(p.price)} / Stk.</small>`:""}</span>` : "";
+  const pr = priceFor(i.name), mul = multiplier(i.qty);
+  const price = pr ? `<span class="price">${pr.est?"ca. ":""}${eur(pr.p * mul)}${pr.est ? `<small>geschätzt</small>` : mul>1 ? `<small>${eur(pr.p)} / Stk.</small>` : ""}</span>` : "";
   const meta = [i.recipe ? `für ${esc(i.recipe)}` : "", i.by ? `<span class="${esc(i.by)}">${esc(i.by)}</span>` : ""].filter(Boolean).join(", ");
   return `<div class="item${i.done?" done":""}" data-id="${esc(i.id)}">
     <button class="check" data-act="toggle" aria-label="${esc(i.name)} ${i.done?"wieder auf die Liste":"abhaken"}"><span class="box"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--leaf-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></span></button>
@@ -672,6 +718,85 @@ const BASIS = ("Äpfel,Bananen,Birnen,Orangen,Mandarinen,Zitronen,Limetten,Traub
  "Mineralwasser,Sprudel,Stilles Wasser,Apfelsaft,Orangensaft,Apfelschorle,Cola,Limonade,Bier,Weißwein,Rotwein,Sekt,"+
  "Klopapier,Küchenrolle,Taschentücher,Spülmittel,Spülmaschinentabs,Waschmittel,Weichspüler,Müllbeutel,Zahnpasta,Zahnbürste,Shampoo,Duschgel,Seife,Deo,Alufolie,Frischhaltefolie,Backpapier,Schwämme,Allzweckreiniger,Batterien,Kerzen,Katzenfutter,Hundefutter").split(",");
 const fold = s => s.toLowerCase().replace(/ä/g,"a").replace(/ö/g,"o").replace(/ü/g,"u").replace(/ß/g,"ss");
+// Oberbegriffe und ihre Sorten: „Salat“ → Rucola, Feldsalat, Eisbergsalat …
+const GROUPS = [
+  {n:"Salat", al:["salate"], stem:"salat", ex:["kartoffel","nudel","geflügel","thunfisch","wurst","fleisch","dressing"], m:["Rucola","Eisbergsalat","Feldsalat","Kopfsalat","Romanasalat","Lollo Rosso","Salatherzen","Babyspinat"]},
+  {n:"Käse", al:["kaese"], stem:"käse", ex:["kuchen","sahne"], m:["Gouda","Emmentaler","Mozzarella","Parmesan","Feta","Camembert","Butterkäse","Bergkäse","Cheddar","Reibekäse","Frischkäse"]},
+  {n:"Nudeln", al:["nudel","pasta"], stem:"nudel", ex:["salat","suppe"], m:["Spaghetti","Penne","Fusilli","Farfalle","Tagliatelle","Makkaroni","Lasagneplatten"]},
+  {n:"Brot", al:[], stem:"brot", ex:["brötchen","brösel"], m:["Vollkornbrot","Toastbrot","Baguette","Ciabatta","Mischbrot","Roggenbrot","Dinkelbrot","Knäckebrot"]},
+  {n:"Brötchen", al:["semmeln","broetchen"], stem:"brötchen", ex:[], m:["Laugenbrötchen","Vollkornbrötchen","Kaiserbrötchen","Mehrkornbrötchen","Aufbackbrötchen"]},
+  {n:"Joghurt", al:["jogurt"], stem:"joghurt", ex:[], m:["Naturjoghurt","Fruchtjoghurt","Griechischer Joghurt","Skyr"]},
+  {n:"Aufschnitt", al:["wurst"], stem:"aufschnitt", ex:[], m:["Salami","Schinken","Kochschinken","Leberwurst","Mortadella","Lyoner","Geflügelwurst"]},
+  {n:"Fleisch", al:[], stem:"fleisch", ex:["salat","wurst"], m:["Hackfleisch","Hähnchenbrust","Schweineschnitzel","Rindersteak","Gulasch","Putenbrust","Hähnchenschenkel"]},
+  {n:"Fisch", al:[], stem:"fisch", ex:["stäbchen","salat"], m:["Lachs","Thunfisch","Seelachs","Forelle","Garnelen","Fischstäbchen"]},
+  {n:"Saft", al:["säfte"], stem:"saft", ex:[], m:["Apfelsaft","Orangensaft","Multivitaminsaft","Traubensaft"]},
+  {n:"Wein", al:[], stem:"wein", ex:["schwein","essig","trauben"], m:["Rotwein","Weißwein","Roséwein"]},
+  {n:"Tee", al:[], stem:"tee", ex:["eistee"], m:["Pfefferminztee","Früchtetee","Schwarzer Tee","Grüner Tee","Kamillentee"]},
+  {n:"Äpfel", al:["apfel","aepfel"], stem:"äpfel", ex:[], m:["Elstar","Braeburn","Pink Lady","Gala","Jonagold","Granny Smith"]},
+  {n:"Kartoffeln", al:["kartoffel"], stem:"kartoffel", ex:["salat","süß","chips","püree","brei"], m:["Festkochende Kartoffeln","Mehligkochende Kartoffeln","Drillinge","Ofenkartoffel"]},
+  {n:"Tomaten", al:["tomate"], stem:"tomate", ex:["mark","passiert","dose","ketchup","sauce","soße"], m:["Cherrytomaten","Rispentomaten","Strauchtomaten","Datteltomaten"]},
+  {n:"Zwiebeln", al:["zwiebel"], stem:"zwiebel", ex:[], m:["Rote Zwiebeln","Gemüsezwiebel","Schalotten","Frühlingszwiebeln"]},
+  {n:"Milch", al:[], stem:"milch", ex:["reis","kondens","butter","schokolade","kaffee"], m:["Vollmilch","Fettarme Milch","H-Milch","Frischmilch","Hafermilch"]},
+  {n:"Kaffee", al:[], stem:"kaffee", ex:["sahne","filter","maschine"], m:["Kaffeebohnen","Gemahlener Kaffee","Kaffeepads","Kaffeekapseln"]}
+];
+function groupOf(name){
+  const n = (name||"").trim().toLowerCase(), f = fold(n);
+  return GROUPS.find(g => g.n.toLowerCase() === n || fold(g.n) === f || g.al.includes(n) || g.al.map(fold).includes(f)) || null;
+}
+function inGroup(g, name){
+  const n = (name||"").toLowerCase();
+  if (!n || n === g.n.toLowerCase()) return false;
+  if (g.m.some(x => x.toLowerCase() === n)) return true;
+  return n.includes(g.stem) && !g.ex.some(x => n.includes(x));
+}
+// Gleiche Sache, anderer Name: Liste „Tortellini“ ↔ Bon „Tortellini Ricotta-Spinat“, „Klopapier“ ↔ „Toilettenpapier“
+const SYN = [["klopapier","toilettenpapier","wc-papier"],["hack","hackfleisch","gehacktes"],["möhren","karotten","mohren"],["sahne","schlagsahne"],["lauch","porree"],
+  ["brötchen","semmeln","schrippen"],["pommes","pommes frites"],["frikadellen","buletten"],["küchenrolle","küchenpapier","haushaltsrolle"],["spülmaschinentabs","geschirrspültabs","spültabs"],
+  ["taschentücher","tempo"],["sprudel","mineralwasser"],["paprika","paprikaschote"],["hähnchen","hühnchen","huhn"],["kartoffeln","erdäpfel"]];
+const stemW = w => fold(w).replace(/(en|er|n|e|s)$/,"");
+const words = s => fold(s||"").split(/[^a-z0-9]+/).filter(w => w.length >= 3);
+function sameThing(listName, otherName){
+  const a = fold(listName||"").trim(), b = fold(otherName||"").trim();
+  if (!a || !b) return false;
+  if (a === b || stemW(a) === stemW(b)) return true;
+  const g = groupOf(listName); if (g && inGroup(g, otherName)) return true;
+  const hasTerm = (s, x) => s === x || s.startsWith(x + " ") || s.split(/[^a-z0-9]+/).includes(x) || (x.length >= 4 && s.startsWith(x));
+  for (const grp of SYN) { const f = grp.map(fold); if (f.some(x => hasTerm(a, x)) && f.some(x => hasTerm(b, x))) return true; }
+  // alle wichtigen Wörter des Listeneintrags stecken im anderen Namen („Tortellini“ in „Tortellini Ricotta Spinat“)
+  // gleiches Wort bis auf Endungen (Tomate/Tomaten), aber nicht Milch ↔ Milchreis
+  const wa = words(listName), wb = words(otherName);
+  const same = (x, y) => { const s = stemW(x); return stemW(y) === s || (y.startsWith(s) && y.length - s.length <= 3); };
+  if (wa.length && wa.every(x => wb.some(y => same(x, y)))) return true;
+  // oder umgekehrt (Liste „Tortellini Ricotta“, Rezept „Tortellini“)
+  if (wb.length && wb.every(y => wa.some(x => same(y, x)))) return true;
+  return false;
+}
+// Passenden offenen Listeneintrag finden; Vorschlag der KI hat Vorrang, wenn er wirklich auf der Liste steht
+const learnedFor = listName => Object.values(learned[keyOf(listName)]?.bought || {}).sort((a,b) => b.count - a.count || (b.last||0) - (a.last||0));
+function findOnList(name, aiRef, used){
+  const open = items.filter(i => !i.done && !(used && used.has(i.id)));
+  if (aiRef) { const hit = open.find(i => fold(i.name) === fold(aiRef)); if (hit) return hit; }
+  const bk = keyOf(name), learnedHit = open.find(i => learned[keyOf(i.name)]?.bought?.[bk]);
+  if (learnedHit) return learnedHit;
+  return open.find(i => fold(i.name) === fold(name)) || open.find(i => sameThing(i.name, name)) || null;
+}
+// Preis für einen Listeneintrag: eigener letzter Preis, sonst bei Oberbegriffen der mittlere Preis eurer Sorten
+function priceFor(name){
+  const p = products[keyOf(name)];
+  if (p?.price) return {p: p.price, est: false};
+  // Gelernt: was ihr bei diesem Eintrag meistens kauft
+  const usual = learnedFor(name).map(e => ({...e, price: products[keyOf(e.name)]?.price})).filter(e => e.price);
+  if (usual.length) {
+    const n = usual.reduce((a,e) => a + e.count, 0);
+    return {p: usual.reduce((a,e) => a + e.price * e.count, 0) / n, est: true, usual: true, from: usual.map(e => e.name)};
+  }
+  const g = groupOf(name);
+  const like = Object.values(products).filter(x => x.price && x.name && fold(x.name) !== fold(name) && (g ? inGroup(g, x.name) : sameThing(name, x.name)));
+  if (!like.length) return null;
+  const vals = like.map(x => x.price).sort((a,b)=>a-b);
+  const mid = vals.length % 2 ? vals[(vals.length-1)/2] : (vals[vals.length/2-1] + vals[vals.length/2]) / 2;
+  return {p: mid, est: true, from: like.map(x => x.name)};
+}
 function suggestions(q){
   // Mit Umlaut getippt → genau suchen; ohne → „bro“ findet auch „Brötchen“
   const f = /[äöüß]/i.test(q) ? (s => s.toLowerCase()) : fold;
@@ -688,8 +813,32 @@ function suggestions(q){
     if (rank < 0) continue;
     seen.add(low); out.push({...c, rank});
   }
+  // Gelernt: Zu „Tortellini“ habt ihr meistens „Tortellini Ricotta-Spinat“ gekauft → gleich mit vorschlagen
+  for (const rec of Object.values(learned)) {
+    const ln = f((rec.list||"").toLowerCase()); if (!ln || !(ln.startsWith(q) || (q.length >= 3 && q.startsWith(ln)))) continue;
+    for (const e of Object.values(rec.bought||{}).sort((a,b) => b.count - a.count)) {
+      const low = e.name.toLowerCase(); if (onList.has(low)) continue;
+      const i = out.findIndex(o => o.name.toLowerCase() === low);
+      if (i >= 0) { out[i].rank = Math.min(out[i].rank, 0.3); continue; }
+      seen.add(low); out.push({name: e.name, cat: products[keyOf(e.name)]?.cat, known: 1, count: e.count + 100, rank: 0.3});
+    }
+  }
+  // Oberbegriff getippt (z. B. „sala“) → eure bekannten Sorten mit Preis gleich dahinter
+  const g = q.length >= 3 ? GROUPS.find(x => f(x.n.toLowerCase()).startsWith(q) || x.al.some(a => f(a).startsWith(q))) : null;
+  if (g) {
+    const mem = [
+      ...Object.values(products).filter(p => inGroup(g, p.name)).map(p => ({name:p.name, cat:p.cat, known:1, count:p.count||0})),
+      ...g.m.map(n => ({name:n, cat:null, known:0}))
+    ];
+    for (const c of mem) {
+      const low = c.name.toLowerCase(); if (onList.has(low)) continue;
+      const i = out.findIndex(o => o.name.toLowerCase() === low);
+      if (i >= 0) { out[i].rank = Math.min(out[i].rank, 0.5); continue; }
+      seen.add(low); out.push({...c, rank: 0.5});
+    }
+  }
   // zuerst Wortanfang, innerhalb davon eure eigenen Artikel vor der Grundliste
-  return out.sort((a,b)=>a.rank-b.rank || b.known-a.known || (b.count||0)-(a.count||0) || a.name.length-b.name.length).slice(0,10);
+  return out.sort((a,b)=>a.rank-b.rank || b.known-a.known || (b.count||0)-(a.count||0) || a.name.length-b.name.length).slice(0,12);
 }
 function highlight(name, q){
   const f = /[äöüß]/i.test(q) ? (s => s.toLowerCase()) : fold;
@@ -703,7 +852,7 @@ function renderChips(){
     const q = raw.match(/^\d/) ? name : raw;
     const list = suggestions(q.trim());
     $("#chips").classList.add("suggest");
-    $("#chips").innerHTML = list.map(s=>`<button type="button" class="chip" data-name="${esc(s.name)}" data-qty="${esc(qty)}"><span aria-hidden="true">${iconFor(s.name,s.cat||guessCat(s.name))}</span> ${highlight(s.name,q.trim())}</button>`).join("");
+    $("#chips").innerHTML = list.map(s=>`<button type="button" class="chip" data-name="${esc(s.name)}" data-qty="${esc(qty)}"><span aria-hidden="true">${iconFor(s.name,s.cat||guessCat(s.name))}</span> ${highlight(s.name,q.trim())}${(() => { const pr = priceFor(s.name); return pr ? ` <small class="chip-p">${pr.est?"ca. ":""}${eur(pr.p)}</small>` : ""; })()}</button>`).join("");
     $("#chips").hidden = !list.length;
     return;
   }
@@ -728,7 +877,11 @@ function openEdit(id){
   editing = id; edCat = CAT[it.cat] ? it.cat : "sonst";
   $("#edName").value = it.name; $("#edQty").value = it.qty || "";
   const p = products[keyOf(it.name)];
-  $("#edPrice").textContent = p?.price ? `Zuletzt ${eur(p.price)}${p.store?` bei ${p.store}`:""}${p.priceDate?` am ${fmtDate(p.priceDate)}`:""}` : "Noch kein Preis – kommt mit dem nächsten Kassenbon.";
+  const pr = priceFor(it.name);
+  $("#edPrice").textContent = p?.price ? `Zuletzt ${eur(p.price)}${p.store?` bei ${p.store}`:""}${p.priceDate?` am ${fmtDate(p.priceDate)}`:""}`
+    : pr?.usual ? `Geschätzt ca. ${eur(pr.p)} – ihr kauft dafür meistens ${pr.from.slice(0,3).join(", ")}.`
+    : pr?.est ? `Geschätzt ca. ${eur(pr.p)} – aus euren Preisen für (${pr.from.slice(0,4).join(", ")}${pr.from.length>4?" …":""}).`
+    : "Noch kein Preis – kommt mit dem nächsten Kassenbon.";
   drawCats(); openSheet("#editScrim");
 }
 function drawCats(){ $("#edCats").innerHTML = CATS.map(c=>`<button type="button" data-cat="${c.id}" aria-pressed="${c.id===edCat}"><i style="background:${c.color}"></i>${c.label}</button>`).join(""); }
@@ -927,37 +1080,46 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
   try { return parseJson(text); } catch(e) { throw kiError("Die Antwort war nicht lesbar. Bitte ein schärferes Foto versuchen.", text.slice(0,120)); }
 }
 const knownNames = () => [...new Set([...Object.values(products).sort((a,b)=>(b.count||0)-(a.count||0)).map(p=>p.name), ...items.map(i=>i.name)])].slice(0,150);
+const openNames = () => items.filter(i => !i.done).map(i => {
+  const l = learnedFor(i.name).slice(0,2).map(e => e.name);
+  return l.length ? `${i.name} (bisher gekauft als: ${l.join(", ")})` : i.name;
+}).slice(0, 80).join("; ");
 function bonPrompt(){
   return `Lies diesen deutschen Kassenbon (Foto oder PDF). Gib NUR dieses JSON zurück:
-{"l":"Geschäft oder null","d":"YYYY-MM-DD oder null","s":Gesamtsumme als Zahl oder null,"a":[{"n":"Artikelname","m":Stückzahl,"p":Preis pro Stück,"k":"Kategorie"}]}
+{"l":"Geschäft oder null","d":"YYYY-MM-DD oder null","s":Gesamtsumme als Zahl oder null,"a":[{"n":"Artikelname","m":Stückzahl,"p":Preis pro Stück,"k":"Kategorie","li":"Listeneintrag oder null"}]}
 k ist eine von: ${CAT_IDS.join(", ")}
 Regeln:
 - n: kurzer normaler Name wie auf einer Einkaufsliste ("H-MILCH 3,5% 1L" → "Milch", "BIO BANANE" → "Bananen").
-- Wenn dasselbe Produkt, schreibe n GENAU wie hier: ${knownNames().join("; ")}
+- Sorte behalten: "EISBERGSALAT" → "Eisbergsalat", nicht nur "Salat"; "RUCOLA" → "Rucola".
+- Wenn dasselbe Produkt (gleiche Sorte), schreibe n GENAU wie hier: ${knownNames().filter(n => !groupOf(n)).join("; ")}
 - Rabatte beim vorherigen Artikel abziehen. Pfand, Tüten, Zahlungs-, Steuer- und Summenzeilen weglassen.
-- Gewichtsware: m 1, p = Zeilenbetrag. Zahlen mit Punkt, ohne €.`;
+- Gewichtsware: m 1, p = Zeilenbetrag. Zahlen mit Punkt, ohne €.
+- li: Entspricht der Artikel einem Eintrag unserer offenen Einkaufsliste – auch wenn er dort anders heißt (Liste "Tortellini" ↔ Bon "RANA TORTELL. RICOTTA", Liste "Klopapier" ↔ "TOILETTENPAPIER") –, schreibe den Listeneintrag GENAU so; sonst null.
+Offene Einkaufsliste: ${openNames() || "(leer)"}`;
 }
 function rezeptPrompt(){
   return `Lies dieses Rezept (Foto oder PDF). Gib NUR dieses JSON zurück:
-{"t":"Name des Gerichts","p":Portionen oder null,"z":[{"n":"Zutat wie auf einer Einkaufsliste","m":"Menge mit Einheit, z. B. 500 g","k":"Kategorie","v":true wenn fast immer im Haus (Salz, Pfeffer, Öl, Zucker, Mehl, Gewürze)}]}
+{"t":"Name des Gerichts","p":Portionen oder null,"z":[{"n":"Zutat wie auf einer Einkaufsliste","m":"Menge mit Einheit, z. B. 500 g","k":"Kategorie","li":"Listeneintrag oder null","v":true wenn fast immer im Haus (Salz, Pfeffer, Öl, Zucker, Mehl, Gewürze)}]}
 k ist eine von: ${CAT_IDS.join(", ")}
-Gleiche Zutaten zusammenfassen, keine Zubereitung. Wenn dieselbe Zutat, schreibe n GENAU wie hier: ${knownNames().join("; ")}`;
+Gleiche Zutaten zusammenfassen, keine Zubereitung.
+li: Steht die Zutat schon auf unserer offenen Einkaufsliste – auch unter anderem Namen (Liste "Nudeln" ↔ Zutat "Spaghetti", Liste "Möhren" ↔ "Karotten") –, schreibe den Listeneintrag GENAU so; sonst null.
+Offene Einkaufsliste: ${openNames() || "(leer)"} Wenn dieselbe Zutat, schreibe n GENAU wie hier: ${knownNames().join("; ")}`;
 }
 const BON_SCHEMA = {type:"OBJECT", properties:{
   l:{type:"STRING", nullable:true}, d:{type:"STRING", nullable:true}, s:{type:"NUMBER", nullable:true},
-  a:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"NUMBER"}, p:{type:"NUMBER"}, k:{type:"STRING", enum:CAT_IDS}}, required:["n","p"]}}},
+  a:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"NUMBER"}, p:{type:"NUMBER"}, k:{type:"STRING", enum:CAT_IDS}, li:{type:"STRING", nullable:true}}, required:["n","p"]}}},
   required:["a"]};
 const REZEPT_SCHEMA = {type:"OBJECT", properties:{
   t:{type:"STRING"}, p:{type:"NUMBER", nullable:true},
-  z:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"STRING"}, k:{type:"STRING", enum:CAT_IDS}, v:{type:"BOOLEAN"}}, required:["n"]}}},
+  z:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"STRING"}, k:{type:"STRING", enum:CAT_IDS}, v:{type:"BOOLEAN"}, li:{type:"STRING", nullable:true}}, required:["n"]}}},
   required:["z"]};
 // Kurzform in die gewohnte Form übersetzen (alte Langform geht weiterhin)
 function normalizeScan(r){
   r = r || {};
   if (Array.isArray(r.a)) return {laden:r.l ?? r.laden, datum:r.d ?? r.datum, summe:r.s ?? r.summe,
-    artikel:r.a.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, einzelpreis:x.p ?? x.einzelpreis, kategorie:x.k ?? x.kategorie, bon:""}))};
+    artikel:r.a.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, einzelpreis:x.p ?? x.einzelpreis, kategorie:x.k ?? x.kategorie, bon:"", li:x.li ?? null}))};
   if (Array.isArray(r.z)) return {titel:r.t ?? r.titel, portionen:r.p ?? r.portionen,
-    zutaten:r.z.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, kategorie:x.k ?? x.kategorie, vorrat:!!(x.v ?? x.vorrat)}))};
+    zutaten:r.z.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, kategorie:x.k ?? x.kategorie, vorrat:!!(x.v ?? x.vorrat), li:x.li ?? null}))};
   return r;
 }
 
@@ -965,8 +1127,9 @@ function showBonReview(res){
   const rows = (res.artikel||[]).map(a => ({
     raw: a.bon||"", name: cap(String(a.name||a.bon||"").trim()),
     menge: num(a.menge) || 1, price: num(a.einzelpreis) ?? (num(a.gesamt)!=null ? num(a.gesamt)/(num(a.menge)||1) : null),
-    line: num(a.gesamt), cat: CAT_IDS.includes(a.kategorie) ? a.kategorie : null, on: true
+    line: num(a.gesamt), cat: CAT_IDS.includes(a.kategorie) ? a.kategorie : null, on: true, ai: a.li || null
   })).filter(r => r.name);
+  { const used = new Set(); for (const r of rows) { const hit = findOnList(r.name, r.ai, used); if (hit) { r.li = hit; used.add(hit.id); } } }
   review = {type:"bon", rows, laden: res.laden||"", datum: /^\d{4}-\d\d-\d\d$/.test(res.datum||"") ? res.datum : today(), summe: num(res.summe)};
   if (!rows.length) { $("#rvSheet").innerHTML = `<h3>Keine Artikel gefunden</h3><p class="sub">Versuch es mit einem geraden, gut beleuchteten Foto, auf dem der ganze Bon zu sehen ist.</p><div class="actions"><button class="btn-main" data-close>OK</button></div>`; return; }
   $("#rvSheet").innerHTML = `
@@ -977,7 +1140,7 @@ function showBonReview(res){
       <div class="rv-row"><input type="checkbox" data-i="${i}" ${r.on?"checked":""} aria-label="übernehmen">
         <input type="text" class="rv-name" data-i="${i}" data-f="name" value="${esc(r.name)}" aria-label="Name">
         <input type="text" class="rv-small" data-i="${i}" data-f="price" inputmode="decimal" value="${r.price!=null?String(r.price.toFixed(2)).replace(".",","):""}" aria-label="Preis"></div>
-      <span class="rv-raw">${r.menge>1?`${r.menge} × `:""}${esc(r.raw)}</span>`).join("")}</div>
+      <span class="rv-raw">${r.menge>1?`${r.menge} × `:""}${esc(r.raw)}${r.li?`<button type="button" class="rv-li" data-unlink="${i}" title="Zuordnung lösen">✓ hakt „${esc(r.li.name)}“ ab ✕</button>`:""}</span>`).join("")}</div>
     <div class="rv-sum" id="rvSum"></div>
     <label class="toggle"><input type="checkbox" id="rvTick" checked> Gekaufte Artikel auf der Liste abhaken</label>
     <div class="hb" id="rvHb"${backend==="fb"?"":" hidden"}>
@@ -994,6 +1157,10 @@ function showBonReview(res){
   checkBooked();
 }
 function bindReview(){
+  $("#rvRows").addEventListener("click", e => {
+    const b = e.target.closest("[data-unlink]"); if (!b) return;
+    const r = review.rows[+b.dataset.unlink]; if (r) { r.li = null; r.unlinked = true; b.remove(); }
+  });
   $("#rvRows").addEventListener("input", e => {
     const i = +e.target.dataset.i, r = review.rows[i]; if (!r) return;
     if (e.target.type === "checkbox") r.on = e.target.checked;
@@ -1048,7 +1215,14 @@ async function saveBon(){
   let ticked = 0;
   if ($("#rvTick").checked) {
     const bought = new Set(rows.map(r => keyOf(r.name)));
-    for (const it of items.filter(i => !i.done && bought.has(keyOf(i.name)))) { await safe(store.update(it.id, {done:true, doneAt:now})); ticked++; }
+    const matched = new Set(rows.filter(r => r.li).map(r => r.li.id));
+    const hits = items.filter(i => !i.done && (matched.has(i.id) || bought.has(keyOf(i.name)) || rows.some(r => !r.unlinked && sameThing(i.name, r.name))));
+    for (const it of hits) {
+      await safe(store.update(it.id, {done:true, doneAt:now})); ticked++;
+      // Lernen: welcher Bon-Artikel gehörte zu diesem Listeneintrag?
+      const r = rows.find(r => r.li?.id === it.id) || rows.find(r => !r.unlinked && sameThing(it.name, r.name));
+      if (r && keyOf(r.name) !== keyOf(it.name)) safe(store.learn(it.name, cap(r.name.trim())));
+    }
   }
   const betrag = Math.round(bonTotal()*100)/100;
   const book = backend==="fb" && $("#rvBook")?.checked && betrag > 0;
@@ -1064,26 +1238,35 @@ async function saveBon(){
 }
 
 function showRezeptReview(res){
-  const rows = (res.zutaten||[]).map(z => ({name: cap(String(z.name||"").trim()), qty: String(z.menge||"").trim(), cat: CAT_IDS.includes(z.kategorie)?z.kategorie:null, on: !z.vorrat})).filter(r=>r.name);
+  const rows = (res.zutaten||[]).map(z => ({name: cap(String(z.name||"").trim()), qty: String(z.menge||"").trim(), cat: CAT_IDS.includes(z.kategorie)?z.kategorie:null, on: !z.vorrat, ai: z.li || null})).filter(r=>r.name);
+  { const used = new Set(); for (const r of rows) { const hit = findOnList(r.name, r.ai, used); if (hit) { r.li = hit; r.on = false; used.add(hit.id); } } }
+  const already = rows.filter(r => r.li).length;
   review = {type:"rezept", rows, titel: String(res.titel||"Rezept").trim()};
   if (!rows.length) { $("#rvSheet").innerHTML = `<h3>Keine Zutaten gefunden</h3><p class="sub">Achte darauf, dass die Zutatenliste gut lesbar im Bild ist.</p><div class="actions"><button class="btn-main" data-close>OK</button></div>`; return; }
   $("#rvSheet").innerHTML = `
-    <h3>Zutaten übernehmen</h3><p class="sub">Was ihr schon im Haus habt, einfach abwählen.</p>
+    <h3>Zutaten übernehmen</h3><p class="sub">Was ihr schon im Haus habt, einfach abwählen.${already ? ` ${already} ${already===1?"Zutat steht":"Zutaten stehen"} schon auf der Liste und ${already===1?"ist":"sind"} deshalb abgewählt.` : ""}</p>
     <label for="rvTitel">Rezept${res.portionen?` (für ${esc(res.portionen)} Portionen)`:""}</label><input id="rvTitel" type="text" value="${esc(review.titel)}">
     <span class="lbl">Zutaten (Name, Menge)</span>
     <div id="rvRows">${rows.map((r,i)=>`
       <div class="rv-row"><input type="checkbox" data-i="${i}" ${r.on?"checked":""} aria-label="übernehmen">
         <input type="text" class="rv-name" data-i="${i}" data-f="name" value="${esc(r.name)}" aria-label="Name">
-        <input type="text" class="rv-small" data-i="${i}" data-f="qty" value="${esc(r.qty)}" aria-label="Menge" style="text-align:left"></div>`).join("")}</div>
+        <input type="text" class="rv-small" data-i="${i}" data-f="qty" value="${esc(r.qty)}" aria-label="Menge" style="text-align:left"></div>${r.li?`<span class="rv-raw"><span class="rv-li">steht schon drauf${fold(r.li.name)!==fold(r.name)?` als „${esc(r.li.name)}“`:""}</span></span>`:""}`).join("")}</div>
     <div class="actions"><button class="btn-ghost" data-close>Verwerfen</button><button class="btn-main" id="rvSave">Auf die Liste</button></div>`;
   bindReview();
   $("#rvSave").onclick = async () => {
     $("#rvSave").disabled = true;
     const titel = $("#rvTitel").value.trim();
     let added = 0;
-    for (const r of review.rows.filter(r=>r.on && r.name.trim())) if (await addItem("", {name: cap(r.name.trim()), qty: r.qty, cat: r.cat, recipe: titel, quiet: true})) added++;
+    for (const r of review.rows.filter(r=>r.on && r.name.trim())) {
+      if (r.li && !r.li.done) {   // trotzdem angehakt → zum vorhandenen Eintrag dazuschreiben statt doppelt
+        const patch = {recipe: r.li.recipe && !r.li.recipe.includes(titel) ? `${r.li.recipe}, ${titel}` : (r.li.recipe || titel)};
+        if (r.qty) patch.qty = r.li.qty ? `${r.li.qty} + ${r.qty}` : r.qty;
+        await safe(store.update(r.li.id, patch)); continue;
+      }
+      if (await addItem("", {name: cap(r.name.trim()), qty: r.qty, cat: r.cat, recipe: titel, quiet: true})) added++;
+    }
     closeSheets();
-    showToast(`${added} Zutaten für ${titel || "das Rezept"} hinzugefügt`);
+    showToast(`${added} ${added===1?"Zutat":"Zutaten"} für ${titel || "das Rezept"} hinzugefügt`);
   };
 }
 
@@ -1095,10 +1278,28 @@ async function openSettings(){
     const L = JSON.parse(localStorage.getItem("einkauf-scanlog")||"[]");
     $("#setLog").innerHTML = L.length ? "<b>Letzte Fotos:</b><br>" + L.map(x => `${new Date(x.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} ${x.mode==="bon"?"Bon":"Rezept"} ${x.ok?"✓":"✗"} ${x.sec} s${x.model?` (${esc(x.model)})`:""}${x.ok?"":` – ${esc(String(x.detail||"").slice(0,90))}`}`).join("<br>") : "";
   } catch(e) {}
+  const nL = Object.values(learned).reduce((a,r) => a + Object.keys(r.bought||{}).length, 0);
+  $("#learnedCount").textContent = nL ? `${nL} gelernt – antippen zum Ansehen oder Korrigieren` : "Noch nichts gelernt – kommt mit den ersten Bons";
   openSheet("#setScrim");
   if (user) try { const c = await kiCfg(); $("#setKi").textContent = c.key ? `KI-Zugang: ${c.anbieter==="gemini"?"Gemini":"Claude"}${c.model?` (${c.model})`:""} ist eingerichtet.` : "Noch kein KI-Zugang eingerichtet – Fotos funktionieren erst danach."; } catch(e) {}
 }
 $("#openSettings").addEventListener("click", openSettings);
+function openLearned(){
+  const recs = Object.entries(learned).sort((a,b) => (a[1].list||"").localeCompare(b[1].list||"", "de"));
+  $("#stSheet").innerHTML = `<h3>Gelernte Zuordnungen</h3>
+    <p class="sub">Links steht, was ihr auf die Liste schreibt, rechts, was ihr dann laut Bon gekauft habt. Falsches einfach mit ✕ löschen.</p>
+    ${recs.length ? `<table class="hist"><tbody>${recs.flatMap(([k, r]) => Object.entries(r.bought||{}).sort((a,b)=>b[1].count-a[1].count).map(([b, e]) =>
+      `<tr><td>${esc(r.list)}</td><td>→ ${esc(e.name)} <span style="color:var(--mute)">(${e.count}×)</span></td><td><button class="linkbtn" data-unlearn="${esc(k)}|${esc(b)}" aria-label="löschen">✕</button></td></tr>`)).join("")}</tbody></table>`
+      : `<div class="empty" style="padding:20px">Noch nichts gelernt. Sobald ein Bon einen Listeneintrag unter anderem Namen abhakt, merkt sich die App das hier.</div>`}
+    <div class="actions"><button class="btn-main" data-close>Fertig</button></div>`;
+  closeSheets(); openSheet("#stScrim");
+}
+$("#openLearned").addEventListener("click", openLearned);
+$("#stSheet").addEventListener("click", async e => {
+  const b = e.target.closest("[data-unlearn]"); if (!b) return;
+  const [k, bk] = b.dataset.unlearn.split("|");
+  b.closest("tr").remove(); await safe(store.unlearn(k, bk));
+});
 $("#logout").addEventListener("click", () => { closeSheets(); auth && auth.signOut(); });
 
 // ---------- Hinweis mit Rückgängig ----------
