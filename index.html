@@ -36,12 +36,12 @@
     if(c.anbieter==='gemini'){/* Bei Überlastung (503/429) kurz warten und automatisch auf andere kostenlose Flash-Modelle ausweichen */
       const first=c.model||'gemini-3.8-flash';const list=[first,...['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash'].filter(x=>x!==first)];let last=null;
       for(let n=0;n<list.length;n++){const m=list[n];if(n)await new Promise(res=>setTimeout(res,800));
-        const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(m)+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':c.key},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:2500}})});
+        const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(m)+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':c.key},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:8192,...(opts&&opts.json?{responseMimeType:'application/json'}:{})}})});
         let m2='';if(!r.ok){try{m2=(await r.json())?.error?.message||'';}catch(_){}}
         if(r.status===400||r.status===401||r.status===403){if(/key/i.test(m2))throw {code:'no_key',message:'Der Gemini-Schlüssel ist ungültig.'};if(r.status===400)throw {code:'api_error',message:m2||'Fehler 400'};}
         if(r.status===503||r.status===429||r.status===500||r.status===404||r.status===403){last={code:r.status===429?'rate_limited':'api_error',message:'Gemini ist gerade überlastet. Bitte in ein paar Minuten nochmal versuchen.'};continue;}
         if(!r.ok)throw {code:'api_error',message:m2||('Fehler '+r.status)};
-        const j=await r.json();return (j.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('');}
+        const j=await r.json();const cd=j.candidates?.[0];const tx=(cd?.content?.parts||[]).filter(x=>!x.thought).map(x=>x.text||'').join('');if(!tx.trim()){last={code:'api_error',message:cd?.finishReason==='MAX_TOKENS'?'Die Antwort der KI war zu lang und wurde abgeschnitten. Bitte kürzer fragen.':cd?.finishReason==='SAFETY'?'Gemini hat die Anfrage abgelehnt. Bitte anders formulieren.':'Gemini hat keine Antwort geliefert ('+(cd?.finishReason||j.promptFeedback?.blockReason||'unbekannt')+').'};continue;}return tx;}
       throw last||{code:'api_error',message:'Gemini ist gerade nicht erreichbar.'};}
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:c.model||'claude-sonnet-5',max_tokens:2500,messages:[{role:'user',content:prompt}]})});
@@ -49,8 +49,8 @@
     if(!r.ok){let m='';try{m=(await r.json())?.error?.message||'';}catch(_){}throw {code:'api_error',message:m||('Fehler '+r.status)};}
     const j=await r.json();return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('');}
   const sample=async(input,opts)=>({text:await ask(typeof input==='string'?input:JSON.stringify(input),opts),truncated:false});
-  sample.json=async(input,opts)=>{const t=await ask((typeof input==='string'?input:JSON.stringify(input))+'\n\nAntworte ausschließlich mit gültigem JSON, ohne Erklärung und ohne ```.',opts);
-    const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw {code:'bad_json',message:'Antwort war kein JSON'};return JSON.parse(t.slice(a,b+1));};
+  sample.json=async(input,opts)=>{const t=await ask((typeof input==='string'?input:JSON.stringify(input))+'\n\nAntworte ausschließlich mit gültigem JSON, ohne Erklärung und ohne ```.',{...(opts||{}),json:true});
+    const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw {code:'bad_json',message:'Die KI hat unerwartet geantwortet. Bitte noch einmal versuchen.'};try{return JSON.parse(t.slice(a,b+1));}catch(_){try{return JSON.parse(t.slice(a,b+1).replace(/,\s*([}\]])/g,'$1'));}catch(__){throw {code:'bad_json',message:'Die KI-Antwort war unvollständig. Bitte noch einmal versuchen.'};}}};
   sample.limits=async()=>({images:null});
   window.claude={use:async n=>{if(!OK)return null;if(n==='db'){await signedIn();return db;}if(n==='downloads')return downloads;if(n==='sample'){await signedIn();return sample;}return null;}};
 
@@ -74,7 +74,7 @@
     const $i=id=>document.getElementById(id);
     const fillModels=(prov,sel)=>{$i('ki-model').innerHTML=MODELS[prov].map(([v,l])=>`<option value="${v}">${l}</option>`).join('');if(sel&&MODELS[prov].some(x=>x[0]===sel))$i('ki-model').value=sel;
       $i('ki-key').placeholder=prov==='gemini'?'AIza…':'sk-ant-…';
-      $i('ki-help').innerHTML=prov==='gemini'?'Schlüssel: <b>aistudio.google.com</b> → mit deinem Google-Konto anmelden → „Get API key“ → „API-Schlüssel erstellen“. Kostenlos. <b>Achtung:</b> In der kostenlosen Variante darf Google die Anfragen (also eure Beträge und Buchungen) zur Verbesserung seiner Produkte nutzen und von Mitarbeitern lesen lassen.':'Schlüssel: <b>console.anthropic.com</b> → Guthaben aufladen (z. B. 5 $) und Monatslimit setzen → „API Keys“ → „Create Key“. Anfragen werden nicht zum Training verwendet.';};
+      $i('ki-help').innerHTML=prov==='gemini'?'Schlüssel: <b>aistudio.google.com</b> → mit deinem Google-Konto anmelden → „Get API key“ → „API-Schlüssel erstellen“. Ohne Abrechnung kostenlos – dann darf Google die Anfragen (eure Beträge und Buchungen) zur Verbesserung nutzen. Mit hinterlegter Abrechnung (bezahlt) nicht, und es gibt seltener „überlastet“.':'Schlüssel: <b>console.anthropic.com</b> → Guthaben aufladen (z. B. 5 $) und Monatslimit setzen → „API Keys“ → „Create Key“. Anfragen werden nicht zum Training verwendet.';};
     fillModels('claude');$i('ki-prov').onchange=e=>fillModels(e.target.value);
     signedIn().then(async()=>{$i('fb-who').textContent='Angemeldet als '+(user.email||'');try{const k=await kiCfg();const pv=k.anbieter||'claude';$i('ki-prov').value=pv;fillModels(pv,k.model);if(k.key)$i('ki-key').placeholder='gespeichert (…'+k.key.slice(-4)+')';}catch(_){}});
     document.getElementById('fb-out').onclick=()=>auth.signOut();
@@ -987,9 +987,11 @@ ${qContext()}
 
 Nachricht: """${text.slice(0,2000)}"""
 
+Heute: ${new Date().toLocaleDateString('de-DE')}. Aktuell geöffneter Monat: ${month}.
 Antworte NUR mit JSON: {"aktionen":[...],"rueckfrage":null|"kurze Frage auf Deutsch"}
 Mögliche Aktionen:
-1) Einkauf aus den Budgets: {"art":"budget","topf":"essen"|"sonst","betrag":Zahl,"notiz":"","wer":"Till"|"Patrick"|""}  – Lebensmittel/Einkauf/Supermarkt = essen; Amazon, Drogerie, Kleinkram = sonst.
+1) Einkauf aus den Budgets Essen oder Sonstiges ("Haus, sonst."): {"art":"budget","topf":"essen"|"sonst","betrag":Zahl,"notiz":"wofür","wer":"Till"|"Patrick"|"","monat":"JJJJ-MM"|null}  – Lebensmittel/Einkauf/Supermarkt = essen; Amazon, Drogerie, Baumarkt, Kleinkram fürs Haus = sonst. monat = der genannte Monat (ohne Jahr: das nächstliegende, also ${month.slice(0,4)}), sonst null.
+   Beispiel: "40 euro im Oktober von sonstiges abziehen für Wassermelder" → {"art":"budget","topf":"sonst","betrag":40,"notiz":"Wassermelder","wer":"","monat":"${month.slice(0,4)}-10"}
    Wird Geld in einen Topf zurückgelegt oder eine Überziehung ausgeglichen (z. B. "hat 2,89 überwiesen, um Sonstiges auszugleichen"), dann betrag NEGATIV (-2.89); das erhöht den Rest im Topf.
 2) Eintrag im Monatsplan: {"art":"eintrag","person":"Till"|"Patrick"|"Haus","monat":"JJJJ-MM","bereich":"giro_aus"|"giro_ein"|"tg_kauf"|"tg_raus"|"tg_rein"|"haus_ab"|"haus_ein","bezeichnung":"...","betrag":Zahl,"modus":"neu"|"aendern"|"loeschen","pauschale":true|false}
    - pauschale=true bei persönlichen Ausgaben vom Girokonto, die aus der monatlichen Pauschale bezahlt werden (Restaurant, Essen gehen, Klamotten, Schwimmen, Kleinkram für sich) – dann wird es von der Pauschale abgezogen statt zusätzlich gezählt.
@@ -1010,7 +1012,7 @@ Eine Überweisung von einem privaten Konto aufs gemeinsame Konto zum Ausgleich e
 Beträge als Zahl mit Punkt. Nichts erfinden. Wenn unklar, eine rueckfrage stellen und aktionen leer lassen.`;}
 let qActs=[];
 function qDescribe(a){
-  if(a.art==='budget')return +a.betrag<0?`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(-a.betrag)} ausgleichen (kommt wieder dazu)${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer)+(S.plan[month]?' (wird bei '+esc(a.wer)+' im Girokonto abgezogen)':''):''}`:`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(a.betrag)} abziehen${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer):''}`;
+  if(a.art==='budget')return (/^\d{4}-\d{2}$/.test(a.monat||'')&&a.monat!==month?ymShort(a.monat)+' · ':'')+(+a.betrag<0?`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(-a.betrag)} ausgleichen (kommt wieder dazu)${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer)+(S.plan[month]?' (wird bei '+esc(a.wer)+' im Girokonto abgezogen)':''):''}`:`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(a.betrag)} abziehen${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer):''}`);
   if(a.art==='eintrag'){const b=BER[a.bereich];const verb=a.modus==='loeschen'?'löschen':a.modus==='aendern'?'ändern auf':'neu';return `${esc(a.person)} · ${ymShort(a.monat||month)} · ${b?b[1]:esc(a.bereich)}: „${esc(a.bezeichnung)}“ ${verb}${a.modus==='loeschen'?'':' '+eur(a.betrag)}${a.pauschale?' (aus der Pauschale)':''}`;}
   if(a.art==='buchung'){const ch=[];if(a.storniert)ch.push('storniert');if(a.erwachsene!=null)ch.push(a.erwachsene+' Erwachsene');if(a.kinder!=null)ch.push(a.kinder+' Kinder');if(a.abreise)ch.push('Abreise '+dDE(a.abreise));if(a.bar!=null)ch.push(eur(a.bar)+' bar vor Ort');{const bu=a.barUrlaub??a.bar_aufs_urlaubskonto;if(bu===false)ch.push('Bargeld nicht aufs Urlaubskonto');else if(bu==='voll')ch.push('Bargeld komplett aufs Urlaubskonto');else if(bu===true)ch.push('Bargeld wie Auszahlung aufteilen');}if(a.notiz)ch.push('Notiz: '+esc(a.notiz));return `Buchung ${esc(a.plattform||'')} ab ${dDE(a.anreise)}: ${ch.join(', ')||'keine Änderung'}`;}
   if(a.art==='grund'){const it=S.grund.items.find(i=>i.k===a.key);return `Grundbetrag „${esc(it?.l||a.key)}“: ${it?eur(gv(a.key,a.ab||month))+' → ':''}${eur(a.wert)} ${a.ab?'ab '+ymName(a.ab):'(gilt ab sofort für alle offenen Monate)'}`;}
@@ -1027,7 +1029,7 @@ function kNeu(a){const cur=String(a.feld||'').split('.').reduce((o,x)=>o?.[x],K(
 const fmtK2=(f,v)=>v==null||v===''?'–':typeof v==='boolean'?(v?'an':'aus'):/zins/.test(f)?num(v)+' %':/an$|standNach/.test(f)?esc(String(v)):eur(v);
 async function qApply(list){let ok=0;const skip=[];
   for(const a of list){
-    if(a.art==='budget'){await addBudget(a.topf==='essen'?'e':'s',+a.betrag,a.notiz||(+a.betrag<0?'Ausgleich':''),a.wer);ok++;}
+    if(a.art==='budget'){await addBudget(a.topf==='essen'?'e':'s',+a.betrag,a.notiz||(+a.betrag<0?'Ausgleich':''),a.wer,/^\d{4}-\d{2}$/.test(a.monat||'')?a.monat:month);ok++;}
     else if(a.art==='eintrag'){const sh=PSH[a.person];const b=BER[a.bereich];if(!sh||!b){skip.push(qDescribe(a));continue;}const g=(sh==='HAUS')?(a.bereich==='haus_ein'?'I':'G'):b[0];const ym=a.monat||month;
       if(!S.plan[ym]){skip.push(`${qDescribe(a)} – ${ymName(ym)} liegt vor dem Planbeginn (Oktober 2026)`);continue;}ok++;
       await savePlan(ym,d=>{const blk=d[sh]=d[sh]||{};const L=blk[g]=blk[g]||[];const key=String(a.bezeichnung||'').trim().toLowerCase();
@@ -1058,7 +1060,7 @@ $('#q-go').onclick=async()=>{const tx=$('#q-text').value.trim();const msg=$('#q-
     if(!qActs.length){msg.innerHTML=r?.rueckfrage?`<b>Rückfrage:</b> ${esc(r.rueckfrage)}`:'Ich habe daraus keine Änderung erkannt. Formulier es gern etwas genauer.';$('#q-prev').innerHTML='';}
     else{msg.innerHTML=(r?.rueckfrage?`<b>Hinweis:</b> ${esc(r.rueckfrage)} `:'')+'Bitte prüfen und bestätigen:';
       $('#q-prev').innerHTML=qActs.map((a,i)=>`<label class="qa"><input type="checkbox" checked data-qi="${i}"><span>${qDescribe(a)}</span></label>`).join('')+`<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="q-ok">Bestätigen</button><button class="btn sec" id="q-no">Verwerfen</button></div>`;}
-  }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'KI-Zugang fehlt. Einstellungen → KI-Zugang.'):e?.code==='not_granted'?'Die KI wurde nicht erlaubt. Trag es im Reiter Monat von Hand ein.':e?.code==='rate_limited'?'Gerade zu viele Anfragen. Bitte gleich noch einmal.':'Das hat nicht geklappt. Bitte noch einmal versuchen.';}
+  }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'KI-Zugang fehlt. Einstellungen → KI-Zugang.'):e?.code==='not_granted'?'Die KI wurde nicht erlaubt. Trag es im Reiter Monat von Hand ein.':e?.code==='rate_limited'?'Gerade zu viele Anfragen. Bitte gleich noch einmal.':e?.code==='bad_json'?e.message:('Das hat nicht geklappt'+(e?.message?': '+e.message:'.')+' Bitte noch einmal versuchen.');}
   $('#q-go').disabled=false;};
 $('#q-prev').addEventListener('click',async e=>{if(e.target.id==='q-no'){$('#q-prev').innerHTML='';$('#q-msg').textContent='Verworfen.';return;}
   if(e.target.id!=='q-ok')return;const sel=$$('#q-prev [data-qi]').filter(c=>c.checked).map(c=>qActs[+c.dataset.qi]);e.target.disabled=true;
