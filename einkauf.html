@@ -238,7 +238,7 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons"};
-const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash"];
+const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
 const CATS = [
   {id:"obst",   label:"Obst & Gemüse",       color:"var(--c-obst)",   kw:["apfel","äpfel","banane","birne","orange","zitrone","limette","traube","beere","kiwi","mango","ananas","melone","tomate","gurke","paprika","salat","zwiebel","knoblauch","kartoffel","karotte","möhre","zucchini","aubergine","brokkoli","blumenkohl","spinat","pilz","champignon","lauch","porree","sellerie","ingwer","avocado","kräuter","petersilie","basilikum","schnittlauch","radieschen","kohl","rucola","obst","gemüse","süßkartoffel","mais"]},
@@ -528,21 +528,41 @@ function pick(src){ lastSrc = src; const inp = src==="cam" ? $("#camInput") : $(
 document.querySelectorAll("#camScrim [data-src]").forEach(b => b.addEventListener("click", () => { closeSheets(); pick(b.dataset.src); }));
 $("#camInput").addEventListener("change", onPicked);
 $("#fileInput").addEventListener("change", onPicked);
+let lastDoc = null, scanAbort = null;
 async function onPicked(e){
   const file = e.target.files?.[0]; if (!file) return;
-  scanBusy = true;
-  $("#rvSheet").innerHTML = `<div class="busy"><div class="spin"></div>${scanMode==="bon"?"Kassenbon wird gelesen …":"Rezept wird gelesen …"}</div>`;
+  try { lastDoc = await prepareFile(file); }
+  catch(err) { showScanError(err, false); return; }
+  runScan();
+}
+function busyView(text){
+  $("#rvSheet").innerHTML = `<div class="busy"><div class="spin"></div><span id="busyText">${esc(text)}</span></div><div class="actions"><button class="btn-ghost" id="scanCancel">Abbrechen</button></div>`;
+  $("#scanCancel").onclick = () => scanAbort && scanAbort.abort();
+}
+async function runScan(){
+  scanBusy = true; scanAbort = new AbortController();
+  busyView(scanMode==="bon" ? "Kassenbon wird gelesen …" : "Rezept wird gelesen …");
   openSheet("#rvScrim");
   try {
-    const doc = await prepareFile(file);
-    const res = await askGemini(scanMode==="bon" ? bonPrompt() : rezeptPrompt(), doc);
+    const res = await askGemini(scanMode==="bon" ? bonPrompt() : rezeptPrompt(), lastDoc, {
+      signal: scanAbort.signal,
+      status: t => { const el = $("#busyText"); if (el) el.textContent = t; }
+    });
     scanBusy = false;
     scanMode==="bon" ? showBonReview(res) : showRezeptReview(res);
   } catch(err) {
     scanBusy = false;
-    $("#rvSheet").innerHTML = `<h3>Das hat nicht geklappt</h3><p class="sub">${esc(err.message)}</p><div class="actions"><button class="btn-ghost" data-close>Schließen</button><button class="btn-main" id="retry">Nochmal versuchen</button></div>`;
-    $("#retry").onclick = () => { closeSheets(); pick(lastSrc); };
+    if (err.name === "AbortError") { closeSheets(); showToast("Einlesen abgebrochen"); return; }
+    showScanError(err, true);
   }
+}
+function showScanError(err, canRetry){
+  openSheet("#rvScrim");
+  $("#rvSheet").innerHTML = `<h3>Das hat nicht geklappt</h3><p class="sub">${esc(err.message)}</p>${err.detail?`<p class="note">Technisch: ${esc(err.detail)}</p>`:""}
+    <div class="actions"><button class="btn-ghost" id="otherPic">Anderes Foto</button>${canRetry?`<button class="btn-main" id="retry">Nochmal versuchen</button>`:""}</div>
+    <div class="actions" style="margin-top:8px"><button class="btn-ghost" data-close>Schließen</button></div>`;
+  $("#otherPic").onclick = () => { closeSheets(); pick(lastSrc); };
+  if (canRetry) $("#retry").onclick = () => runScan();   // gleiches Foto, kein neues Auswählen
 }
 // Foto verkleinern, PDF unverändert weitergeben
 async function prepareFile(file){
@@ -560,53 +580,86 @@ async function shrink(file){
   const url = URL.createObjectURL(file);
   try {
     const im = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error("Das Foto konnte nicht geöffnet werden.")); i.src = url; });
-    const max = 1800, f = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+    const max = 1600, f = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
     const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth*f); c.height = Math.round(im.naturalHeight*f);
     c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
-    return c.toDataURL("image/jpeg", 0.85).split(",")[1];
+    return c.toDataURL("image/jpeg", 0.8).split(",")[1];
   } finally { URL.revokeObjectURL(url); }
 }
 async function kiCfg(){ const s = await fs.doc("privat/ki").get(); return s.exists ? s.data() : {}; }
 const parseJson = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); if (a<0 || b<a) throw 0; return JSON.parse(t.slice(a, b+1)); };
-async function askGemini(prompt, doc){
+const sleep = (ms, signal) => new Promise((ok, bad) => {
+  const t = setTimeout(ok, ms);
+  signal?.addEventListener("abort", () => { clearTimeout(t); bad(new DOMException("abgebrochen","AbortError")); }, {once:true});
+});
+function kiError(message, detail){ const e = new Error(message); e.detail = detail; return e; }
+// Ein Versuch mit Zeitlimit; bricht auch ab, wenn der Nutzer „Abbrechen“ tippt
+async function fetchTimed(url, init, ms, signal){
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+  const onAbort = () => ac.abort(); signal?.addEventListener("abort", onAbort, {once:true});
+  try { return await fetch(url, {...init, signal: ac.signal}); }
+  catch(e) { if (signal?.aborted) throw new DOMException("abgebrochen","AbortError"); throw kiError("timeout", e.name==="AbortError" ? "Zeitüberschreitung" : "Netzwerk"); }
+  finally { clearTimeout(t); signal?.removeEventListener("abort", onAbort); }
+}
+async function askGemini(prompt, doc, {signal, status} = {}){
   const c = await kiCfg();
-  if (!c.key) throw new Error("Kein KI-Zugang eingerichtet. Bitte im Haushaltsbuch unter Einstellungen → KI-Zugang eintragen.");
-  let text;
+  if (!c.key) throw kiError("Kein KI-Zugang eingerichtet. Bitte im Haushaltsbuch unter Einstellungen → KI-Zugang eintragen.");
+  const say = t => status && status(t);
+  let text = null;
   if (c.anbieter === "gemini") {
-    const list = [...new Set([c.model, ...GEMINI_FALLBACK].filter(Boolean))];
-    let last = null;
-    for (let n = 0; n < list.length && text == null; n++) {
-      if (n) await new Promise(r => setTimeout(r, 800));
-      let r;
-      try {
-        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(list[n])}:generateContent`, {
-          method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":c.key},
-          body: JSON.stringify({contents:[{role:"user",parts:[{text:prompt},{inline_data:{mime_type:doc.mime,data:doc.data}}]}],
-                                generationConfig:{responseMimeType:"application/json",temperature:0.1}})
-        });
-      } catch(e) { throw new Error("Keine Internetverbindung zu Gemini."); }
-      const data = await r.json().catch(()=>({}));
-      const m = data?.error?.message || "";
-      if ([400,401,403].includes(r.status) && /key/i.test(m)) throw new Error("Der Gemini-Schlüssel ist ungültig. Bitte im Haushaltsbuch prüfen.");
-      if ([429,500,503,404,403].includes(r.status)) { last = "Gemini ist gerade überlastet. Bitte in ein paar Minuten nochmal versuchen."; continue; }
-      if (!r.ok) throw new Error("Gemini meldet: " + (m || r.status));
-      text = (data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+    let models = [...new Set([c.model, ...GEMINI_FALLBACK].filter(Boolean))];
+    const waits = [0, 8000, 20000];            // 3 Runden: sofort, nach 8 s, nach 20 s
+    let last = "";
+    for (let round = 0; round < waits.length && text == null; round++) {
+      if (waits[round]) {
+        for (let s = waits[round]/1000; s > 0; s--) { say(`Gemini ist ausgelastet – neuer Versuch in ${s} s (${round+1}/${waits.length})`); await sleep(1000, signal); }
+      }
+      for (const m of [...models]) {
+        say(`${scanMode==="bon"?"Kassenbon":"Rezept"} wird gelesen …${round||m!==models[0] ? " (anderes Modell)" : ""}`);
+        let r;
+        try {
+          r = await fetchTimed(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`, {
+            method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":c.key},
+            body: JSON.stringify({contents:[{role:"user",parts:[{text:prompt},{inline_data:{mime_type:doc.mime,data:doc.data}}]}],
+                                  generationConfig:{responseMimeType:"application/json",temperature:0.1}})
+          }, 75000, signal);
+        } catch(e) { if (e.name==="AbortError") throw e; last = `${m}: ${e.detail}`; continue; }
+        const data = await r.json().catch(()=>({}));
+        const msg = (data?.error?.message || "").slice(0, 160);
+        if (r.ok) {
+          const t = (data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+          if (t) { text = t; break; }
+          last = `${m}: leere Antwort (${data.candidates?.[0]?.finishReason || data.promptFeedback?.blockReason || "?"})`; continue;
+        }
+        last = `${m}: ${r.status} ${msg}`;
+        if (/api key|API_KEY/i.test(msg)) throw kiError("Der Gemini-Schlüssel ist ungültig. Bitte im Haushaltsbuch prüfen.", last);
+        if (r.status === 404 || (r.status === 400 && /not (found|supported)|unsupported/i.test(msg))) { models = models.filter(x => x !== m); continue; } // Modell gibt es nicht oder kann keine Bilder
+        if (r.status === 400 && /size|too large|payload/i.test(msg)) throw kiError("Die Datei ist zu groß für Gemini. Bitte ein kleineres Foto oder eine kürzere PDF verwenden.", last);
+        if (r.status === 400) throw kiError("Gemini konnte die Datei nicht verarbeiten.", last);
+        // 429, 500, 503 usw.: vorübergehend – nächstes Modell bzw. nächste Runde
+      }
+      if (!models.length) break;
     }
-    if (text == null) throw new Error(last || "Gemini ist gerade nicht erreichbar.");
+    if (text == null) {
+      const quota = /429/.test(last) && /quota|exhaust|per day|daily/i.test(last);
+      throw kiError(quota ? "Das kostenlose Tageskontingent von Gemini ist aufgebraucht. Morgen geht es wieder." : "Gemini ist gerade nicht erreichbar oder ausgelastet. Tippe gleich auf „Nochmal versuchen“ – das Foto bleibt gespeichert.", last);
+    }
   } else {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+    const r = await fetchTimed("https://api.anthropic.com/v1/messages", {
       method:"POST",
       headers:{"content-type":"application/json","x-api-key":c.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body: JSON.stringify({model: c.model || "claude-sonnet-5", max_tokens: 4000, messages:[{role:"user", content:[
-        doc.mime==="application/pdf" ? {type:"document", source:{type:"base64", media_type:"application/pdf", data:doc.data}} : {type:"image", source:{type:"base64", media_type:"image/jpeg", data:doc.data}}, {type:"text", text: prompt}]}]})
-    });
-    if (r.status===401) throw new Error("Der API-Schlüssel ist ungültig.");
-    if (r.status===429 || r.status===529) throw new Error("Die KI ist gerade überlastet. Bitte gleich nochmal versuchen.");
+        doc.mime==="application/pdf" ? {type:"document", source:{type:"base64", media_type:"application/pdf", data:doc.data}} : {type:"image", source:{type:"base64", media_type:"image/jpeg", data:doc.data}},
+        {type:"text", text: prompt}]}]})
+    }, 90000, signal).catch(e => { if (e.name==="AbortError") throw e; throw kiError("Keine Verbindung zur KI. Bitte nochmal versuchen.", e.detail); });
     const data = await r.json().catch(()=>({}));
-    if (!r.ok) throw new Error("KI meldet: " + (data?.error?.message || r.status));
+    const detail = `${r.status} ${(data?.error?.message||"").slice(0,160)}`;
+    if (r.status===401) throw kiError("Der API-Schlüssel ist ungültig.", detail);
+    if (r.status===429 || r.status===529) throw kiError("Die KI ist gerade überlastet. Bitte gleich nochmal versuchen.", detail);
+    if (!r.ok) throw kiError("Die KI konnte die Datei nicht verarbeiten.", detail);
     text = (data.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("");
   }
-  try { return parseJson(text); } catch(e) { throw new Error("Die Antwort war nicht lesbar. Bitte ein schärferes Foto versuchen."); }
+  try { return parseJson(text); } catch(e) { throw kiError("Die Antwort war nicht lesbar. Bitte ein schärferes Foto versuchen.", text.slice(0,120)); }
 }
 const knownNames = () => [...new Set([...Object.values(products).map(p=>p.name), ...items.map(i=>i.name)])].slice(0,250);
 
