@@ -375,6 +375,15 @@ details.row.goldsep{border-bottom:1px solid color-mix(in srgb,var(--gold) 30%,tr
 .bsbox{margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--gem) 35%,transparent);background:color-mix(in srgb,var(--gem) 6%,transparent)}
 .bs-h{font-weight:600;margin-bottom:6px}.bsrow{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px dashed var(--line)}.bsrow>div{display:flex;flex-direction:column}.bsrow small{color:var(--ink2);font-size:12px}
 .bsprev{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px}.gtag.bs{color:var(--gem);border-color:color-mix(in srgb,var(--gem) 40%,transparent)}
+.row.dauer{opacity:.5}.row.dauer small{display:block;font-size:11px;color:var(--mute)}
+.hsinfo{margin-top:12px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--gem) 7%,transparent);border:1px solid color-mix(in srgb,var(--gem) 30%,transparent)}.hsinfo .row{border-bottom:0}
+.hssum{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin:0 0 6px;border-radius:8px;background:color-mix(in srgb,var(--gem) 10%,transparent);font-weight:600}.hssum small{display:block;font-weight:400;font-size:11px;color:var(--mute)}
+.monthnav{position:relative}.mtitle{cursor:pointer;border-bottom:1px dashed color-mix(in srgb,var(--ink) 25%,transparent)}.mtitle::after{content:" ▾";font-size:12px;color:var(--mute)}
+.mpick{position:absolute;top:calc(100% + 6px);left:0;z-index:30;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:10px;width:260px}
+.mp-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.mp-g{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mp-g button{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:8px 0;font:inherit;font-size:13px;cursor:pointer}.mp-g button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}.mp-g button.cur{outline:2px solid color-mix(in srgb,var(--acc) 40%,transparent)}.mp-g button:disabled{opacity:.35;cursor:default}
+.mp-f{margin-top:8px;text-align:right}
+.card.monthbar{overflow:visible;position:relative;z-index:5}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
@@ -594,7 +603,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
-const APPV={nr:'2.0',datum:'28.09.2026'};/* Bei jeder neuen Version hochzählen */
+const APPV={nr:'2.0',datum:'28.09.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
 const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
@@ -613,7 +622,7 @@ function baseVars(){const g=GYM;GYM=null;const v=vars();GYM=g;return v;}
 /* Vorjahres-Ansparung (Wasser, Grundsteuer): Ändert sich der Jahresbetrag mitten im Jahr (z. B. neuer Bescheid ab Februar),
    wird das in den Vormonaten bereits Angesparte verrechnet: Rest des Jahresbetrags / verbleibende Monate. Ab Januar wieder Jahresbetrag / 12. */
 /* Bescheide (Wasser, Grundsteuer): item.bsch = {JJJJ:{f:Februar-Rate, r:weitere Raten}}.
-   Ab Februar des Bescheid-Jahres gilt: Raten wie im Bescheid, Ansparen fürs Folgejahr = 4 × r. */
+   Ab Februar des Bescheid-Jahres gilt: Raten wie im Bescheid, Ansparen fürs Folgejahr = Gesamtbetrag laut Bescheid (f + 3 × r). */
 const BSN={h_wasser:'Wasser',h_grundst:'Grundsteuer'};
 /* Jahresposten mit neuem Beitrag: item.bsch={JJJJ:{j:neuer Jahresbetrag, ab:'JJJJ-MM' Fälligkeit}} */
 const BSJ={h_wohngeb:['Wohngebäudeversicherung','Wohngebäude_jährlich'],h_hausrat:['Hausratversicherung','Hausrat_jährlich'],h_haftpfl:['Haftpflichtversicherung','Haftpflicht_jährlich'],h_abfall:['Abfallgebühr','Abfall_jährlich'],h_adac:['ADAC','ADAC_jährlich']};
@@ -622,7 +631,7 @@ function bjAusgleich(k,ab,j){let sv=0;for(let i=1;i<=12;i++){const m=ymAdd(ab,-i
 function bjDue(k){const vn=BSJ[k]?.[1];for(let ym=CUR;ym<=ymAdd(CUR,24);ym=ymAdd(ym,1)){if((S.plan[ym]?.HAUS?.G||[]).some(e=>(e.f||'').includes(vn)))return ym;}return ymAdd(CUR,1);}
 function bsList(k){const it=S.grund.items.find(i=>i.k===k);return Object.entries(it?.bsch||{}).map(([y,b])=>({y:+y,f:+b.f,r:+b.r,am:b.am})).sort((a,b)=>a.y-b.y);}
 function bsFor(k,ym){const y=+ym.slice(0,4),m=+ym.slice(5);return bsList(k).filter(b=>b.y<y||(b.y===y&&m>=2)).at(-1)||null;}
-function annOf(k,ym){const b=ym&&bsFor(k,ym);return b?4*b.r:gn(k,ym);}
+function annOf(k,ym){const b=ym&&bsFor(k,ym);return b?b.f+3*b.r:gn(k,ym);}
 function rateOf(k,ym){if(!ym)ym=CUR;const y=+ym.slice(0,4),m=+ym.slice(5);const b=bsList(k).filter(x=>x.y<=y).at(-1);if(b)return b.y===y&&m===2?b.f:b.r;return k==='h_wasser'?gn('h_wasser_ab',ym):gn('h_grundst',ym)/4;}
 /* Vorjahres-Ansparung: Ändert sich der Jahresbetrag mitten im Jahr, wird das in den Vormonaten Angesparte verrechnet:
    (Jahresbetrag − angespart) / verbleibende Monate. Ab Januar wieder Jahresbetrag / 12. */
@@ -630,9 +639,11 @@ function vjRate(k,ym){if(!ym)return annOf(k,CUR)/12;const y=ym.slice(0,4),mm=+ym
   let ch=0;for(let m=2;m<=mm;m++)if(Math.abs(annOf(k,M(m))-annOf(k,M(m-1)))>0.005)ch=m;if(!ch)return annOf(k,ym)/12;
   let saved=0;for(let j=1;j<ch;j++)saved+=vjRate(k,M(j));return Math.max(0,(annOf(k,ym)-saved)/(13-ch));}
 function bsAusgleich(k,y){const b=bsList(k).find(x=>x.y===y);if(!b)return null;let sv=0;for(let j=1;j<=12;j++)sv+=vjRate(k,(y-1)+'-'+String(j).padStart(2,'0'));const pay=b.f+3*b.r;return {sv:r2(sv),pay:r2(pay),d:r2(pay-sv),b};}
+let VJ_LAST=null;
+function jOf(ym){const g=GYM;GYM=ym;vars();const J={...VJ_LAST};GYM=g;return J;}
 function vars(){
   const J={J5:gn('h_tilgung'),J6:gn('h_wohngeb')/12,J7:gn('h_hausrat')/12,J8:vjRate('h_wasser',GYM),J9:vjRate('h_grundst',GYM),J10:gn('h_abfall')/12,J11:gn('h_risiko'),J12:gn('h_haftpfl')/12,J13:gn('h_rechts'),J14:gn('h_adac')/12,J15:gn('h_internet'),J16:gn('h_gez')*4/12,J17:gn('h_essen'),J18:gn('h_s_frei')+gn('h_s_chatgpt')+gn('h_s_pcloud')+gn('h_s_prime'),J19:0,J20:S.grund.items.filter(i=>i.cu&&i.g==='Haus').reduce((a,i)=>a+(i.cu.rh==='j'?gn(i.k)/12:gn(i.k)),0)};
-  const anteil=Object.values(J).reduce((a,b)=>a+b,0)/2;
+  const anteil=Object.values(J).reduce((a,b)=>a+b,0)/2;VJ_LAST=J;
   const st=gv('ing_start')||'2026-11';
   return {D_C19:anteil,D_D19:anteil,D_J5:J.J5,D_J11:J.J11,D_J13:J.J13,D_J15:J.J15,D_J17:J.J17,D_J18:J.J18,
     Pausch_Till:gn('t_p_schwimmen')+gn('t_p_restaurant')+gn('t_p_klamotten')+gn('t_p_etf')+gn('t_p_sonst'),
@@ -786,6 +797,11 @@ const sign=v=>v<-0.005?'neg':v>0.005?'pos':'';
 /* ---------- Monatsnavigation ---------- */
 function mState(ym){const P=S.plan[ym];if(ym<planStart())return 'vor Planbeginn';if(!P)return 'kein Plan';if(P.zu||SH.every(sh=>P[sh]?.zu))return '🔒 abgeschlossen';{const cz=SH.filter(sh=>P[sh]?.zu).map(sh=>SHN[sh]);if(cz.length)return '🔒 '+cz.join(' + ')+' abgeschlossen';}const fx=['TILL','PATRICK'].filter(sh=>fixInfo(sh,P[sh])?.fixed).length;const base=ym<CUR?'offen (vergangen)':ym===CUR?'laufender Monat':P._virt?'fortgeschrieben':'Planung';return fx===2?'📌 festgeschrieben · '+base:fx===1?'📌 teilweise festgeschrieben · '+base:base;}
 function renderMonthBar(){$$('.mtitle').forEach(e=>e.textContent=ymName(month));$$('.mstate').forEach(e=>{const t=mState(month);e.textContent=t;e.classList.toggle('fixed',t.startsWith('📌 fest'));e.classList.toggle('part',t.startsWith('📌 teil'));e.classList.toggle('zu',t.startsWith('🔒'));});const c=$('#m-close');if(c)c.textContent=bzu(S.plan[month],mWho)?`Abschluss aufheben (${SHN[mWho]})`:`${SHN[mWho]} abschließen`;}
+document.addEventListener('click',e=>{const t=e.target.closest('.mtitle');const pk=e.target.closest('.mpick');
+  if(pk){e.stopPropagation();const yb=e.target.closest('[data-py]');if(yb){pk.dataset.y=+pk.dataset.y+(+yb.dataset.py);pk.outerHTML=mPick(+pk.dataset.y);return;}const mb=e.target.closest('[data-pm]');if(mb&&!mb.disabled){month=mb.dataset.pm;$$('.mpick').forEach(x=>x.remove());render();}return;}
+  if(t){const open=t.parentElement.querySelector('.mpick');$$('.mpick').forEach(x=>x.remove());if(!open)t.insertAdjacentHTML('afterend',mPick(+month.slice(0,4)));return;}
+  if(!e.target.closest('.mpick'))$$('.mpick').forEach(x=>x.remove());},true);
+function mPick(y){const y0=+MIN_M.slice(0,4),y1=+PLAN1.slice(0,4);return `<div class="mpick" data-y="${y}"><div class="mp-h"><button type="button" class="btn sec sm" data-py="-1" ${y<=y0?'disabled':''}>‹</button><b>${y}</b><button type="button" class="btn sec sm" data-py="1" ${y>=y1?'disabled':''}>›</button></div><div class="mp-g">${PVM.map((n,i)=>{const ym=y+'-'+String(i+1).padStart(2,'0');const P=S.plan[ym];return `<button type="button" data-pm="${ym}" class="${ym===month?'on':''}${ym===CUR?' cur':''}${P?.zu?' zu':''}" ${ym<MIN_M||ym>PLAN1?'disabled':''}>${n}${P?.zu?' 🔒':''}</button>`;}).join('')}</div><div class="mp-f"><button type="button" data-pm="${CUR<MIN_M?MIN_M:CUR}" class="btn sec sm">Heute</button></div></div>`;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-mnav]');if(!b)return;const n=ymAdd(month,+b.dataset.mnav);if(n<MIN_M||n>PLAN1)return;month=n;render();});
 
 /* ---------- Budget ---------- */
@@ -817,8 +833,7 @@ function rHeute(){
   if(!c){$('#h-ueb').innerHTML='<div class="muted">Der Plan beginnt im Oktober 2026.</div>';$('#h-konten').innerHTML='';return;}
   const H=c.HAUS;
   $('#h-ueb').innerHTML=`<div class="kpi"><span class="v">${eur(H.ueb)}</span><span class="n">im ${ymName(month)} vom Haushaltskonto aufs Girokonto überweisen</span></div>
-   ${H.dauer.length?`<div class="note">Nicht enthalten, weil per Dauerauftrag: ${H.dauer.map(([l,v])=>`${esc(l)} ${eur(v)}`).join(', ')}.</div>`:''}
-   <details open style="margin-top:8px"><summary class="muted" style="cursor:pointer">Woraus sich der Betrag zusammensetzt</summary>${(S.plan[month]?.HAUS?.G||[]).filter(e=>!isDauer(e.l)).map(e=>`<div class="row"><span>${esc(e.l)}</span><span class="num">${eur(entryVal(e,S.plan[month].HAUS,'HAUS'))}</span></div>`).join('')}</details>`;
+   <details open style="margin-top:8px"><summary class="muted" style="cursor:pointer">Woraus sich der Betrag zusammensetzt</summary>${(S.plan[month]?.HAUS?.G||[]).filter(e=>!isDauer(e.l)).map(e=>`<div class="row"><span>${esc(e.l)}</span><span class="num">${eur(entryVal(e,S.plan[month].HAUS,'HAUS'))}</span></div>`).join('')}${H.dauer.map(([l,v])=>`<div class="row dauer"><span>${esc(l)} <small>Dauerauftrag, nicht in der Summe</small></span><span class="num">${eur(v)}</span></div>`).join('')}</details>${hausInfo()}`;
   const dl=(v,base)=>{if(base==null)return'';const d=v-base;return Math.abs(d)<0.005?'<small class="dlt ok">✓ wie geplant</small>':`<small class="dlt ${d<0?'neg':'pos'}">${d>0?'+':'−'}${eur(Math.abs(d))} seit Planung</small>`;};
   const snapInfo=sh=>{const sn=S.plan[month]?.[sh]?.snap;if(bzu(S.plan[month],sh))return `<div class="note snapn">🔒 Abgeschlossen am ${dDE(bzuAm(S.plan[month],sh))}.</div>`;return sn?`<div class="note snapn">📌 Geplant am ${dDE(sn.am)}. Daneben siehst du, was sich seitdem geändert hat.</div>`:`<div class="note snapn">Noch nicht festgeschrieben. Nach der Monatsplanung im Reiter Monat beim Giroausgleich auf 📌 tippen, dann siehst du hier jede Abweichung.</div>`;};
   const box=(t,rows,color,sh,extra='')=>`<div class="card" style="border-top:3px solid ${color}"><h2>${t}</h2>${sh?snapInfo(sh):''}${rows.map(([l,v,b,base])=>`<div class="row"><span>${l}</span><span class="rv">${b?`<b class="num ${sign(v)}">${eur(v)}</b>`:`<span class="num ${v<0?'neg':''}">${eur(v)}</span>`}${dl(v,base)}</span></div>`).join('')}${extra}</div>`;
@@ -835,6 +850,13 @@ function bkAlt(){const am=S.sich?.am?S.sich.am.slice(0,10):null;if(!am)return 99
 function rBkHint(){const el=$('#h-bk');if(!el)return;const d=bkAlt();if(d<30){el.innerHTML='';return;}
   el.innerHTML=`<div class="bkhint">💾 <div><b>${d>=999?'Noch keine Sicherung gespeichert':'Letzte Sicherung vor '+d+' Tagen'}</b><small>Einmal im Monat sichern, dann bleibt nichts verloren.</small></div><button type="button" class="btn sm" data-bknow="1">Jetzt sichern</button></div>`;}
 document.addEventListener('click',e=>{if(e.target.closest('[data-bknow]'))$('#bk-save').click();});
+const JLAB={J5:'Tilgung',J6:'Wohngebäudeversicherung',J7:'Hausrat',J8:'Wasser',J9:'Grundsteuer',J10:'Abfall',J11:'Risikolebensversicherung',J12:'Haftpflicht',J13:'Rechtsschutz',J14:'ADAC',J15:'Internet',J16:'GEZ',J17:'Essen',J18:'Sonstiges',J20:'eigene Posten'};
+function hsOf(ym){const P=S.plan[ym];const e=(P?.TILL?.C||[]).find(x=>/^haus, sonst/i.test((x.l||'').trim()));if(!e)return null;useYm(ym);const v=entryVal(e,P.TILL,'TILL');return v;}
+function hausInfo(){const now=hsOf(month);if(now==null){useYm(month);return '';}let nx=null;for(let ym=ymAdd(month,1);ym<=PLAN1;ym=ymAdd(ym,1)){const v=hsOf(ym);if(v!=null&&Math.abs(v-now)>=0.5){nx=[ym,v];break;}}useYm(month);
+  let why='';if(nx){const a=jOf(ymAdd(nx[0],-1)),b=jOf(nx[0]);const ch=Object.keys(JLAB).map(k=>[JLAB[k],((b[k]||0)-(a[k]||0))/2]).filter(([,d])=>Math.abs(d)>=0.01);
+    why=ch.length?ch.map(([l,d])=>`${l} ${d>0?'+':'−'}${eur(Math.abs(d))}`).join(', '):(nx[0]==='2027-01'?'Heizöl-Rücklage (bis Dezember 2026) fällt weg':'feste Beträge im Plan ändern sich');}
+  useYm(month);
+  return `<div class="hsinfo"><div class="row"><span><b>Haus, sonst.</b> je Person im ${ymName(month)}</span><b class="num">${eur(now)}</b></div>${nx?`<div class="note" style="margin:2px 0 0">Nächste Änderung ab <b>${ymName(nx[0])}</b>: ${eur(nx[1])} (${nx[1]>now?'+':'−'}${eur(Math.abs(nx[1]-now))}) · ${why}</div>`:'<div class="note" style="margin:2px 0 0">Keine Änderung bis '+ymName(PLAN1)+' geplant.</div>'}</div>`;}
 function rFwNext(){const el=$('#h-fw');if(!el||typeof fwList!=='function')return;const R=FR();
   const L=fwList().filter(b=>b.ud>=TODAY).sort((a,b)=>a.ud.localeCompare(b.ud));if(!L.length){el.hidden=true;return;}el.hidden=false;const b=L[0];
   const spar=b.spar;const tage=Math.round((Date.parse(b.ud)-Date.parse(TODAY))/864e5);
@@ -1309,7 +1331,7 @@ $('#gp').addEventListener('change',e=>{const x=parseNum(e.target.value);if(x>0)s
 /* ---------- Einstellungen ---------- */
 const GOWN=[['TILL','Till','var(--till)',[['Gehalt',/^t_gehalt$/],['IGBCE-Beitrag',/^t_igbce$/],['Pauschalen',/^t_p_/],['Versicherungen',/^t_(zahn|lv)$/],['Auto',/^t_(ioniq|tanken)$/]]],
   ['PATRICK','Patrick','var(--pat)',[['Gehalt',/^p_gehalt$/],['Pauschalen',/^p_p_/],['Versicherungen',/^p_debeka$/],['Kredit PC',/^p_pc$/],['Strom-Anteil',/^p_strom/]]],
-  ['GEM','Gemeinsam','var(--gem)',[['Kredite',/^(h_tilgung|ing_)/],['Versicherungen',/^h_(wohngeb|hausrat|risiko|haftpfl|rechts|adac)$/],['Wasser, Grundsteuer, Abfall',/^h_(wasser|wasser_ab|grundst|abfall)$/],['Internet & GEZ',/^h_(internet|gez)$/],['Essen',/^h_essen$/],['Sonstiges',/^h_s_/],['Strom',/^s_/],['Goldpreis',/^goldpreis$/]]]];
+  ['GEM','Gemeinsam','var(--gem)',[['Kredite',/^(h_tilgung|ing_)/],['Versicherungen',/^h_(wohngeb|hausrat|risiko|haftpfl|rechts|adac)$/],['Wasser, Grundsteuer, Abfall',/^h_(wasser|wasser_ab|grundst|abfall)$/],['Internet & GEZ',/^h_(internet|gez)$/],['Essen',/^h_essen$/],['Sonstiges',/^h_s_/],['Strom',/^s_/],['__gold',/^goldpreis$/]]]];
 const GOPEN=new Set();let GED=null;
 const gMon=i=>{if(i.fmt==='date'||i.k==='goldpreis'||i.k==='h_wasser_ab')return 0;const v=gn(i.k,CUR);return /jährlich/i.test(i.l)?v/12:/quartal/i.test(i.l)?v/3:v;};
 function gAddHTML(){if(!GADD)return `<button type="button" class="btn sec sm" id="gadd-open" style="margin-top:12px">+ Neuer Posten</button>`;
@@ -1338,7 +1360,7 @@ function bsForm(){const k=BSF.k||'h_wasser';const jp=!!BSJ[k];const opts=`<optgr
     <div class="row"><span>${y-1} für ${y} angespart</span><span class="num">${eur(a.sv)}</span></div>
     <div class="row"><span>${y} zu zahlen (${eur(f)} + 3 × ${eur(r)})</span><span class="num">${eur(a.pay)}</span></div>
     <div class="row"><b>${Math.abs(a.d)<0.01?'passt genau':a.d>0?'Nachzahlung – Till und Patrick zahlen im Februar je':'übrig vom Ansparen – Till und Patrick zahlen im Februar je'}</b><b class="num ${a.d>0?'neg':'pos'}">${Math.abs(a.d)<0.01?'':(a.d>0?'+':'−')+eur(Math.abs(a.d)/2)+(a.d>0?' mehr':' weniger')}</b></div>
-    <div class="note" style="margin:6px 0 0">Ansparen für ${y+1}: 4 × ${eur(r)} = <b>${eur(4*r)}</b>. Im Januar ${y} waren es noch ${eur(c.jan)}, ab Februar ${eur(c.feb)} im Monat (Januar wird verrechnet), ab Januar ${y+1} dann ${eur(c.nxt)} im Monat.</div></div>`;}
+    <div class="note" style="margin:6px 0 0">Ansparen für ${y+1}: Gesamtbetrag laut Bescheid ${y} = <b>${eur(f+3*r)}</b>. Im Januar ${y} waren es noch ${eur(c.jan)}, ab Februar ${eur(c.feb)} im Monat (Januar wird verrechnet), ab Januar ${y+1} dann ${eur(c.nxt)} im Monat.</div></div>`;}
   return `<form class="form gadd" id="f-bsch" style="margin-top:10px"><h3 style="width:100%;margin:0">Neuer Bescheid / Beitrag</h3>
     <label>Posten<select name="k">${opts}</select></label>
     <label>für das Jahr<input type="number" name="y" value="${y}" style="width:90px"></label>
@@ -1350,16 +1372,16 @@ function bsForm(){const k=BSF.k||'h_wasser';const jp=!!BSJ[k];const opts=`<optgr
 function grundHTML(){const used=new Set();const own=i=>i.g==='Till'?'TILL':i.g==='Patrick'?'PATRICK':'GEM';
   const rh=i=>i.k==='h_wasser_ab'?'je Rate · Feb, Mai, Aug, Nov':i.fmt==='date'||i.k==='goldpreis'||/gehalt/.test(i.k)?'':(i.cu?.rh==='j'||/jährlich/i.test(i.l))?'jährlich':/quartal/i.test(i.l)?'je Quartal':'monatlich';
   const lab=i=>{const t=rh(i);const bk=i.k==='h_wasser_ab'?'h_wasser':i.k;const bl=BSN[bk]?bsList(bk):[];return (bl.length?'':'')+esc(i.l.replace(/^(Pauschale|sonstiges):\s*/i,'').replace(/\s*\((jährlich|monatlich)\)/i,''))+(t?` <span class="gtag ${t==='monatlich'?'m':''}">${t}</span>`:'')+(i.cu?.an?` <span class="gtag">an ${esc(i.cu.an)}</span>`:'')+(i.cu?.art==='ein'?' <span class="gtag">Eingang</span>':'')+(i.cu?.ab&&i.cu.ab>CUR?` <span class="gtag">ab ${ymShort(i.cu.ab)}</span>`:'')+(i.bis?` <span class="gtag end">bis ${ymShort(i.bis)}</span>`:'')+(bl.length?` <span class="gtag bs">ab Feb ${bl[0].y} laut Bescheid</span>`:'');};
-  const row=i=>`<div class="grow${GED===i.k?' ed':''}${GNEW===i.k?' new':''}" data-row="${i.k}"><span><button type="button" class="glab" data-ged="${i.k}" title="Ende festlegen oder entfernen">${lab(i)}</button>${(i.hist||[]).map((h,hi)=>`<small class="hist">ab ${ymName(h.ab)}: <b>${i.fmt==='date'?esc(h.v):eur(h.v)}</b> <button type="button" data-hdel="${i.k}:${hi}" aria-label="Änderung löschen">×</button></small>`).join('')}</span><span class="gin">${i.fmt==='date'?`<input type="month" data-gk="${i.k}" value="${esc(i.v||'')}">`:`<input inputmode="decimal" data-gk="${i.k}" value="${num(i.v)}">`}<button type="button" class="gbtn" data-ged="${i.k}" title="Ende festlegen oder entfernen" aria-label="Bearbeiten">${GED===i.k?'✕':'⋯'}</button></span></div>`
+  const row=i=>`<div class="grow${GED===i.k?' ed':''}${GNEW===i.k?' new':''}" data-row="${i.k}"><span><button type="button" class="glab" data-ged="${i.k}" title="Ende festlegen oder entfernen">${lab(i)}</button>${(i.hist||[]).map((h,hi)=>`<small class="hist">ab ${ymName(h.ab)}: <b>${i.fmt==='date'?esc(h.v):eur(h.v)}</b> <button type="button" data-hdel="${i.k}:${hi}" aria-label="Änderung löschen">×</button></small>`).join('')}</span><span class="gin">${i.fmt==='date'?`<input type="month" data-gk="${i.k}" value="${esc(i.v||'')}">`:`<input inputmode="decimal" data-gk="${i.k}" value="${num(i.k==='goldpreis'?gn('goldpreis'):i.v)}">`}<button type="button" class="gbtn" data-ged="${i.k}" title="Ende festlegen oder entfernen" aria-label="Bearbeiten">${GED===i.k?'✕':'⋯'}</button></span></div>`
     +(GED===i.k?`<div class="gedit"><label>endet nach<input type="month" data-gbis="${i.k}" value="${i.bis||''}"></label><span class="muted">${i.bis?'danach 0 €':'leer = läuft weiter'}</span><button type="button" class="btn sec sm danger-t" data-gdel="${i.k}">Entfernen</button>${i.cu?'':'<div class="note" style="margin:4px 0 0;width:100%">Entfernen setzt den Posten in allen offenen Monaten auf 0. Abgeschlossene Monate bleiben, wie sie sind.</div>'}</div>`:'');
   return `<div class="gown">`+GOWN.map(([o,name,col,grp])=>{const its=S.grund.items.filter(i=>own(i)===o);
     const G=grp.map(([t,re])=>{const l=its.filter(i=>re.test(i.k));l.forEach(i=>used.add(i.k));return [t,l];}).filter(([,l])=>l.length);
     const rest=its.filter(i=>!used.has(i.k));const own2=rest.filter(i=>i.cu),oth=rest.filter(i=>!i.cu);if(oth.length)G.push(['Weitere',oth]);if(own2.length)G.push(['Eigene Posten',own2]);
     const tot=its.reduce((a,i)=>a+(/gehalt/.test(i.k)?0:gMon(i)),0);
-    return `<div class="gcol" style="--oc:${col}"><div class="gcol-h"><span>${name}</span>${o!=='GEM'||tot?`<small>Ausgaben ≈ ${eur(tot,0)} / Monat</small>`:''}</div>`+G.map(([t,l])=>{const key=o+':'+t;
+    return `<div class="gcol" style="--oc:${col}"><div class="gcol-h"><span>${name}</span>${o!=='GEM'||tot?`<small>Ausgaben ≈ ${eur(tot,0)} / Monat</small>`:''}</div>${o==='GEM'?(()=>{const hs=hsOf(CUR<PLAN0?PLAN0:CUR)??0;useYm(month);return `<div class="hssum"><span>Haus, sonst. <small>je Person · ${ymName(CUR<PLAN0?PLAN0:CUR)}</small></span><b class="num">${eur(hs)}</b></div>`;})():''}`+G.filter(([t])=>t!=='__gold').map(([t,l])=>{const key=o+':'+t;
       if(l.length===1&&(l[0].l.replace(/\s*\(.*\)/,'').length<30||t===l[0].l))return `<div class="gsingle${l[0].k==='goldpreis'?' ggold':''}">${row(l[0])}${l[0].k==='goldpreis'?`<div class="note" style="margin:2px 0 0">${goldAm()?'Stand '+dDE(goldAm())+' · ':''}gilt überall außer in abgeschlossenen Monaten</div>`:''}</div>`;
       const m=l.reduce((a,i)=>a+gMon(i),0);
-      return `<details class="ggrp" data-gg="${key}" ${GOPEN.has(key)?'open':''}><summary><span>${esc(t)} <small class="muted">${l.length}</small></span>${m?`<b class="num">${eur(m)}<small class="muted"> / Monat</small></b>`:''}</summary>${l.map(row).join('')}</details>`;}).join('')+(o==='GEM'?bsHTML():'')+`</div>`;}).join('')+`</div>`+gAddHTML();}
+      return `<details class="ggrp" data-gg="${key}" ${GOPEN.has(key)?'open':''}><summary><span>${esc(t)}</span>${m?`<b class="num">${eur(m)}<small class="muted"> / Monat</small></b>`:''}</summary>${l.map(row).join('')}</details>`;}).join('')+(o==='GEM'?bsHTML()+(()=>{const g=G.find(([t])=>t==='__gold');return g?`<div class="gsingle ggold">${row(g[1][0])}<div class="note" style="margin:2px 0 0">${goldAm()?'Stand '+dDE(goldAm())+(liveGold()?' (automatisch)':' (von Hand)')+' · ':''}wird täglich automatisch aktualisiert · gilt überall außer in abgeschlossenen Monaten</div></div>`:'';})():'')+`</div>`;}).join('')+`</div>`+gAddHTML();}
 function rEinst(){
   const groups={};S.grund.items.forEach(i=>{(groups[i.g]??=[]).push(i);});
   if($('#gh-k').options.length!==S.grund.items.filter(i=>i.fmt!=='date').length)$('#gh-k').innerHTML=S.grund.items.filter(i=>i.fmt!=='date').map(i=>`<option value="${i.k}">${esc(i.g)}: ${esc(i.l)}</option>`).join('');
