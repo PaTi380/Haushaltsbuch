@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.7 vom 28.09.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.8 vom 28.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -232,7 +232,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.7</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.8</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -308,7 +308,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.7 vom 28.09.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.8 vom 28.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -330,7 +330,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.7 vom 28.09.2026";
+const APP_VERSION = "Version 1.8 vom 28.09.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -1047,6 +1047,19 @@ async function shrink(file){
 }
 async function kiCfg(){ const s = await fs.doc("privat/ki").get(); return s.exists ? s.data() : {}; }
 const parseJson = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); if (a<0 || b<a) throw 0; return JSON.parse(t.slice(a, b+1)); };
+const tryParse = t => { try { return parseJson(t); } catch(e) { return null; } };
+// Wurde die Antwort mittendrin abgeschnitten, bis zum letzten vollständigen Artikel zurückgehen und sauber schließen
+function repairJson(t){
+  const a = t.indexOf("{"); if (a < 0) return null;
+  let p = t.length, n = 0;
+  while ((p = t.lastIndexOf("}", p - 1)) > a && n++ < 400) {
+    for (const tail of ["]}", "}]}", ""]) {
+      try { const o = JSON.parse(t.slice(a, p + 1) + tail);
+        if (o && (Array.isArray(o.a) || Array.isArray(o.z) || Array.isArray(o.artikel) || Array.isArray(o.zutaten)) && (o.a||o.z||o.artikel||o.zutaten).length) { o._partial = true; return o; } } catch(e) {}
+    }
+  }
+  return null;
+}
 const sleep = (ms, signal) => new Promise((ok, bad) => {
   const t = setTimeout(ok, ms);
   signal?.addEventListener("abort", () => { clearTimeout(t); bad(new DOMException("abgebrochen","AbortError")); }, {once:true});
@@ -1064,7 +1077,7 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
   const c = await kiCfg();
   if (!c.key) throw kiError("Kein KI-Zugang eingerichtet. Bitte im Haushaltsbuch unter Einstellungen → KI-Zugang eintragen.");
   const say = t => status && status(t);
-  let text = null;
+  let text = null, result = null;
   if (c.anbieter === "gemini") {
     // Modelle, deren Tageskontingent heute schon aufgebraucht ist, gar nicht erst anfragen – spart Kontingent
     const dayKey = new Date().toLocaleDateString("sv-SE", {timeZone:"America/Los_Angeles"});   // Google setzt um Mitternacht Pazifikzeit zurück
@@ -1076,7 +1089,8 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
     const waits = [0, 5000, 12000];            // 3 Runden: sofort, nach 5 s, nach 12 s
     // Stufe 0: kurzes Nachdenken + festes Antwortschema (schnell), 1: nur Schema, 2: einfach
     let level = +(localStorage.getItem("einkauf-gemini-level") || 0) || 0;
-    const genCfg = lv => Object.assign({responseMimeType:"application/json", temperature:0, maxOutputTokens:4096},
+    let maxOut = 16384;   // lange Bons (50+ Zeilen) brauchen Platz
+    const genCfg = lv => Object.assign({responseMimeType:"application/json", temperature:0, maxOutputTokens:maxOut},
       lv < 2 && schema ? {responseSchema: schema} : {}, lv < 1 ? {thinkingConfig:{thinkingLevel:"minimal"}} : {});
     let last = "";
     for (let round = 0; round < waits.length && text == null; round++) {
@@ -1100,7 +1114,14 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
         const msg = (data?.error?.message || "").slice(0, 160);
         if (r.ok) {
           const t = (data.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");
-          if (t) { text = t; lastModelUsed = m; try { localStorage.setItem("einkauf-gemini-level", String(level)); } catch(e) {} break; }
+          const fr = data.candidates?.[0]?.finishReason || "";
+          if (t) {
+            let parsed = tryParse(t);
+            if (!parsed && fr === "MAX_TOKENS" && maxOut < 32768) { maxOut = 32768; i--; say("Langer Bon – wird vollständig gelesen …"); continue; }
+            if (!parsed) parsed = repairJson(t);
+            if (parsed) { result = parsed; text = t; lastModelUsed = m; try { localStorage.setItem("einkauf-gemini-level", String(level)); } catch(e) {} break; }
+            last = `${m}: unvollständige Antwort (${fr || "?"})`; continue;
+          }
           last = `${m}: leere Antwort (${data.candidates?.[0]?.finishReason || data.promptFeedback?.blockReason || "?"})`; continue;
         }
         last = `${m}: ${r.status} ${msg}`;
@@ -1142,7 +1163,10 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
     if (!r.ok) throw kiError("Die KI konnte die Datei nicht verarbeiten.", detail);
     text = (data.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("");
   }
-  try { return parseJson(text); } catch(e) { throw kiError("Die Antwort war nicht lesbar. Bitte ein schärferes Foto versuchen.", text.slice(0,120)); }
+  if (result) return result;
+  const parsed = tryParse(text) || repairJson(text);
+  if (parsed) return parsed;
+  throw kiError("Die Antwort war nicht lesbar. Bitte nochmal versuchen.", String(text).slice(0,120));
 }
 const knownNames = () => [...new Set([...Object.values(products).sort((a,b)=>(b.count||0)-(a.count||0)).map(p=>p.name), ...items.map(i=>i.name)])].slice(0,150);
 const openNames = () => items.filter(i => !i.done).map(i => {
@@ -1151,7 +1175,7 @@ const openNames = () => items.filter(i => !i.done).map(i => {
 }).slice(0, 80).join("; ");
 function bonPrompt(){
   return `Lies diesen deutschen Kassenbon (Foto oder PDF). Gib NUR dieses JSON zurück:
-{"l":"Geschäft oder null","d":"YYYY-MM-DD oder null","s":Gesamtsumme als Zahl oder null,"a":[{"n":"Artikelname","m":Stückzahl,"p":Preis pro Stück,"k":"Kategorie","li":"Listeneintrag oder null"}]}
+{"l":"Geschäft oder null","d":"YYYY-MM-DD oder null","s":Gesamtsumme als Zahl oder null (steht meist unten bei SUMME),"a":[{"n":"Artikelname","m":Stückzahl,"p":Preis pro Stück,"k":"Kategorie","li":"Listeneintrag oder null"}]}
 k ist eine von: ${CAT_IDS.join(", ")}
 Regeln:
 - n: kurzer normaler Name wie auf einer Einkaufsliste ("H-MILCH 3,5% 1L" → "Milch", "BIO BANANE" → "Bananen").
@@ -1172,16 +1196,16 @@ Offene Einkaufsliste: ${openNames() || "(leer)"} Wenn dieselbe Zutat, schreibe n
 }
 const BON_SCHEMA = {type:"OBJECT", properties:{
   l:{type:"STRING", nullable:true}, d:{type:"STRING", nullable:true}, s:{type:"NUMBER", nullable:true},
-  a:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"NUMBER"}, p:{type:"NUMBER"}, k:{type:"STRING", enum:CAT_IDS}, li:{type:"STRING", nullable:true}}, required:["n","p"]}}},
-  required:["a"]};
+  a:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"NUMBER"}, p:{type:"NUMBER"}, k:{type:"STRING", enum:CAT_IDS}, li:{type:"STRING", nullable:true}}, required:["n","p"], propertyOrdering:["n","m","p","k","li"]}}},
+  required:["a"], propertyOrdering:["l","d","s","a"]};
 const REZEPT_SCHEMA = {type:"OBJECT", properties:{
   t:{type:"STRING"}, p:{type:"NUMBER", nullable:true},
-  z:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"STRING"}, k:{type:"STRING", enum:CAT_IDS}, v:{type:"BOOLEAN"}, li:{type:"STRING", nullable:true}}, required:["n"]}}},
-  required:["z"]};
+  z:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"STRING"}, k:{type:"STRING", enum:CAT_IDS}, v:{type:"BOOLEAN"}, li:{type:"STRING", nullable:true}}, required:["n"], propertyOrdering:["n","m","k","v","li"]}}},
+  required:["z"], propertyOrdering:["t","p","z"]};
 // Kurzform in die gewohnte Form übersetzen (alte Langform geht weiterhin)
 function normalizeScan(r){
   r = r || {};
-  if (Array.isArray(r.a)) return {laden:r.l ?? r.laden, datum:r.d ?? r.datum, summe:r.s ?? r.summe,
+  if (Array.isArray(r.a)) return {partial: !!r._partial, laden:r.l ?? r.laden, datum:r.d ?? r.datum, summe:r.s ?? r.summe,
     artikel:r.a.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, einzelpreis:x.p ?? x.einzelpreis, kategorie:x.k ?? x.kategorie, bon:"", li:x.li ?? null}))};
   if (Array.isArray(r.z)) return {titel:r.t ?? r.titel, portionen:r.p ?? r.portionen,
     zutaten:r.z.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, kategorie:x.k ?? x.kategorie, vorrat:!!(x.v ?? x.vorrat), li:x.li ?? null}))};
@@ -1199,6 +1223,7 @@ function showBonReview(res){
   if (!rows.length) { $("#rvSheet").innerHTML = `<h3>Keine Artikel gefunden</h3><p class="sub">Versuch es mit einem geraden, gut beleuchteten Foto, auf dem der ganze Bon zu sehen ist.</p><div class="actions"><button class="btn-main" data-close>OK</button></div>`; return; }
   $("#rvSheet").innerHTML = `
     <h3>Kassenbon prüfen</h3><p class="sub">Namen und Preise kannst du korrigieren. Nicht angehakte Zeilen werden ignoriert.</p>
+    ${res.partial || res._partial ? `<p class="note warn" style="color:var(--warn)">Der Bon war sehr lang und wurde nur bis „${esc(rows[rows.length-1]?.name||"")}“ gelesen. Die übrigen Artikel fehlen in den Preisen – am besten „Verwerfen“ und nochmal einlesen.</p>` : ""}
     <div class="rv-head"><div><label for="rvLaden">Laden</label><input id="rvLaden" type="text" value="${esc(review.laden)}"></div><div><label for="rvDatum">Datum</label><input id="rvDatum" type="date" value="${review.datum}"></div></div>
     <span class="lbl">Artikel (Name, Preis pro Stück)</span>
     <div id="rvRows">${rows.map((r,i)=>`
@@ -1219,7 +1244,13 @@ function showBonReview(res){
   review.monthNext = false;
   $("#rvDatum").addEventListener("change", checkBooked);
   $("#rvMonth").addEventListener("click", e => { const b = e.target.closest("[data-next]"); if (!b) return; review.monthNext = b.dataset.next === "1"; checkBooked(); });
-  checkBooked();
+  checkBooked().then(() => {
+    if ((res.partial || res._partial) && review.summe == null && $("#rvBook")) {
+      $("#rvBook").checked = false;
+      $("#rvBookNote").className = "note warn";
+      $("#rvBookNote").textContent = "Die Gesamtsumme fehlt, weil der Bon nicht vollständig gelesen wurde. Bitte nicht buchen, sondern den Betrag über „Nur Betrag eintragen“ oder nach einem erneuten Einlesen.";
+    }
+  });
 }
 function bindReview(){
   $("#rvRows").addEventListener("click", e => {
