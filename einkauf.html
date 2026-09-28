@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Einkaufsliste Till & Patrick – Version 1 vom 28.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -90,6 +91,8 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .dock-in{max-width:560px;margin:0 auto}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:0 2px 10px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
+.chip b{font-weight:700}
+.chips.suggest .chip{border-color:var(--leaf)}
 .chip{flex-shrink:0;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 13px;font-size:14px;font-weight:500;white-space:nowrap}
 .addrow{display:flex;gap:8px}
 .addrow input{flex:1;min-width:0;height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--paper);padding:0 16px;font-size:17px}
@@ -151,12 +154,73 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 .seg{display:flex;background:var(--soft);border-radius:12px;padding:3px;margin:10px 0 0 30px}
 .seg button{flex:1;border:0;background:none;border-radius:9px;padding:8px 6px;font-size:14px;font-weight:600;color:var(--mute)}
 .seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+/* Intro: edler Notizblock, klappt nach oben auf (Gegenstück zum Haushaltsbuch) */
+#intro{position:fixed;inset:0;z-index:60;display:grid;place-items:center;cursor:pointer;perspective:1600px}
+#intro::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,#14221b 0,#070b09 75%);animation:inBgOut .7s 1.15s ease forwards}
+.nb{position:relative;width:min(70vw,300px);aspect-ratio:3/4;animation:nbIn .6s ease both}
+.nb-cover{position:absolute;inset:0;transform-origin:center top;border-radius:6px;
+  background:linear-gradient(160deg,#153a2b 0,#0e2a1f 55%,#091c15 100%);
+  box-shadow:inset 0 6px 10px rgba(0,0,0,.45),inset 0 -1px 0 rgba(255,255,255,.05),0 20px 50px rgba(0,0,0,.6);
+  display:grid;place-items:center;backface-visibility:hidden;animation:nbFlip 1.05s 1s cubic-bezier(.6,.05,.3,1) forwards}
+.nb-frame{position:absolute;inset:12% 8% 7%;border:1px solid rgba(217,189,116,.55);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+  box-shadow:inset 0 0 0 4px rgba(0,0,0,.15),inset 0 0 0 5px rgba(217,189,116,.25)}
+.nb-t,.nb-n,.nb-y{background:linear-gradient(100deg,#9c7a34 0,#f3dc9a 45%,#b8903f 55%,#f3dc9a 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gold 1.4s ease forwards;font-family:Figtree,system-ui,sans-serif}
+.nb-t{font-size:clamp(16px,5vw,22px);letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+.nb-n{font-size:clamp(14px,4.2vw,18px);letter-spacing:.18em;font-style:italic}
+.nb-y{font-size:11px;letter-spacing:.3em;text-transform:uppercase;margin-top:8px;opacity:.8}
+.nb-v{font:500 10px/1 Figtree,system-ui,sans-serif;letter-spacing:.25em;text-transform:uppercase;color:rgba(217,189,116,.55);margin-top:2px}
+.nb-rule{width:46%;height:1px;background:linear-gradient(90deg,transparent,#d9bd74,transparent)}
+.nb-ico{width:40px;height:40px;margin-bottom:2px}
+.nb-rings{position:absolute;left:9%;right:9%;top:-9px;display:flex;justify-content:space-between;z-index:2;animation:pageOut .45s 1.05s ease forwards}
+.nb-rings i{width:9px;height:22px;border-radius:5px;background:linear-gradient(90deg,#8e7437,#f1dca0 45%,#a7843c);box-shadow:0 2px 3px rgba(0,0,0,.5)}
+@keyframes nbIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+@keyframes nbFlip{to{transform:rotateX(165deg)}}
+@keyframes pageOut{to{opacity:0;transform:translateY(-10px) scale(.98)}}
+@keyframes gold{from{background-position:100% 0}to{background-position:0 0}}
+@keyframes inBgOut{to{opacity:0}}
+@keyframes inOut{0%,82%{opacity:1}100%{opacity:0;visibility:hidden}}
+@media (prefers-reduced-motion:reduce){#intro{animation:inOut 1s ease forwards}.nb,.nb-cover,.nb-rings{animation:none}}
+.tabs{display:flex;background:var(--soft);border-radius:12px;padding:3px;margin:0 0 16px}
+.tabs button{flex:1;border:0;background:none;border-radius:9px;padding:9px 6px;font-size:15px;font-weight:600;color:var(--mute)}
+.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.kpi b{display:block;font-family:"Bricolage Grotesque",Figtree,sans-serif;font-size:20px;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--mute)}
+.st-tools{display:flex;gap:8px;margin-bottom:10px}
+.st-tools input{flex:1;min-width:0;height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);padding:0 14px;font-size:16px}
+.st-tools select{height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);padding:0 10px;font-size:14px}
+.st-row{display:flex;align-items:center;gap:10px;width:100%;min-height:62px;border:0;border-top:1px solid var(--line);background:none;text-align:left;padding:8px 14px}
+.st-row:first-child{border-top:0}
+.st-row .txt{flex:1;min-width:0}
+.st-row .name{font-size:16px;font-weight:500;display:block;overflow-wrap:anywhere}
+.st-row .meta{font-size:12px;color:var(--mute)}
+.spark{flex-shrink:0;color:var(--leaf)}
+.st-p{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:64px}
+.st-p small{display:block;font-size:12px;font-weight:600}
+.up{color:var(--radish)} .down{color:var(--c-obst)} .same{color:var(--mute)}
+.st-foot{font-size:12px;color:var(--mute);margin:10px 4px 0}
+.chart{width:100%;height:auto;display:block;margin:6px 0 4px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--mute);margin-bottom:10px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.hist{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+.hist td{padding:8px 4px;border-top:1px solid var(--line)}
+.hist td:last-child{text-align:right;font-weight:600}
+.hist td:nth-child(2){color:var(--mute)}
 .toast{position:fixed;left:50%;bottom:170px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;display:none;align-items:center;gap:14px;z-index:30;max-width:calc(100% - 32px)}
 .toast.show{display:flex}
 .toast button{border:0;background:none;color:var(--bg);font-weight:700;text-decoration:underline;padding:0}
 </style>
 </head>
 <body>
+<div id="intro" aria-hidden="true"><div class="nb">
+  <div class="nb-cover"><div class="nb-frame">
+    <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1</div>
+  </div></div>
+  <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+</div></div>
+<script>(function(){var el=document.getElementById("intro");function go(){if(el.parentNode)el.remove();}el.onclick=go;setTimeout(go,2300);})();</script>
 <div class="wrap">
   <header>
     <div>
@@ -172,7 +236,9 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
     </div>
   </header>
   <div class="status" id="status"><span class="dot"></span><span id="statusText">Verbinde …</span></div>
+  <nav class="tabs" role="tablist"><button role="tab" data-tab="liste" aria-selected="true">Liste</button><button role="tab" data-tab="stat" aria-selected="false">Preise</button></nav>
   <main id="main"></main>
+  <section id="stat" hidden></section>
 </div>
 
 <div class="dock">
@@ -223,10 +289,13 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
   <p class="sub" id="setWho"></p>
   <p class="note">Die Einkaufsliste nutzt dieselbe Anmeldung, denselben KI-Zugang und dieselbe Datenbank wie das Haushaltsbuch. Den KI-Schlüssel ändert ihr im Haushaltsbuch unter Einstellungen → KI-Zugang.</p>
   <p class="note" id="setKi"></p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1 vom 28.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
 <div class="gate" id="gate" hidden><div><h2>Einkauf</h2><p id="gateMsg">Till &amp; Patrick</p><button id="gateLogin">Mit Google anmelden</button></div></div>
+
+<div class="scrim" id="stScrim"><div class="sheet" role="dialog" aria-modal="true" id="stSheet"></div></div>
 
 <div class="toast" id="toast"><span id="toastText"></span><button id="toastUndo">Rückgängig</button></div>
 
@@ -237,6 +306,7 @@ h1{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;font-weight:80
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
+const APP_VERSION = "Version 1 vom 28.09.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -310,6 +380,7 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const clean = d => JSON.parse(JSON.stringify(d ?? null));
 
 // ---------- Zustand ----------
+let bons = [];      // eingelesene Kassenbons {store,date,total,items:[{name,qty,price}]}
 let items = [];     // {id,name,qty,cat,done,by,createdAt,doneAt,recipe}
 let products = {};  // key → {name,cat,count,last,price,priceDate,store}
 let backend = "local";
@@ -317,8 +388,8 @@ let fs = null, auth = null, user = null;
 
 // ---------- Speicher: Firebase oder Demo auf diesem Gerät ----------
 const LKEY = "einkauf-demo-v1";
-function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; } catch(e){} }
-function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products})); } catch(e){} }
+function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; bons = d.bons||[]; } catch(e){} }
+function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products, bons})); } catch(e){} }
 
 const store = {
   async add(data){
@@ -341,7 +412,7 @@ const store = {
   },
   async receipt(data){
     if (backend==="fb") { const ref = fs.collection(COL.bons).doc(); await ref.set(clean(data)); return ref.id; }
-    return "demo";
+    const id = "l"+Date.now(); bons.push({id, ...data}); saveLocal(); if (tab==="stat") renderStats(); return id;
   }
 };
 
@@ -401,6 +472,7 @@ function connect(){
     const err = e => setStatus("err", e.code==="permission-denied" ? "Kein Zugriff – Firestore-Regeln prüfen (siehe Anleitung)" : "Verbindung unterbrochen");
     subs.push(fs.collection(COL.items).onSnapshot(q => { items = q.docs.map(d => ({id:d.id, ...d.data()})); render(); }, err));
     subs.push(fs.collection(COL.prod).onSnapshot(q => { products = Object.fromEntries(q.docs.map(d => [d.id, d.data()])); render(); }, () => {}));
+    subs.push(fs.collection(COL.bons).onSnapshot(q => { bons = q.docs.map(d => ({id:d.id, ...d.data()})); if (tab==="stat") renderStats(); }, () => {}));
   });
 }
 
@@ -441,6 +513,120 @@ async function safe(p){
 }
 
 // ---------- Anzeige ----------
+// ---------- Preise & Statistik ----------
+let tab = "liste", stQuery = "", stSort = "oft";
+const STORE_COLORS = ["#2e7d4f","#c8385f","#3c8fc2","#c98a1b","#7c67c4","#2f9d9a"];
+function storeColor(store, stores){ const i = stores.indexOf(store || "–"); return STORE_COLORS[(i<0?0:i) % STORE_COLORS.length]; }
+function histories(){
+  const map = {};
+  for (const b of bons) for (const it of (b.items||[])) {
+    const p = num(it.price); if (p == null || p <= 0 || !it.name) continue;
+    const k = keyOf(it.name);
+    (map[k] ||= {key:k, name: products[k]?.name || it.name, cat: products[k]?.cat || guessCat(it.name), pts:[]}).pts.push({d: b.date || "", p, s: (b.store||"").trim()});
+  }
+  return Object.values(map).map(h => {
+    h.pts.sort((a,b) => a.d.localeCompare(b.d));
+    const n = h.pts.length, last = h.pts[n-1];
+    // Vergleich möglichst mit demselben Geschäft, sonst mit dem letzten Preis davor
+    const earlier = h.pts.slice(0, -1), prev = earlier.filter(x => x.s && x.s === last.s).pop() || earlier.pop() || null;
+    h.prevStore = prev?.s || "";
+    h.last = last; h.diff = prev ? last.p - prev.p : 0;
+    h.change = (last.p - h.pts[0].p) / h.pts[0].p;
+    h.min = Math.min(...h.pts.map(x=>x.p)); h.max = Math.max(...h.pts.map(x=>x.p));
+    return h;
+  });
+}
+function trendHtml(d){
+  if (Math.abs(d) < 0.005) return `<small class="same">gleich</small>`;
+  return d > 0 ? `<small class="up">▲ ${eur(d)}</small>` : `<small class="down">▼ ${eur(-d)}</small>`;
+}
+// Linien-Diagramm als SVG; Punkte nach Geschäft eingefärbt
+function chartSvg(pts, {w, h, big, stores}){
+  const pad = big ? {l:44, r:12, t:12, b:24} : {l:2, r:2, t:3, b:3};
+  const ts = pts.map(p => Date.parse(p.d + "T12:00") || 0);
+  const t0 = Math.min(...ts), t1 = Math.max(...ts);
+  let lo = Math.min(...pts.map(p=>p.p)), hi = Math.max(...pts.map(p=>p.p));
+  if (hi - lo < 0.01) { lo -= 0.5; hi += 0.5; } else { const m = (hi-lo)*0.15; lo -= m; hi += m; }
+  const X = (t, i) => pad.l + (t1 > t0 ? (t - t0) / (t1 - t0) : (pts.length > 1 ? i/(pts.length-1) : 0.5)) * (w - pad.l - pad.r);
+  const Y = v => pad.t + (1 - (v - lo) / (hi - lo)) * (h - pad.t - pad.b);
+  const xy = pts.map((p,i) => [X(ts[i], i), Y(p.p)]);
+  const line = xy.map(([x,y],i) => `${i?"L":"M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+  let s = `<svg class="${big?"chart":"spark"}" viewBox="0 0 ${w} ${h}" width="${big?"":w}" height="${big?"":h}" aria-hidden="true">`;
+  if (big) {
+    for (const v of [hi - (hi-lo)*0.15, lo + (hi-lo)*0.15]) s += `<line x1="${pad.l}" x2="${w-pad.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${pad.l-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--mute)">${eur(v).replace(/\s?€/,"")}</text>`;
+    s += `<text x="${pad.l}" y="${h-6}" font-size="11" fill="var(--mute)">${fmtDate(pts[0].d)}</text><text x="${w-pad.r}" y="${h-6}" text-anchor="end" font-size="11" fill="var(--mute)">${fmtDate(pts[pts.length-1].d)}</text>`;
+  }
+  s += `<path d="${line}" fill="none" stroke="${big?"var(--mute)":"currentColor"}" stroke-width="${big?1.5:1.6}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  xy.forEach(([x,y],i) => { if (big || i === xy.length-1) s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${big?4:2.4}" fill="${big?storeColor(pts[i].s, stores):"currentColor"}"/>`; });
+  return s + `</svg>`;
+}
+function renderStats(){
+  const el = $("#stat");
+  const now = today().slice(0,7);
+  const monthBons = bons.filter(b => (b.date||"").startsWith(now));
+  const monthSum = monthBons.reduce((a,b)=>a+(num(b.total)||0),0);
+  const avg = bons.length ? bons.reduce((a,b)=>a+(num(b.total)||0),0) / bons.length : 0;
+  let list = histories();
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><strong>Noch keine Preise</strong>Sobald ihr Kassenbons mit 📷 einlest, seht ihr hier, wie sich die Preise entwickeln.</div>`;
+    return;
+  }
+  const q = stQuery.trim();
+  if (q) { const f = fold(q); list = list.filter(h => fold(h.name).includes(f)); }
+  if (stSort === "teurer") list.sort((a,b) => b.change - a.change);
+  else if (stSort === "az") list.sort((a,b) => a.name.localeCompare(b.name, "de"));
+  else list.sort((a,b) => b.pts.length - a.pts.length || a.name.localeCompare(b.name, "de"));
+  const monthName = new Date().toLocaleDateString("de-DE",{month:"long"});
+  el.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><b>${bons.length}</b><span>Bons eingelesen</span></div>
+      <div class="kpi"><b>${eur(monthSum).replace(",00","")}</b><span>im ${monthName}</span></div>
+      <div class="kpi"><b>${eur(avg).replace(",00","")}</b><span>pro Einkauf</span></div>
+    </div>
+    <div class="st-tools">
+      <input id="stSearch" type="search" placeholder="Artikel suchen" value="${esc(stQuery)}" aria-label="Artikel suchen">
+      <select id="stSortSel" aria-label="Sortierung">
+        <option value="oft"${stSort==="oft"?" selected":""}>Oft gekauft</option>
+        <option value="teurer"${stSort==="teurer"?" selected":""}>Teurer geworden</option>
+        <option value="az"${stSort==="az"?" selected":""}>A–Z</option>
+      </select>
+    </div>
+    <div class="list">${list.length ? list.map(h => `
+      <button class="st-row" data-k="${esc(h.key)}">
+        <span class="ico" aria-hidden="true">${iconFor(h.name, h.cat)}</span>
+        <span class="txt"><span class="name">${esc(h.name)}</span><span class="meta">${[h.last.s, fmtDate(h.last.d)].filter(Boolean).map(esc).join(", ")}${h.pts.length>1?`, ${h.pts.length} Preise`:""}</span></span>
+        ${h.pts.length > 1 ? chartSvg(h.pts, {w:64, h:26}) : ""}
+        <span class="st-p">${eur(h.last.p)}${h.pts.length>1 ? trendHtml(h.diff) : ""}</span>
+      </button>`).join("") : `<div class="empty" style="padding:24px">Kein Artikel gefunden</div>`}</div>
+    <p class="st-foot">Nur Einkäufe mit eingelesenem Bon fließen ein. Bei loser Ware nach Gewicht (z. B. Äpfel) hängt der Preis von der Menge ab.</p>`;
+}
+function openHistory(k){
+  const h = histories().find(x => x.key === k); if (!h) return;
+  const stores = [...new Set(h.pts.map(p => p.s || "–"))];
+  $("#stSheet").innerHTML = `
+    <h3>${iconFor(h.name,h.cat)} ${esc(h.name)}</h3>
+    <p class="sub">Zuletzt ${eur(h.last.p)}${h.last.s?` bei ${esc(h.last.s)}`:""}. ${h.pts.length>1 ? `Günstigster Preis ${eur(h.min)}, teuerster ${eur(h.max)}.` : "Bisher erst ein Preis erfasst."}</p>
+    ${h.pts.length > 1 ? chartSvg(h.pts, {w:340, h:170, big:true, stores}) : ""}
+    ${stores.length > 1 || stores[0] !== "–" ? `<div class="legend">${stores.map(s => `<span><i style="background:${storeColor(s, stores)}"></i>${esc(s)}</span>`).join("")}</div>` : ""}
+    <table class="hist"><tbody>${[...h.pts].reverse().map(p => `<tr><td>${p.d ? new Date(p.d+"T12:00").toLocaleDateString("de-DE") : "–"}</td><td>${esc(p.s || "")}</td><td>${eur(p.p)}</td></tr>`).join("")}</tbody></table>
+    <div class="actions"><button class="btn-main" data-close>Schließen</button></div>`;
+  openSheet("#stScrim");
+}
+function setTab(t){
+  tab = t;
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  $("#main").hidden = t !== "liste"; $("#stat").hidden = t !== "stat";
+  document.querySelector(".dock").hidden = t !== "liste";
+  if (t === "stat") renderStats();
+  window.scrollTo(0,0);
+}
+document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
+$("#stat").addEventListener("input", e => {
+  if (e.target.id === "stSearch") { stQuery = e.target.value; const pos = e.target.selectionStart; renderStats(); const i = $("#stSearch"); i.focus(); i.setSelectionRange(pos, pos); }
+});
+$("#stat").addEventListener("change", e => { if (e.target.id === "stSortSel") { stSort = e.target.value; renderStats(); } });
+$("#stat").addEventListener("click", e => { const r = e.target.closest(".st-row"); if (r) openHistory(r.dataset.k); });
+
 function render(){
   const open = items.filter(i=>!i.done);
   const done = items.filter(i=>i.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
@@ -471,7 +657,54 @@ function row(i){
       <span class="txt"><span class="line1"><span class="name">${esc(i.name)}</span>${i.qty?`<span class="qty">${esc(i.qty)}</span>`:""}</span>${meta?`<span class="meta">${meta}</span>`:""}</span>${price}</button>
   </div>`;
 }
+// Häufige Lebensmittel für Vorschläge, auch bevor etwas gekauft wurde
+const BASIS = ("Äpfel,Bananen,Birnen,Orangen,Mandarinen,Zitronen,Limetten,Trauben,Erdbeeren,Heidelbeeren,Himbeeren,Kiwis,Mango,Ananas,Melone,Avocado,"+
+ "Tomaten,Gurke,Paprika,Salat,Eisbergsalat,Rucola,Spinat,Brokkoli,Blumenkohl,Zucchini,Aubergine,Zwiebeln,Rote Zwiebeln,Knoblauch,Kartoffeln,Süßkartoffeln,Karotten,Lauch,Sellerie,Champignons,Ingwer,Petersilie,Basilikum,Schnittlauch,Radieschen,Mais,Frühlingszwiebeln,"+
+ "Brot,Vollkornbrot,Toastbrot,Brötchen,Baguette,Croissants,Brezeln,Knäckebrot,Kuchen,"+
+ "Milch,Hafermilch,Butter,Margarine,Käse,Gouda,Mozzarella,Parmesan,Feta,Frischkäse,Joghurt,Naturjoghurt,Quark,Skyr,Sahne,Schmand,Crème fraîche,Eier,Pudding,Tofu,Aufschnitt,Salami,Schinken,Kochschinken,Leberwurst,"+
+ "Hackfleisch,Hähnchenbrust,Hähnchenschenkel,Putenbrust,Rindersteak,Schweineschnitzel,Bratwurst,Würstchen,Speck,Lachs,Thunfisch,Garnelen,Fischstäbchen,"+
+ "Tiefkühlpizza,Pommes,Eis,Tiefkühlgemüse,Erbsen,Spinat TK,"+
+ "Nudeln,Spaghetti,Penne,Reis,Basmatireis,Couscous,Mehl,Zucker,Salz,Pfeffer,Olivenöl,Sonnenblumenöl,Essig,Tomatenmark,Passierte Tomaten,Dosentomaten,Kidneybohnen,Kichererbsen,Linsen,Mais Dose,Brühe,Senf,Ketchup,Mayonnaise,Honig,Marmelade,Nutella,Müsli,Haferflocken,Cornflakes,Kaffee,Kaffeebohnen,Tee,Kakao,Backpulver,Hefe,Vanillezucker,Nüsse,Erdnüsse,Walnüsse,Gewürze,Paprikapulver,Oregano,Curry,"+
+ "Schokolade,Chips,Kekse,Gummibärchen,Salzstangen,Popcorn,Müsliriegel,"+
+ "Mineralwasser,Sprudel,Stilles Wasser,Apfelsaft,Orangensaft,Apfelschorle,Cola,Limonade,Bier,Weißwein,Rotwein,Sekt,"+
+ "Klopapier,Küchenrolle,Taschentücher,Spülmittel,Spülmaschinentabs,Waschmittel,Weichspüler,Müllbeutel,Zahnpasta,Zahnbürste,Shampoo,Duschgel,Seife,Deo,Alufolie,Frischhaltefolie,Backpapier,Schwämme,Allzweckreiniger,Batterien,Kerzen,Katzenfutter,Hundefutter").split(",");
+const fold = s => s.toLowerCase().replace(/ä/g,"a").replace(/ö/g,"o").replace(/ü/g,"u").replace(/ß/g,"ss");
+function suggestions(q){
+  // Mit Umlaut getippt → genau suchen; ohne → „bro“ findet auch „Brötchen“
+  const f = /[äöüß]/i.test(q) ? (s => s.toLowerCase()) : fold;
+  q = f(q); if (!q) return [];
+  const onList = new Set(items.filter(i=>!i.done).map(i=>i.name.toLowerCase()));
+  const seen = new Set(), out = [];
+  const cand = [
+    ...Object.values(products).map(p=>({name:p.name, cat:p.cat, known:1, count:p.count||0})),
+    ...BASIS.map(n=>({name:n, cat:null, known:0}))
+  ];
+  for (const c of cand) {
+    const low = (c.name||"").toLowerCase(), n = f(low); if (!n || seen.has(low) || onList.has(low)) continue;
+    let rank = n.startsWith(q) ? 0 : n.split(/[\s-]+/).some(w=>w.startsWith(q)) ? 1 : n.includes(q) ? 2 : -1;
+    if (rank < 0) continue;
+    seen.add(low); out.push({...c, rank});
+  }
+  // zuerst Wortanfang, innerhalb davon eure eigenen Artikel vor der Grundliste
+  return out.sort((a,b)=>a.rank-b.rank || b.known-a.known || (b.count||0)-(a.count||0) || a.name.length-b.name.length).slice(0,10);
+}
+function highlight(name, q){
+  const f = /[äöüß]/i.test(q) ? (s => s.toLowerCase()) : fold;
+  const i = f(name).indexOf(f(q));
+  return i < 0 ? esc(name) : esc(name.slice(0,i)) + "<b>" + esc(name.slice(i,i+q.length)) + "</b>" + esc(name.slice(i+q.length));
+}
 function renderChips(){
+  const raw = ($("#addInput")?.value || "").trim();
+  if (raw) {
+    const {qty, name} = parseInput(raw.replace(/^(\d+(?:[.,]\d+)?\s*\S*)\s*$/, "$1 ")) ;
+    const q = raw.match(/^\d/) ? name : raw;
+    const list = suggestions(q.trim());
+    $("#chips").classList.add("suggest");
+    $("#chips").innerHTML = list.map(s=>`<button type="button" class="chip" data-name="${esc(s.name)}" data-qty="${esc(qty)}"><span aria-hidden="true">${iconFor(s.name,s.cat||guessCat(s.name))}</span> ${highlight(s.name,q.trim())}</button>`).join("");
+    $("#chips").hidden = !list.length;
+    return;
+  }
+  $("#chips").classList.remove("suggest");
   const onList = new Set(items.filter(i=>!i.done).map(i=>i.name.toLowerCase()));
   const top = Object.values(products).filter(p=>p.count && !onList.has((p.name||"").toLowerCase()))
     .sort((a,b)=>(b.count||0)-(a.count||0) || (b.last||0)-(a.last||0)).slice(0,12);
@@ -838,13 +1071,20 @@ $("#main").addEventListener("click", e => {
   if (b.dataset.act === "toggle") toggle(id);
   if (b.dataset.act === "edit") openEdit(id);
 });
-$("#addForm").addEventListener("submit", e => {
-  e.preventDefault(); const v = $("#addInput").value; $("#addInput").value = ""; addItem(v); $("#addInput").focus();
-});
+// Ohne Formular-Absenden, damit es auch in eingeschränkten Vorschauen funktioniert
+function submitAdd(){ const v = $("#addInput").value; if (!v.trim()) return; $("#addInput").value = ""; renderChips(); addItem(v); $("#addInput").focus(); }
+$("#addForm").addEventListener("submit", e => { e.preventDefault(); submitAdd(); });
+$("#addForm .addbtn").addEventListener("click", e => { e.preventDefault(); submitAdd(); });
+$("#addInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); submitAdd(); } });
+$("#chips").addEventListener("pointerdown", e => { if ($("#chips").classList.contains("suggest")) e.preventDefault(); }); // Tastatur bleibt offen
 $("#chips").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if (!b) return;
-  const p = products[keyOf(b.dataset.name)]; addItem("", {name: b.dataset.name, qty:"", cat: p?.cat});
+  const suggest = $("#chips").classList.contains("suggest");
+  const p = products[keyOf(b.dataset.name)];
+  addItem("", {name: b.dataset.name, qty: b.dataset.qty || "", cat: p?.cat});
+  if (suggest) { $("#addInput").value = ""; renderChips(); $("#addInput").focus(); }
 });
+$("#addInput").addEventListener("input", renderChips);
 function drawWho(){ document.querySelectorAll(".who button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.n===S.me))); }
 document.querySelector(".who").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.me = b.dataset.n; saveS(); drawWho(); });
 drawWho();
