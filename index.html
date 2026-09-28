@@ -990,7 +990,7 @@ Nachricht: """${text.slice(0,2000)}"""
 Heute: ${new Date().toLocaleDateString('de-DE')}. Aktuell geöffneter Monat: ${month}.
 Antworte NUR mit JSON: {"aktionen":[...],"rueckfrage":null|"kurze Frage auf Deutsch"}
 Mögliche Aktionen:
-1) Einkauf aus den Budgets Essen oder Sonstiges ("Haus, sonst."): {"art":"budget","topf":"essen"|"sonst","betrag":Zahl,"notiz":"wofür","wer":"Till"|"Patrick"|"","monat":"JJJJ-MM"|null}  – Lebensmittel/Einkauf/Supermarkt = essen; Amazon, Drogerie, Baumarkt, Kleinkram fürs Haus = sonst. monat = der genannte Monat (ohne Jahr: das nächstliegende, also ${month.slice(0,4)}), sonst null.
+1) Einkauf aus den Budgets Essen oder Sonstiges ("Haus, sonst."): {"art":"budget","topf":"essen"|"sonst","betrag":Zahl,"notiz":"wofür","wer":"Till"|"Patrick"|"","monat":"JJJJ-MM"|null}  – Lebensmittel/Einkauf/Supermarkt = essen; Amazon, Drogerie, Baumarkt, Kleinkram fürs Haus = sonst. WICHTIG: "Sonstiges", "sonst.", "Sonstiges-Pauschale", "Haus, sonst." oder "Essen" in der Nachricht meint IMMER diesen Budget-Topf (art budget) – nie einen Eintrag im Monatsplan und keine Rückfrage dazu. monat = der genannte Monat (ohne Jahr: das nächstliegende, also ${month.slice(0,4)}), sonst null.
    Beispiel: "40 euro im Oktober von sonstiges abziehen für Wassermelder" → {"art":"budget","topf":"sonst","betrag":40,"notiz":"Wassermelder","wer":"","monat":"${month.slice(0,4)}-10"}
    Wird Geld in einen Topf zurückgelegt oder eine Überziehung ausgeglichen (z. B. "hat 2,89 überwiesen, um Sonstiges auszugleichen"), dann betrag NEGATIV (-2.89); das erhöht den Rest im Topf.
 2) Eintrag im Monatsplan: {"art":"eintrag","person":"Till"|"Patrick"|"Haus","monat":"JJJJ-MM","bereich":"giro_aus"|"giro_ein"|"tg_kauf"|"tg_raus"|"tg_rein"|"haus_ab"|"haus_ein","bezeichnung":"...","betrag":Zahl,"modus":"neu"|"aendern"|"loeschen","pauschale":true|false}
@@ -1009,7 +1009,7 @@ Eine Überweisung von einem privaten Konto aufs gemeinsame Konto zum Ausgleich e
 8) Tatsächliches Gehalt in EINEM Monat (z. B. "Patrick hat im Oktober 2.610 € bekommen", "Gehalt Patrick diesen Monat 2.540") – NICHT dauerhaft, dafür art grund: {"art":"gehalt","person":"Till"|"Patrick","monat":"JJJJ-MM","wert":Zahl|null}  – null = wieder das geplante Gehalt.
 9) Neuer Bescheid für Wasser oder Grundsteuer (z. B. "Wasserbescheid 2027: Februar 297 €, danach 280 €"): {"art":"bescheid","posten":"wasser"|"grundsteuer","jahr":JJJJ,"februar":Zahl,"rate":Zahl}  – februar = Betrag am 15.02., rate = Betrag je Rate im Mai, August, November.
 10) Neuer Jahresbeitrag für Wohngebäudeversicherung, Hausratversicherung, Haftpflichtversicherung, Abfallgebühr oder ADAC (z. B. "Wohngebäudeversicherung kostet ab April 2027 2.000 €"): {"art":"beitrag","posten":"wohngebaeude"|"hausrat"|"haftpflicht"|"abfall"|"adac","jahresbetrag":Zahl,"faellig":"JJJJ-MM"}  – faellig = Monat der Zahlung; ohne Angabe null.
-Beträge als Zahl mit Punkt. Nichts erfinden. Wenn unklar, eine rueckfrage stellen und aktionen leer lassen.`;}
+Beträge als Zahl mit Punkt. Nichts erfinden. Im Zweifel die wahrscheinlichste Aktion wählen – der Nutzer sieht vor dem Speichern eine Vorschau und bestätigt selbst. Nur wenn Betrag oder Ziel wirklich fehlen, eine rueckfrage stellen und aktionen leer lassen.`;}
 let qActs=[];
 function qDescribe(a){
   if(a.art==='budget')return (/^\d{4}-\d{2}$/.test(a.monat||'')&&a.monat!==month?ymShort(a.monat)+' · ':'')+(+a.betrag<0?`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(-a.betrag)} ausgleichen (kommt wieder dazu)${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer)+(S.plan[month]?' (wird bei '+esc(a.wer)+' im Girokonto abgezogen)':''):''}`:`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(a.betrag)} abziehen${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer):''}`);
@@ -1050,12 +1050,25 @@ async function qApply(list){let ok=0;const skip=[];
   }
   return {ok,skip};
 }
+/* Eindeutige Einkäufe (Betrag + Essen/Sonstiges) ohne KI erkennen – schneller und ohne Rückfragen */
+function qLocal(tx){const t=' '+tx.toLowerCase().replace(/\s+/g,' ')+' ';
+  if(/tagesgeld|gehalt|kredit|tilg|strom|bescheid|buchung|gäste|gast|überwies|ausgleich|zurück|dauerhaft|ab jetzt|grundbetrag|ändern|lösch|rate/.test(t))return null;
+  const se=/sonstig|haus,? ?sonst|\bsonst\b/.test(t),es=/\bessen|lebensmittel|einkauf|supermarkt/.test(t);if(se===es)return null;
+  const am=[...t.matchAll(/(\d+(?:[.,]\d{1,2})?) ?(?:€|euro\b|eur\b)/g)];if(am.length!==1)return null;const b=parseNum(am[0][1]);if(!(b>0))return null;
+  const MN=['januar','februar','märz','april','mai','juni','juli','august','september','oktober','november','dezember'];
+  let ym=month;const mi=MN.findIndex(m=>t.includes(' '+m)||t.includes(' '+m.slice(0,3)+' ')||t.includes(' '+m.slice(0,3)+'.'));
+  if(/nächsten monat|nächster monat/.test(t)){const[y,m]=month.split('-').map(Number);ym=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;}
+  else if(mi>=0){const yy=t.match(/\b(20\d\d)\b/);ym=`${yy?yy[1]:month.slice(0,4)}-${String(mi+1).padStart(2,'0')}`;}
+  const nm=tx.match(/\bf(?:ü|ue)r\s+(.+?)\s*$/i);let notiz=nm?nm[1].replace(/\s*(im|in|am|für)?\s*(nächsten monat|januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)(\s*20\d\d)?/ig,' ').replace(/\s*(abziehen|abgezogen|ausgegeben|gekauft|bezahlt)\s*/ig,' ').replace(/\s+/g,' ').trim():'';
+  if(notiz&&/^(essen|sonstiges?|lebensmittel)$/i.test(notiz))notiz='';notiz=notiz.charAt(0).toUpperCase()+notiz.slice(1);
+  const w=/\bpatrick\b/.test(t)?'Patrick':/\btill\b/.test(t)?'Till':'';
+  return {aktionen:[{art:'budget',topf:se?'sonst':'essen',betrag:b,notiz,wer:w,monat:ym}],rueckfrage:null};}
 $('#q-go').onclick=async()=>{const tx=$('#q-text').value.trim();const msg=$('#q-msg');if(!tx)return;
   // Schnellweg ohne Claude: nur ein Betrag => Essen
   const only=parseNum(tx.replace(/^essen\s*/i,''));if(only!=null&&/^(essen\s*)?[\d.,\s€]+$/i.test(tx)){await addBudget('e',only);$('#q-text').value='';msg.innerHTML=`<b class="pos">${eur(only)} bei Essen abgezogen.</b>`;return;}
-  if(!sampleFn){msg.textContent='Die KI ist in dieser Ansicht nicht verfügbar. Nutze die Felder bei Essen & Sonstiges oder den Reiter Monat.';return;}
+  if(!sampleFn&&!qLocal(tx)){msg.textContent='Die KI ist in dieser Ansicht nicht verfügbar. Nutze die Felder bei Essen & Sonstiges oder den Reiter Monat.';return;}
   $('#q-go').disabled=true;msg.textContent='Die KI liest deine Nachricht …';
-  try{const r=await sampleFn.json(qPrompt(tx),{modelTier:'default',cache:false});
+  try{const r=qLocal(tx)||await sampleFn.json(qPrompt(tx),{modelTier:'default',cache:false});
     qActs=(r?.aktionen||[]).filter(a=>a&&a.art);
     if(!qActs.length){msg.innerHTML=r?.rueckfrage?`<b>Rückfrage:</b> ${esc(r.rueckfrage)}`:'Ich habe daraus keine Änderung erkannt. Formulier es gern etwas genauer.';$('#q-prev').innerHTML='';}
     else{msg.innerHTML=(r?.rueckfrage?`<b>Hinweis:</b> ${esc(r.rueckfrage)} `:'')+'Bitte prüfen und bestätigen:';
