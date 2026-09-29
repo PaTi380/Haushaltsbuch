@@ -612,7 +612,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
-const APPV={nr:'2.0',datum:'28.09.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
+const APPV={nr:'2.1',datum:'29.09.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
 const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
@@ -888,12 +888,16 @@ const ABGL='Abgleich Kontostand';
 function isFest(e,sh,g){if(e._c)return true;if(e.fest!=null)return !!e.fest;if((e.l||'')===ABGL)return false;if(e.f)return true;
   if(sh==='HAUS')return g==='G'?!!e.l:/^anteil/i.test(e.l||'');return FEST_P.test((e.l||'').trim());}
 const ABG={giro:['C','E'],tg:['I','K'],haus:['G','I']};
-function tendHTML(blk,c){const sn=blk.snap;if(!sn)return `<div class="tend eq"><small>Nach dem 📌 beim Giroausgleich siehst du hier, ob ihr über oder unter dem Plan liegt.</small></div>`;
+function tendHTML(blk,c){const sn=blk.snap;
+  if(!sn){const ks=blk.G||blk.I&&!blk.C?['haus']:['giro','tg'];const ds=ks.map(k=>[k,r2(abglVal(blk,k))]);const d=r2(ds.reduce((a,x)=>a+x[1],0));if(ds.some(x=>Math.abs(x[1])>0.004)){const NM={giro:'Girokonto',tg:'Tagesgeld',haus:'Haushaltskonto'};
+    return `<div class="tend ${Math.abs(d)<0.5?'eq':d>0?'pos':'neg'}"><small>✅ Ergebnis Monatsende laut echtem Kontostand</small>${Math.abs(d)<0.5?'genau wie geplant':`<b class="num ${d>0?'pos':'neg'}">${eur(Math.abs(d),0)}</b> ${d>0?'mehr':'weniger'} auf den Konten als geplant`}<small>${ds.map(([k,x])=>`${NM[k]} ${x>=0?'+':'−'}${eur(Math.abs(x))}`).join(' · ')}</small></div>`;}}
+  if(!sn)return `<div class="tend eq"><small>Nach dem 📌 beim Giroausgleich siehst du hier, ob ihr über oder unter dem Plan liegt.</small></div>`;
   const dg=r2(c.giro-sn.giro),dt=r2(c.tg-sn.tg),d=r2(dg+dt);const fin=['giro','tg'].some(k=>(ABG[k]).some(g=>(blk[g]||[]).some(e=>e.l===ABGL)));
   const head=fin?'Endergebnis mit echtem Kontostand':`Tendenz seit der Planung am ${dDE(sn.am)}`;
   const txt=Math.abs(d)<0.5?'genau wie geplant':d>0?`<b class="num pos">${eur(d,0)}</b> weniger ausgegeben als geplant`:`<b class="num neg">${eur(-d,0)}</b> mehr ausgegeben als geplant`;
   const det=Math.abs(d)<0.5?'':` · Girokonto ${dg>=0?'+':'−'}${eur(Math.abs(dg),0)}, Tagesgeld ${dt>=0?'+':'−'}${eur(Math.abs(dt),0)}`;
   return `<div class="tend ${Math.abs(d)<0.5?'eq':d>0?'pos':'neg'}"><small>${fin?'✅ ':'📈 '}${head}</small>${txt}<small>${d>0.5?'(oder mehr eingenommen) ':''}Girokonto + Tagesgeld, ohne ETF${det}</small></div>`;}
+function abglChip(blk,k){const d=r2(abglVal(blk,k));if(Math.abs(d)<0.005)return '';return `<br><b class="num ${d>0?'pos':'neg'}">${d>0?'+':'−'}${eur(Math.abs(d))} ${d>0?'mehr':'weniger'} als geplant</b>`;}
 function abglVal(blk,k){const[out,inn]=ABG[k];const f=g=>(blk[g]||[]).filter(e=>e.l===ABGL).reduce((a,e)=>a+(+e.v||0),0);return f(inn)-f(out);}
 const UNL=new Set();
 function sharedGold(){const p=gn('goldpreis');return [0,1].map(()=>({t:'Barren 10 g',w:10/OZ*p,k:624.65}));}
@@ -930,7 +934,7 @@ function rMonat(){
       ${L.length<15?`<button type="button" class="btn sec sm" data-add="${g}">+ Zeile</button>`:'<div class="note">15 Zeilen voll.</div>'}
       ${F.length||rnRow?`<div class="festbox"><div class="festh">🔒 Feste Beträge · ${eur(F.reduce((a,[e])=>a+pv(e),0)+(g==='I'?rn:0))}</div>${rnRow}${F.map(([e,i])=>rn&&g==='E'&&GIROAUS.test((e.l||'').trim())?row(e,i,g,entryVal(e,blk,sh)-rn)+rnIn:row(e,i,g)).join('')}</div>`:''}</div>`;};
   const ACC=sh==='HAUS'?[['haus','Haushaltskonto',['G','I'],c.k0,c.k]]:[['giro','Girokonto',['C','E'],c.giro0,c.giro],['tg','Tagesgeld',['I','K'],c.tg0,c.tg]];
-  const groups=ACC.map(([k,name,gs,a0,a1])=>`<div class="acct ${k}"><div class="acct-h"><span><span class="kd ${k}"></span>${name}</span><small>Anfang ${eur(a0)} → Ende <b class="num ${a1<0?'neg':''}">${eur(a1)}</b></small></div><div class="gridg">${GR[sh].filter(([g])=>gs.includes(g)).map(grp).join('')}</div></div>`).join('');
+  const groups=ACC.map(([k,name,gs,a0,a1])=>`<div class="acct ${k}"><div class="acct-h"><span><span class="kd ${k}"></span>${name}</span><small>Anfang ${eur(a0)} → Ende <b class="num ${a1<0?'neg':''}">${eur(a1)}</b>${abglChip(blk,k)}</small></div><div class="gridg">${GR[sh].filter(([g])=>gs.includes(g)).map(grp).join('')}</div></div>`).join('');
   const bank=(k,calc,label)=>{const has=Math.abs(abglVal(blk,k))>0.004;return `<div class="bankrow"><span><span class="kd ${k}"></span>${label}<small>laut Plan ${eur(calc-abglVal(blk,k))}${has?` · Abgleich ${abglVal(blk,k)>0?'+':''}${eur(abglVal(blk,k))}`:''}</small></span><label>echter Kontostand<input inputmode="decimal" data-abgl="${k}" value="${has?num(calc):''}" placeholder="${num(calc)}"></label></div>`;};
   let sum='';
   if(sh==='HAUS'){sum=`<div class="row"><span>Anfang</span><span class="num">${eur(c.k0)}</span></div><div class="row"><span>− Abbuchungen</span><span class="num">${eur(c.soll)}</span></div><div class="row"><span>+ Einzahlungen</span><span class="num">${eur(c.haben)}</span></div><div class="sumrow"><span>Haushaltskonto Monatsende</span><span class="num ${c.k<0?'neg':''}">${eur(c.k)}</span></div><div class="row"><span>Überweisung aufs Girokonto</span><b class="num">${eur(c.ueb)}</b></div><details class="row goldsep" style="display:block"><summary style="display:flex;justify-content:space-between;cursor:pointer"><span>Gemeinsames Golddepot <span class="muted">▸ aufschlüsseln</span></span><span class="num">${eur(sharedGold().reduce((a,x)=>a+x.w,0))}</span></summary><div class="dep">${goldList(sharedGold())}<div class="note">2 × 10 g, gehört euch beiden je zur Hälfte. Zählt nicht zum Stand des Haushaltskontos.</div></div></details>${blk.notiz?`<div class="note">${esc(blk.notiz)}</div>`:''}`;}
