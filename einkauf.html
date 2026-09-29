@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.8 vom 28.09.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.9 vom 29.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -207,6 +207,14 @@ button.rv-li{text-decoration:underline dotted}
 .st-p{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:64px}
 .st-p small{display:block;font-size:12px;font-weight:600}
 .up{color:var(--radish)} .down{color:var(--c-obst)} .same{color:var(--mute)}
+.sheet label.rz-row{display:flex;align-items:center;gap:10px;padding:10px 2px;margin:0;border-top:1px solid var(--line);font-size:16px;font-weight:400;color:var(--ink);cursor:pointer}
+.sheet label.rz-row:first-child{border-top:0}
+.rz-row input{width:22px;height:22px;accent-color:var(--leaf);flex-shrink:0}
+.rz-row .txt{flex:1;min-width:0}
+.rz-row .name{font-size:16px;font-weight:500}
+.rz-tag{display:block;color:var(--leaf);font-size:12px;font-weight:600}
+.rz-row .price{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tabs button{white-space:nowrap}
 .st-foot{font-size:12px;color:var(--mute);margin:10px 4px 0}
 .chart{width:100%;height:auto;display:block;margin:6px 0 4px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--mute);margin-bottom:10px}
@@ -232,7 +240,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.8</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.9</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -253,9 +261,10 @@ button.rv-li{text-decoration:underline dotted}
     </div>
   </header>
   <div class="status" id="status"><span class="dot"></span><span id="statusText">Verbinde …</span></div>
-  <nav class="tabs" role="tablist"><button role="tab" data-tab="liste" aria-selected="true">Liste</button><button role="tab" data-tab="stat" aria-selected="false">Preise</button></nav>
+  <nav class="tabs" role="tablist"><button role="tab" data-tab="liste" aria-selected="true">Liste</button><button role="tab" data-tab="stat" aria-selected="false">Preise</button><button role="tab" data-tab="rez" aria-selected="false">Rezepte</button></nav>
   <main id="main"></main>
   <section id="stat" hidden></section>
+  <section id="rez" hidden></section>
 </div>
 
 <div class="dock">
@@ -308,7 +317,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.8 vom 28.09.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.9 vom 29.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -330,8 +339,8 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.8 vom 28.09.2026";
-const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung"};
+const APP_VERSION = "Version 1.9 vom 29.09.2026";
+const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
 const CATS = [
@@ -407,6 +416,7 @@ const clean = d => JSON.parse(JSON.stringify(d ?? null));
 
 // ---------- Zustand ----------
 let bons = [];      // eingelesene Kassenbons {store,date,total,items:[{name,qty,price}]}
+let recipes = [];   // gespeicherte Rezepte {title, portionen, zutaten:[{name,qty,cat,vorrat}]}
 let learned = {};   // Listeneintrag → was tatsächlich gekauft wurde {list, bought:{key:{name,count,last}}}
 let items = [];     // {id,name,qty,cat,done,by,createdAt,doneAt,recipe}
 let products = {};  // key → {name,cat,count,last,price,priceDate,store}
@@ -415,8 +425,8 @@ let fs = null, auth = null, user = null;
 
 // ---------- Speicher: Firebase oder Demo auf diesem Gerät ----------
 const LKEY = "einkauf-demo-v1";
-function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; bons = d.bons||[]; learned = d.learned||{}; } catch(e){} }
-function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products, bons, learned})); } catch(e){} }
+function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; bons = d.bons||[]; learned = d.learned||{}; recipes = d.recipes||[]; } catch(e){} }
+function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products, bons, learned, recipes})); } catch(e){} }
 
 const store = {
   async add(data){
@@ -445,6 +455,14 @@ const store = {
     e.name = boughtName; e.count++; e.last = Date.now(); rec.bought[b] = e;
     if (backend==="fb") return fs.doc(`${COL.zuord}/${k}`).set(clean(rec));
     learned[k] = rec; saveLocal();
+  },
+  async saveRecipe(data){
+    if (backend==="fb") { const ref = fs.collection(COL.rez).doc(); await ref.set(clean(data)); return ref.id; }
+    const id = "r"+Date.now(); recipes.push({id, ...data}); saveLocal(); render(); return id;
+  },
+  async deleteRecipe(id){
+    if (backend==="fb") return fs.doc(`${COL.rez}/${id}`).delete();
+    recipes = recipes.filter(r => r.id !== id); saveLocal(); render();
   },
   async unlearn(k, b){
     const rec = JSON.parse(JSON.stringify(learned[k] || null)); if (!rec) return;
@@ -516,6 +534,7 @@ function connect(){
     subs.push(fs.collection(COL.prod).onSnapshot(q => { products = Object.fromEntries(q.docs.map(d => [d.id, d.data()])); render(); }, () => {}));
     subs.push(fs.collection(COL.bons).onSnapshot(q => { bons = q.docs.map(d => ({id:d.id, ...d.data()})); if (tab==="stat") renderStats(); }, () => {}));
   subs.push(fs.collection(COL.zuord).onSnapshot(q => { learned = Object.fromEntries(q.docs.map(d => [d.id, d.data()])); render(); }, () => {}));
+  subs.push(fs.collection(COL.rez).onSnapshot(q => { recipes = q.docs.map(d => ({id:d.id, ...d.data()})); if (tab==="rez") renderRecipes(); }, () => {}));
   });
 }
 
@@ -657,12 +676,97 @@ function openHistory(k){
     <div class="actions"><button class="btn-ghost" data-close>Schließen</button>${isOnList(h.name) ? `<button class="btn-main" disabled>Steht auf der Liste ✓</button>` : `<button class="btn-main" data-add="${esc(h.key)}">Auf die Liste</button>`}</div>`;
   openSheet("#stScrim");
 }
+// ---------- Rezepte ----------
+function recipeCost(rec){
+  let sum = 0, n = 0, tot = 0;
+  for (const z of rec.zutaten || []) {
+    if (z.vorrat) continue; tot++;
+    const pr = priceFor(z.name); if (pr) { sum += pr.p; n++; }   // eine Packung je Zutat – bewusst grob
+  }
+  return {sum, n, tot};
+}
+const canScan = () => typeof sampleFn !== "undefined" ? !!sampleFn : backend === "fb";
+function renderRecipes(){
+  const el = $("#rez");
+  const list = [...recipes].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  el.innerHTML = `
+    <button class="choice" id="rzScan" style="margin:0 0 14px"><span>📖</span><span><b>Rezept einlesen</b><small>Foto oder PDF – nur die Zutaten werden gespeichert</small></span></button>
+    ${list.length ? `<div class="list">${list.map(r => { const c = recipeCost(r); return `
+      <div class="st-row"><button class="st-open rz-open" data-rid="${esc(r.id)}">
+        <span class="ico" aria-hidden="true">🍽️</span>
+        <span class="txt"><span class="name">${esc(r.title)}</span><span class="meta">${(r.zutaten||[]).length} Zutaten${r.portionen ? `, für ${esc(r.portionen)} Portionen` : ""}</span></span>
+        <span class="st-p">${c.n ? `ca. ${eur(c.sum)}` : "–"}${c.n && c.n < c.tot ? `<small class="same">${c.n} von ${c.tot} mit Preis</small>` : ""}</span></button>
+        <button class="st-add" data-rzadd="${esc(r.id)}" aria-label="Zutaten von ${esc(r.title)} auf die Liste">+</button>
+      </div>`; }).join("")}</div>
+      <p class="st-foot">Der Preis ist grob geschätzt: je Zutat eine Packung zum letzten bekannten Preis, Vorräte wie Salz oder Öl zählen nicht mit. Er aktualisiert sich mit jedem neuen Bon.</p>`
+    : `<div class="empty"><strong>Noch keine Rezepte</strong>Fotografiere ein Rezept oder lade eine PDF hoch – gespeichert werden nur die Zutaten.</div>`}`;
+}
+function recipeRows(rec){
+  const used = new Set();
+  return (rec.zutaten || []).map(z => {
+    const hit = findOnList(z.name, null, used); if (hit) used.add(hit.id);
+    return {...z, li: hit, on: !z.vorrat && !hit, pr: priceFor(z.name)};
+  });
+}
+function openRecipe(id){
+  const rec = recipes.find(r => r.id === id); if (!rec) return;
+  const rows = recipeRows(rec), c = recipeCost(rec);
+  $("#stSheet").innerHTML = `
+    <h3>🍽️ ${esc(rec.title)}</h3>
+    <p class="sub">${rec.portionen ? `Für ${esc(rec.portionen)} Portionen. ` : ""}${c.n ? `Kostet ungefähr ${eur(c.sum)}${c.n < c.tot ? ` (${c.n} von ${c.tot} Zutaten mit Preis)` : ""}.` : "Für diese Zutaten gibt es noch keine Preise."}</p>
+    <div id="rzRows">${rows.map((r,i) => `
+      <label class="rz-row"><input type="checkbox" data-i="${i}" ${r.on ? "checked" : ""}>
+        <span class="ico" aria-hidden="true">${iconFor(r.name, r.cat || guessCat(r.name))}</span>
+        <span class="txt"><span class="name">${esc(r.name)}</span>${r.qty ? ` <span class="qty">${esc(r.qty)}</span>` : ""}
+          ${r.li ? `<span class="meta rz-tag">steht schon auf der Liste${fold(r.li.name) !== fold(r.name) ? ` als „${esc(r.li.name)}“` : ""}</span>` : r.vorrat ? `<span class="meta rz-tag">Vorrat – meist im Haus</span>` : ""}</span>
+        <span class="price">${r.pr ? `${r.pr.est ? "ca. " : ""}${eur(r.pr.p)}` : ""}</span>
+      </label>`).join("")}</div>
+    <div class="actions"><button class="btn-danger" id="rzDel">Löschen</button><button class="btn-main" id="rzAdd"></button></div>`;
+  const upd = () => { const n = rows.filter(r => r.on).length; $("#rzAdd").textContent = n ? `${n} ${n===1?"Zutat":"Zutaten"} auf die Liste` : "Nichts ausgewählt"; $("#rzAdd").disabled = !n; };
+  $("#rzRows").addEventListener("change", e => { const i = +e.target.dataset.i; if (rows[i]) { rows[i].on = e.target.checked; upd(); } });
+  upd();
+  $("#rzAdd").onclick = async () => { closeSheets(); await addRecipeToList(rec, rows); };
+  $("#rzDel").onclick = async () => {
+    closeSheets(); const {id: rid, ...data} = rec;
+    await safe(store.deleteRecipe(rid));
+    showToast(`${rec.title} gelöscht`, () => safe(store.saveRecipe(data)));
+  };
+  openSheet("#stScrim");
+}
+// Zutaten auf die Liste – was schon draufsteht, kommt nicht doppelt dazu
+async function addRecipeToList(rec, rows){
+  rows = rows || recipeRows(rec);
+  let added = 0, merged = 0;
+  for (const r of rows.filter(r => r.on)) {
+    if (r.li && !r.li.done) {
+      const patch = {recipe: r.li.recipe && !r.li.recipe.includes(rec.title) ? `${r.li.recipe}, ${rec.title}` : (r.li.recipe || rec.title)};
+      await safe(store.update(r.li.id, patch)); merged++; continue;
+    }
+    if (await addItem("", {name: r.name, qty: r.qty, cat: r.cat, recipe: rec.title, quiet: true})) added++; else merged++;
+  }
+  const skipped = rows.filter(r => r.li && !r.on).length;
+  showToast(added ? `${added} ${added===1?"Zutat":"Zutaten"} für ${rec.title} auf der Liste${skipped ? `, ${skipped} ${skipped===1?"stand":"standen"} schon drauf` : ""}` : `Alles für ${rec.title} steht schon auf der Liste`);
+  if (tab === "rez") renderRecipes();
+}
+$("#rez").addEventListener("click", e => {
+  if (e.target.closest("#rzScan")) {
+    if (pendingScan) { openPending(); return; }
+    if (!canScan()) { showToast("Rezepte einlesen geht nur, wenn du angemeldet bist"); return; }
+    scanMode = "rezept"; scanFrom = "rez";
+    $("#camT2").textContent = "Rezept"; $("#camStep1").hidden = true; $("#camStep2").hidden = false;
+    openSheet("#camScrim"); return;
+  }
+  const a = e.target.closest("[data-rzadd]"); if (a) { const rec = recipes.find(r => r.id === a.dataset.rzadd); if (rec) addRecipeToList(rec); return; }
+  const o = e.target.closest("[data-rid]"); if (o) openRecipe(o.dataset.rid);
+});
+
 function setTab(t){
   tab = t;
   document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
-  $("#main").hidden = t !== "liste"; $("#stat").hidden = t !== "stat";
+  $("#main").hidden = t !== "liste"; $("#stat").hidden = t !== "stat"; $("#rez").hidden = t !== "rez";
   document.querySelector(".dock").hidden = t !== "liste";
   if (t === "stat") renderStats();
+  if (t === "rez") renderRecipes();
   window.scrollTo(0,0);
 }
 document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
@@ -691,6 +795,7 @@ $("#stSheet").addEventListener("click", e => { const a = e.target.closest("[data
 
 function render(){
   if (tab === "stat" && document.activeElement?.id !== "stSearch") renderStats();   // ✓-Markierungen aktuell halten
+  if (tab === "rez") renderRecipes();
   const open = items.filter(i=>!i.done);
   const done = items.filter(i=>i.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
   let sum = 0, priced = 0;
@@ -923,8 +1028,9 @@ $("#camBtn").addEventListener("click", () => {
   openSheet("#camScrim");
 });
 let lastSrc = "cam";
+let scanFrom = "liste";
 document.querySelectorAll("#camScrim [data-mode]").forEach(b => b.addEventListener("click", () => {
-  scanMode = b.dataset.mode;
+  scanMode = b.dataset.mode; scanFrom = "liste";
   $("#camT2").textContent = scanMode==="bon" ? "Kassenbon" : "Rezept";
   $("#camStep1").hidden = true; $("#camStep2").hidden = false;
 }));
@@ -1334,26 +1440,31 @@ async function saveBon(){
 }
 
 function showRezeptReview(res){
-  const rows = (res.zutaten||[]).map(z => ({name: cap(String(z.name||"").trim()), qty: String(z.menge||"").trim(), cat: CAT_IDS.includes(z.kategorie)?z.kategorie:null, on: !z.vorrat, ai: z.li || null})).filter(r=>r.name);
+  const rows = (res.zutaten||[]).map(z => ({name: cap(String(z.name||"").trim()), qty: String(z.menge||"").trim(), cat: CAT_IDS.includes(z.kategorie)?z.kategorie:null, on: !z.vorrat, vorrat: !!z.vorrat, ai: z.li || null})).filter(r=>r.name);
   { const used = new Set(); for (const r of rows) { const hit = findOnList(r.name, r.ai, used); if (hit) { r.li = hit; r.on = false; used.add(hit.id); } } }
   const already = rows.filter(r => r.li).length;
-  review = {type:"rezept", rows, titel: String(res.titel||"Rezept").trim()};
+  review = {type:"rezept", rows, titel: String(res.titel||"Rezept").trim(), portionen: num(res.portionen)};
+  const fromRez = scanFrom === "rez";
   if (!rows.length) { $("#rvSheet").innerHTML = `<h3>Keine Zutaten gefunden</h3><p class="sub">Achte darauf, dass die Zutatenliste gut lesbar im Bild ist.</p><div class="actions"><button class="btn-main" data-close>OK</button></div>`; return; }
   $("#rvSheet").innerHTML = `
-    <h3>Zutaten übernehmen</h3><p class="sub">Was ihr schon im Haus habt, einfach abwählen.${already ? ` ${already} ${already===1?"Zutat steht":"Zutaten stehen"} schon auf der Liste und ${already===1?"ist":"sind"} deshalb abgewählt.` : ""}</p>
+    <h3>${fromRez ? "Rezept speichern" : "Zutaten übernehmen"}</h3><p class="sub">${fromRez ? "Alle Zutaten werden im Rezept gespeichert. Häkchen = kommt auf die Einkaufsliste, falls du das unten einschaltest." : "Was ihr schon im Haus habt, einfach abwählen."}${already ? ` ${already} ${already===1?"Zutat steht":"Zutaten stehen"} schon auf der Liste und ${already===1?"ist":"sind"} deshalb abgewählt.` : ""}</p>
     <label for="rvTitel">Rezept${res.portionen?` (für ${esc(res.portionen)} Portionen)`:""}</label><input id="rvTitel" type="text" value="${esc(review.titel)}">
     <span class="lbl">Zutaten (Name, Menge)</span>
     <div id="rvRows">${rows.map((r,i)=>`
       <div class="rv-row"><input type="checkbox" data-i="${i}" ${r.on?"checked":""} aria-label="übernehmen">
         <input type="text" class="rv-name" data-i="${i}" data-f="name" value="${esc(r.name)}" aria-label="Name">
         <input type="text" class="rv-small" data-i="${i}" data-f="qty" value="${esc(r.qty)}" aria-label="Menge" style="text-align:left"></div>${r.li?`<span class="rv-raw"><span class="rv-li">steht schon drauf${fold(r.li.name)!==fold(r.name)?` als „${esc(r.li.name)}“`:""}</span></span>`:""}`).join("")}</div>
-    <div class="actions"><button class="btn-ghost" data-close>Verwerfen</button><button class="btn-main" id="rvSave">Auf die Liste</button></div>`;
+    <label class="toggle"><input type="checkbox" id="rvRecOpt" ${fromRez ? "" : "checked"}> ${fromRez ? "Zutaten gleich auf die Einkaufsliste setzen" : "Rezept im Rezepte-Tab speichern"}</label>
+    <div class="actions"><button class="btn-ghost" data-close>Verwerfen</button><button class="btn-main" id="rvSave">${fromRez ? "Rezept speichern" : "Auf die Liste"}</button></div>`;
   bindReview();
   $("#rvSave").onclick = async () => {
     $("#rvSave").disabled = true;
-    const titel = $("#rvTitel").value.trim();
+    const titel = $("#rvTitel").value.trim() || "Rezept";
+    const saveRec = fromRez || $("#rvRecOpt").checked, toList = !fromRez || $("#rvRecOpt").checked;
+    if (saveRec) await safe(store.saveRecipe({title: titel, portionen: review.portionen || null, by: S.me || "", createdAt: Date.now(),
+      zutaten: review.rows.filter(r => r.name.trim()).map(r => ({name: cap(r.name.trim()), qty: r.qty || "", cat: r.cat || null, vorrat: !!r.vorrat}))}));
     let added = 0;
-    for (const r of review.rows.filter(r=>r.on && r.name.trim())) {
+    for (const r of (toList ? review.rows : []).filter(r=>r.on && r.name.trim())) {
       if (r.li && !r.li.done) {   // trotzdem angehakt → zum vorhandenen Eintrag dazuschreiben statt doppelt
         const patch = {recipe: r.li.recipe && !r.li.recipe.includes(titel) ? `${r.li.recipe}, ${titel}` : (r.li.recipe || titel)};
         if (r.qty) patch.qty = r.li.qty ? `${r.li.qty} + ${r.qty}` : r.qty;
@@ -1362,7 +1473,8 @@ function showRezeptReview(res){
       if (await addItem("", {name: cap(r.name.trim()), qty: r.qty, cat: r.cat, recipe: titel, quiet: true})) added++;
     }
     closeSheets();
-    showToast(`${added} ${added===1?"Zutat":"Zutaten"} für ${titel || "das Rezept"} hinzugefügt`);
+    showToast(toList ? `${added} ${added===1?"Zutat":"Zutaten"} für ${titel} hinzugefügt${saveRec ? ", Rezept gespeichert" : ""}` : `${titel} ist gespeichert`);
+    if (tab === "rez") renderRecipes();
   };
 }
 
