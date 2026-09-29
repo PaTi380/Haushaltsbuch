@@ -19,7 +19,7 @@
     firebase.initializeApp(CFG);auth=firebase.auth();fs=firebase.firestore();
     try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(_){}
     auth.getRedirectResult().catch(()=>{});
-    auth.onAuthStateChanged(u=>{user=u;if(!u){document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>loginScreen()):loginScreen();return;}
+    auth.onAuthStateChanged(u=>{user=u;window.__me=(u&&u.email)||"";if(!u){document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>loginScreen()):loginScreen();return;}
       gate('');while(waiters.length)waiters.shift()();setTimeout(liveUpdate,4000);});
   }
   const signedIn=()=>new Promise(r=>{if(user)r();else waiters.push(r);});
@@ -391,6 +391,8 @@ details.row.goldsep{border-bottom:1px solid color-mix(in srgb,var(--gold) 30%,tr
 .cl-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.cl-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.cl-n{margin-top:14px;font-size:13px;opacity:.8;max-width:260px}
 #closed .btn{background:#d9bd74;color:#0c231b;border:0}
 body.is-closed main,body.is-closed header{visibility:hidden}
+
+.upm{display:inline-flex;gap:4px;align-items:center;justify-content:flex-end}.upm .btn{padding:2px 8px;min-width:0}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
@@ -419,7 +421,7 @@ body{margin:0;padding:0 16px}
       <textarea id="q-text" rows="2" placeholder="z. B. „Essen 36,34“ · „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“ · „Till Tanken im Oktober 60 statt 115“"></textarea>
       <div class="qbtns"><button class="btn" id="q-go">Übernehmen</button></div>
     </div>
-    <div class="note" id="q-msg">Schreib einfach, was sich geändert hat. Die KI macht daraus Einträge, du bestätigst sie.</div>
+    <div class="note qmsg" id="q-msg">Schreib oder diktier einfach, was sich geändert hat – z. B. „40 € Sonstiges im Oktober für Wassermelder“, „200 € vom Urlaubskonto abgehoben am 12.10. für Fähre“, „Patrick hat im Oktober 2.610 € Gehalt bekommen“, „Stromabrechnung Oktober 85 €“. Die App erkennt das meist selbst, nur im Zweifel fragt sie die KI. Du bestätigst immer vorher.</div>
     <div id="q-prev"></div>
   </div>
 
@@ -457,8 +459,8 @@ body{margin:0;padding:0 16px}
 <section role="tabpanel" id="p-fewo" hidden>
   <div class="card">
     <div class="head"><h2>Neue Buchung</h2></div>
-    <div class="quick"><textarea id="fw-text" rows="3" placeholder="Buchung einfügen, z. B. „Airbnb, 13. bis 15. November, 2 Erwachsene, du erhältst 154,95 €“ oder den kopierten Text aus der Booking- bzw. Airbnb-App"></textarea><div class="qbtns"><button type="button" class="btn" id="fw-readtext">Übernehmen</button></div></div>
-    <div class="note" id="fw-shotmsg" style="margin-top:6px">Die KI füllt die Felder unten aus, du prüfst und speicherst. Liste, Urlaubskonto und Gästebeitrag führt die App dann selbst.</div>
+    <div class="quick"><textarea id="fw-text" rows="3" placeholder="Neue Buchung, z. B. „Airbnb, 13. bis 15. November, 2 Erwachsene, du erhältst 154,95 €“ – oder eine Änderung bzw. Urlaubskonto-Buchung"></textarea><div class="qbtns"><button type="button" class="btn" id="fw-readtext">Übernehmen</button></div></div>
+    <div class="note qmsg" id="fw-shotmsg" style="margin-top:6px">Neue Buchung: Die KI füllt die Felder unten aus, du prüfst und speicherst. Änderungen erkennt die App meist selbst, z. B. „Gäste vom 3.10. haben 20 € bar bezahlt“, „Buchung vom 14.11. storniert“, „150 € vom Urlaubskonto abgehoben für Ausflug“.</div><div id="fw-qprev"></div>
     <form class="form" id="f-fw" style="margin-top:12px">
       <label>Plattform<select id="fw-p"><option>Booking.com</option><option>Airbnb</option><option>Privat</option></select></label>
       <label>Anreise<input type="date" id="fw-a" required></label>
@@ -477,7 +479,7 @@ body{margin:0;padding:0 16px}
     <div class="note">Tippe auf eine Buchung für den Auszahlungs-Zettel: wie viel vom Geld Gästebeitrag ist, wie viel in den Spartopf (30 % + 5 €) und wie viel aufs Urlaubskonto geht.</div></div>
   <div class="g2">
     <div class="card"><div class="head"><h2>Urlaubskonto</h2><b class="num" id="u-stand"></b></div>
-      <form class="form" id="f-url"><label>Datum<input type="date" id="u-d" required></label><label>Betrag (€, Ausgabe mit −)<input id="u-b" type="text" inputmode="decimal" required style="width:120px" placeholder="-643,95"></label><label>Bemerkung<input id="u-t" placeholder="z. B. Unterkunft London"></label><button class="btn">Eintragen</button></form>
+      <form class="form" id="f-url"><label>Datum<input type="date" id="u-d" required></label><label>Art<select id="u-art"><option value="-1">Entnahme / Ausgabe (−)</option><option value="1">Einzahlung (+)</option></select></label><label>Betrag (€)<input id="u-b" type="text" inputmode="decimal" required style="width:120px" placeholder="643,95"></label><label>Bemerkung<input id="u-t" placeholder="z. B. Unterkunft London"></label><button class="btn">Eintragen</button></form>
       <div class="tw" style="margin-top:10px;max-height:320px;overflow:auto"><table id="u-table"></table></div><h3>Verlauf</h3><div class="legend" style="margin:0 0 4px"><span><i style="background:var(--acc)"></i>Kontostand</span><span><i class="dash"></i>geplant (Buchungen und Ausgaben in der Zukunft)</span></div><div class="chart" id="c-url"></div></div>
     <div class="card"><h2>Gästebeitrag je Monat</h2><div class="note" style="margin-top:0">Für die Meldung an die Gemeinde. Nach Anreisemonat.</div><div class="tw"><table id="gb-table"></table></div></div>
   </div>
@@ -1013,12 +1015,13 @@ Eine Überweisung von einem privaten Konto aufs gemeinsame Konto zum Ausgleich e
 8) Tatsächliches Gehalt in EINEM Monat (z. B. "Patrick hat im Oktober 2.610 € bekommen", "Gehalt Patrick diesen Monat 2.540") – NICHT dauerhaft, dafür art grund: {"art":"gehalt","person":"Till"|"Patrick","monat":"JJJJ-MM","wert":Zahl|null}  – null = wieder das geplante Gehalt.
 9) Neuer Bescheid für Wasser oder Grundsteuer (z. B. "Wasserbescheid 2027: Februar 297 €, danach 280 €"): {"art":"bescheid","posten":"wasser"|"grundsteuer","jahr":JJJJ,"februar":Zahl,"rate":Zahl}  – februar = Betrag am 15.02., rate = Betrag je Rate im Mai, August, November.
 10) Neuer Jahresbeitrag für Wohngebäudeversicherung, Hausratversicherung, Haftpflichtversicherung, Abfallgebühr oder ADAC (z. B. "Wohngebäudeversicherung kostet ab April 2027 2.000 €"): {"art":"beitrag","posten":"wohngebaeude"|"hausrat"|"haftpflicht"|"abfall"|"adac","jahresbetrag":Zahl,"faellig":"JJJJ-MM"}  – faellig = Monat der Zahlung; ohne Angabe null.
+11) Urlaubskonto (Geld abheben/abrufen/entnehmen oder einzahlen): {"art":"urlaub","datum":"JJJJ-MM-TT","betrag":Zahl,"grund":"wofür"}  – Abheben/Entnahme = NEGATIV, Einzahlung = positiv; datum ohne Angabe = heute (${TODAY}).
 Beträge als Zahl mit Punkt. Nichts erfinden. Im Zweifel die wahrscheinlichste Aktion wählen – der Nutzer sieht vor dem Speichern eine Vorschau und bestätigt selbst. Nur wenn Betrag oder Ziel wirklich fehlen, eine rueckfrage stellen und aktionen leer lassen.`;}
 let qActs=[];
 function qDescribe(a){
   if(a.art==='budget')return (/^\d{4}-\d{2}$/.test(a.monat||'')&&a.monat!==month?ymShort(a.monat)+' · ':'')+(+a.betrag<0?`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(-a.betrag)} ausgleichen (kommt wieder dazu)${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer)+(S.plan[month]?' (wird bei '+esc(a.wer)+' im Girokonto abgezogen)':''):''}`:`${a.topf==='essen'?'Essen':'Sonstiges'}: ${eur(a.betrag)} abziehen${a.notiz?' ('+esc(a.notiz)+')':''}${a.wer?' · '+esc(a.wer):''}`);
   if(a.art==='eintrag'){const b=BER[a.bereich];const verb=a.modus==='loeschen'?'löschen':a.modus==='aendern'?'ändern auf':'neu';return `${esc(a.person)} · ${ymShort(a.monat||month)} · ${b?b[1]:esc(a.bereich)}: „${esc(a.bezeichnung)}“ ${verb}${a.modus==='loeschen'?'':' '+eur(a.betrag)}${a.pauschale?' (aus der Pauschale)':''}`;}
-  if(a.art==='buchung'){const ch=[];if(a.storniert)ch.push('storniert');if(a.erwachsene!=null)ch.push(a.erwachsene+' Erwachsene');if(a.kinder!=null)ch.push(a.kinder+' Kinder');if(a.abreise)ch.push('Abreise '+dDE(a.abreise));if(a.bar!=null)ch.push(eur(a.bar)+' bar vor Ort');{const bu=a.barUrlaub??a.bar_aufs_urlaubskonto;if(bu===false)ch.push('Bargeld nicht aufs Urlaubskonto');else if(bu==='voll')ch.push('Bargeld komplett aufs Urlaubskonto');else if(bu===true)ch.push('Bargeld wie Auszahlung aufteilen');}if(a.notiz)ch.push('Notiz: '+esc(a.notiz));return `Buchung ${esc(a.plattform||'')} ab ${dDE(a.anreise)}: ${ch.join(', ')||'keine Änderung'}`;}
+  if(a.art==='buchung'){const ch=[];if(a.storniert)ch.push('storniert');if(a.erwachsene!=null)ch.push(a.erwachsene+' Erwachsene');if(a.kinder!=null)ch.push(a.kinder+(+a.kinder===1?' Kind':' Kinder'));if(a.abreise)ch.push('Abreise '+dDE(a.abreise));if(a.bar!=null)ch.push(eur(a.bar)+' bar vor Ort');{const bu=a.barUrlaub??a.bar_aufs_urlaubskonto;if(bu===false)ch.push('Bargeld nicht aufs Urlaubskonto');else if(bu==='voll')ch.push('Bargeld komplett aufs Urlaubskonto');else if(bu===true)ch.push('Bargeld wie Auszahlung aufteilen');}if(a.notiz)ch.push('Notiz: '+esc(a.notiz));return `Buchung ${esc(a.plattform||'')} ab ${dDE(a.anreise)}: ${ch.join(', ')||'keine Änderung'}`;}
   if(a.art==='grund'){const it=S.grund.items.find(i=>i.k===a.key);return `Grundbetrag „${esc(it?.l||a.key)}“: ${it?eur(gv(a.key,a.ab||month))+' → ':''}${eur(a.wert)} ${a.ab?'ab '+ymName(a.ab):'(gilt ab sofort für alle offenen Monate)'}`;}
   if(a.art==='kredit'){const f=KFELDER.find(x=>x[0]===a.feld);const cur=String(a.feld||'').split('.').reduce((o,x)=>o?.[x],K());const nv=kNeu(a);return `${esc(f?f[1]:a.feld)}: ${fmtK2(a.feld,cur)} → <b>${fmtK2(a.feld,nv)}</b>`;}
   if(a.art==='sondertilgung')return `Sondertilgung ${a.kredit==='ing'?'ING':'Sparda'} ${ymName(a.monat)}: ${eur(a.betrag)}`;
@@ -1026,6 +1029,7 @@ function qDescribe(a){
   if(a.art==='bescheid')return `${a.posten==='grundsteuer'?'Grundsteuer':'Wasser'}-Bescheid ${a.jahr}: Februar ${eur(+a.februar)}, Mai/Aug/Nov je ${eur(+a.rate)}`;
   if(a.art==='gehalt')return `${esc(a.person)}: echtes Gehalt ${ymName(a.monat)} ${a.wert==null?'zurück auf geplant':eur(+a.wert)}`;
   if(a.art==='strom'){const L={spar:'Einzahlung',verbrauch:'Verbrauch geplant €',ist:'Verbrauch echt €',verg:'Vergütung €'};return `Stromkonto ${ymName(a.monat)}: ${L[a.feld]||esc(a.feld)} ${eur(S.strom.m?.[a.monat]?.[a.feld]??0)} → <b>${eur(a.wert)}</b>`;}
+  if(a.art==='urlaub')return `Urlaubskonto ${dDE(a.datum||TODAY)}: <b class="num ${+a.betrag<0?'neg':'pos'}">${+a.betrag<0?'−':'+'}${eur(Math.abs(+a.betrag))}</b> ${+a.betrag<0?'abheben':'einzahlen'}${a.grund?' ('+esc(a.grund)+')':''}`;
   return esc(JSON.stringify(a));
 }
 const KFELDER=[['sparda.stand','Sparda Restschuld (Stand)'],['sparda.standNach','Sparda Stand nach Monat (JJJJ-MM)'],['sparda.rate','Sparda Monatsrate'],['sparda.zins','Sparda Zinssatz %'],['sparda.szenario.aktiv','Szenario Mutter einrechnen (true/false)'],['sparda.szenario.an','Szenario Mutter ab Monat'],['sparda.szenario.betrag','Szenario Mutter Betrag'],['sparda.szenario.rate','Rate an Mutter monatlich'],['bauspar.saldo','Bausparguthaben'],['bauspar.monat','Bausparen monatlich'],['bauspar.summe','Bausparsumme'],['ing.betrag','ING Kreditbetrag'],['ing.zins','ING Zinssatz %']];
@@ -1050,38 +1054,108 @@ async function qApply(list){let ok=0;const skip=[];
     else if(a.art==='beitrag'){const k={wohngebaeude:'h_wohngeb',hausrat:'h_hausrat',haftpflicht:'h_haftpfl',abfall:'h_abfall',adac:'h_adac'}[a.posten];if(!k||a.jahresbetrag==null){skip.push(qDescribe(a));continue;}const ab=a.faellig||bjDue(k);const items=structuredClone(S.grund.items);const it=items.find(i=>i.k===k);it.bsch={...(it.bsch||{}),[ab.slice(0,4)]:{j:r2(+a.jahresbetrag),ab,am:TODAY}};S.grund={items};render();await save('config/grund',{items});ok++;}
     else if(a.art==='bescheid'){const k=a.posten==='grundsteuer'?'h_grundst':'h_wasser';if(!(+a.jahr>2000)||a.februar==null||a.rate==null){skip.push(qDescribe(a));continue;}const items=structuredClone(S.grund.items);const it=items.find(i=>i.k===k);it.bsch={...(it.bsch||{}),[+a.jahr]:{f:r2(+a.februar),r:r2(+a.rate),am:TODAY}};S.grund={items};render();await save('config/grund',{items});ok++;}
     else if(a.art==='gehalt'){const sh=PSH[a.person];if(!sh||sh==='HAUS'||!S.plan[a.monat]){skip.push(qDescribe(a));continue;}await savePlan(a.monat,d=>{const b=d[sh]=d[sh]||{};if(a.wert==null)delete b.gehIst;else b.gehIst=r2(+a.wert);});ok++;}
+    else if(a.art==='urlaub'){if(!(+a.betrag)){skip.push(qDescribe(a));continue;}await saveUrlaub(u=>{u.e.push({d:/^\d{4}-\d{2}-\d{2}$/.test(a.datum||'')?a.datum:TODAY,b:r2(+a.betrag),t:a.grund||(+a.betrag<0?'Entnahme':'Einzahlung')});});ok++;}
     else if(a.art==='strom'){if(!['spar','verbrauch','ist','verg'].includes(a.feld)){skip.push(qDescribe(a));continue;}const d=structuredClone(S.strom);d.m=d.m||{};d.m[a.monat]={...(d.m[a.monat]||{}),[a.feld]:+a.wert};S.strom=d;render();await save('config/strom',d);ok++;}
   }
   return {ok,skip};
 }
-/* Eindeutige Einkäufe (Betrag + Essen/Sonstiges) ohne KI erkennen – schneller und ohne Rückfragen */
-function qLocal(tx){const t=' '+tx.toLowerCase().replace(/\s+/g,' ')+' ';
-  if(/tagesgeld|gehalt|kredit|tilg|strom|bescheid|buchung|gäste|gast|überwies|ausgleich|zurück|dauerhaft|ab jetzt|grundbetrag|ändern|lösch|rate/.test(t))return null;
-  const se=/sonstig|haus,? ?sonst|\bsonst\b/.test(t),es=/\bessen|lebensmittel|einkauf|supermarkt/.test(t);if(se===es)return null;
-  const am=[...t.matchAll(/(\d+(?:[.,]\d{1,2})?) ?(?:€|euro\b|eur\b)/g)];if(am.length!==1)return null;const b=parseNum(am[0][1]);if(!(b>0))return null;
-  const MN=['januar','februar','märz','april','mai','juni','juli','august','september','oktober','november','dezember'];
-  let ym=month;const mi=MN.findIndex(m=>t.includes(' '+m)||t.includes(' '+m.slice(0,3)+' ')||t.includes(' '+m.slice(0,3)+'.'));
-  if(/nächsten monat|nächster monat/.test(t)){const[y,m]=month.split('-').map(Number);ym=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;}
-  else if(mi>=0){const yy=t.match(/\b(20\d\d)\b/);ym=`${yy?yy[1]:month.slice(0,4)}-${String(mi+1).padStart(2,'0')}`;}
-  const nm=tx.match(/\bf(?:ü|ue)r\s+(.+?)\s*$/i);let notiz=nm?nm[1].replace(/\s*(im|in|am|für)?\s*(nächsten monat|januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)(\s*20\d\d)?/ig,' ').replace(/\s*(abziehen|abgezogen|ausgegeben|gekauft|bezahlt)\s*/ig,' ').replace(/\s+/g,' ').trim():'';
-  if(notiz&&/^(essen|sonstiges?|lebensmittel)$/i.test(notiz))notiz='';notiz=notiz.charAt(0).toUpperCase()+notiz.slice(1);
-  const w=/\bpatrick\b/.test(t)?'Patrick':/\btill\b/.test(t)?'Till':'';
-  return {aktionen:[{art:'budget',topf:se?'sonst':'essen',betrag:b,notiz,wer:w,monat:ym}],rueckfrage:null};}
+/* ---------- Befehle ohne KI erkennen (zuerst das Programm, nur im Notfall die KI) ---------- */
+const QMN=['januar','februar','märz','april','mai','juni','juli','august','september','oktober','november','dezember'];
+const QMRX='(januar|jan|februar|feb|märz|maerz|mär|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez)\\.?';
+const qMi=w=>{w=w.replace('.','').replace('maerz','märz');return QMN.findIndex(m=>m===w||m.startsWith(w)&&w.length>=3);};
+const qPn=s=>{s=String(s).trim().replace(/,-$/,'');if(/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s))s=s.replace(/\./g,'');return parseNum(s);};
+function qMe(){const m=window.__me||'';return /till/i.test(m)?'Till':/patrick|pati/i.test(m)?'Patrick':'';}
+function qPerson(t){return /\bpatrick\b|\bpati\b/.test(t)?'Patrick':/\btill\b/.test(t)?'Till':/\b(ich|mein|meine|meinem|meinen|mir|mich)\b/.test(t)?qMe():'';}
+function qYmFor(mi,t){const yy=t.match(/\b(20\d\d)\b/);if(yy)return `${yy[1]}-${String(mi+1).padStart(2,'0')}`;const[y,m]=CUR.split('-').map(Number);let Y=y;if(mi+1-m<-6)Y++;else if(mi+1-m>6)Y--;return `${Y}-${String(mi+1).padStart(2,'0')}`;}
+function qMonth(t){if(/nächste[nrm]? monat/.test(t)){const[y,m]=month.split('-').map(Number);return m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;}
+  if(/(diese[nrm]?|aktuelle[nrm]?) monat/.test(t))return month;if(/letzte[nrm]? monat|vormonat/.test(t)){const[y,m]=month.split('-').map(Number);return m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;}
+  const r=t.match(new RegExp('(?:^|[^\\d.])(?:\\d{1,2}\\. ?)?'+QMRX+'(?=[\\s,.!?]|$)'));if(r){const mi=qMi(r[1]);if(mi>=0)return qYmFor(mi,t);}return null;}
+function qDate(t){if(/\bvorgestern\b/.test(t))return dAdd(TODAY,-2);if(/\bgestern\b/.test(t))return dAdd(TODAY,-1);if(/\bübermorgen\b/.test(t))return dAdd(TODAY,2);if(/\bmorgen\b/.test(t))return dAdd(TODAY,1);if(/\bheute\b/.test(t))return TODAY;
+  let r=t.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{2,4})?/);if(r){const y=r[3]?(r[3].length===2?'20'+r[3]:r[3]):qYmFor(+r[2]-1,t).slice(0,4);return `${y}-${r[2].padStart(2,'0')}-${r[1].padStart(2,'0')}`;}
+  r=t.match(new RegExp('\\b(\\d{1,2})\\. ?'+QMRX+'(?: (20\\d\\d))?'));if(r){const mi=qMi(r[2]);if(mi>=0){const ym=r[3]?`${r[3]}-${String(mi+1).padStart(2,'0')}`:qYmFor(mi,t);return `${ym}-${r[1].padStart(2,'0')}`;}}return null;}
+function qDates(t){const out=[];const re=new RegExp('\\b(\\d{1,2})\\.(\\d{1,2})\\.(\\d{2,4})?|\\b(\\d{1,2})\\. ?'+QMRX,'g');let m;while((m=re.exec(t))){out.push(qDate(m[0]));}return out.filter(Boolean);}
+/* Beträge: mit €/Euro bevorzugt, sonst eine einzelne Zahl, die kein Datum/Jahr/keine Anzahl ist */
+function qAmts(t,bare){const c=t.replace(new RegExp('\\b\\d{1,2}\\.\\d{1,2}\\.(\\d{2,4})?|\\b\\d{1,2}\\. ?'+QMRX,'g'),' ').replace(/\b20\d\d\b/g,' ');
+  const e=[...c.matchAll(/(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(?:,-)? ?(?:€|euro\b|eur\b)/g)].map(m=>qPn(m[1]));if(e.length||!bare)return e;
+  return [...c.matchAll(/(?:^|\s)(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)(?!\s*(?:erwachsene|kinder|kind|gäste|personen|nächte|%|x\b))(?=[\s,.!?]|$)/g)].map(m=>qPn(m[1]));}
+const qAmt=(t,bare)=>{const a=qAmts(t,bare);return a.length===1&&a[0]>0?a[0]:null;};
+function qWhy(tx){const m=tx.match(/\b(?:f(?:ü|ue)r|wegen|grund:?|zweck:?)\s+(.+?)\s*[.!]?$/i);if(!m)return '';
+  let s=m[1].replace(new RegExp('\\s*\\b(?:am|im|vom|zum|ab)?\\s*(?:\\d{1,2}\\.\\d{1,2}\\.(?:\\d{2,4})?|\\d{1,2}\\. ?'+QMRX+'(?: 20\\d\\d)?|'+QMRX+'(?: 20\\d\\d)?|heute|gestern|vorgestern|morgen|nächste[nrm]? monat|diese[nrm]? monat)\\b','ig'),' ')
+    .replace(/\s*\b(abziehen|abgezogen|ausgegeben|gekauft|bezahlt|abheben|abgehoben|abrufen|abgerufen|entnehmen|entnommen|genommen|einzahlen|eingezahlt|buchen|eintragen)\b\s*/ig,' ')
+    .replace(/\s*\b(vom|aus dem|von dem|aufs|auf das)\s+(urlaubskonto|tagesgeld|urlaubskasse)\b/ig,' ').replace(/\s+/g,' ').replace(/[\s,.]+$/,'').trim();
+  return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
+function qParse1(tx){const t=' '+tx.toLowerCase().replace(/\s+/g,' ').replace(/[„“"]/g,'')+' ';
+  // 1) Urlaubskonto
+  if(/urlaubs?konto|urlaubskasse|urlaubsgeld|urlaubstopf/.test(t)){const b=qAmt(t);if(b==null)return null;
+    const minus=/ab(ge)?hoben|abheben|abrufen|abgerufen|entnehm|entnommen|genommen|\braus\b|ausgegeben|bezahlt|runter|\bvom urlaub|aus dem urlaub|von dem urlaub|\babbuch|\babzieh/.test(t),plus=/einzahl|eingezahlt|\bdrauf|aufs urlaub|auf das urlaub|gutschrift|gutgeschrieben|zurückgelegt|zurück ?gezahlt|dazu/.test(t);
+    if(minus===plus)return null;return {art:'urlaub',datum:qDate(t)||TODAY,betrag:minus?-b:b,grund:qWhy(tx)};}
+  // 2) Sondertilgung
+  if(/sondertilgung/.test(t)){const k=/\bing\b/.test(t)?'ing':/sparda/.test(t)?'sparda':null;const b=qAmt(t,true);const ym=qMonth(t);if(!k||b==null||!ym)return null;return {art:'sondertilgung',kredit:k,monat:ym,betrag:b};}
+  // 3) Restschuld/Kredit
+  if(/restschuld|kreditstand/.test(t)&&/sparda/.test(t)&&!/\bum\b/.test(t)){const b=qAmt(t,true);if(b==null)return null;return {art:'kredit',feld:'sparda.stand',wert:b,um:null};}
+  // 4) Bescheid Wasser/Grundsteuer
+  if(/bescheid/.test(t)&&/wasser|grundsteuer/.test(t)){const y=t.match(/\b(20\d\d)\b/);const f=t.match(/februar\D{0,12}?(\d[\d.,]*)/);const r=t.match(/(?:rate|danach|mai|je|dann)\D{0,20}?(\d[\d.,]*)/);if(!y||!f||!r)return null;
+    return {art:'bescheid',posten:/grundsteuer/.test(t)?'grundsteuer':'wasser',jahr:+y[1],februar:qPn(f[1].replace(/[.,]$/,'')),rate:qPn(r[1].replace(/[.,]$/,''))};}
+  // 5) Jahresbeiträge
+  {const P=[['wohngeb','wohngebaeude'],['hausrat','hausrat'],['haftpflicht','haftpflicht'],['abfall','abfall'],['müll','abfall'],['adac','adac']].find(([w])=>t.includes(w));
+    if(P&&/kostet|beitrag|teurer|günstiger|jahr/.test(t)){const b=qAmt(t,true);if(b==null)return null;return {art:'beitrag',posten:P[1],jahresbetrag:b,faellig:qMonth(t)};}}
+  // 6) Strom
+  if(/strom|einspeis/.test(t)&&!/anteil/.test(t)){const b=qAmt(t,true);const ym=qMonth(t)||month;if(b==null)return null;
+    const f=/einspeis|vergütung/.test(t)?'verg':/stromkonto|eingezahlt|einzahl|sparen|zurückgelegt/.test(t)?'spar':/geplant|plan|abschlag/.test(t)?'verbrauch':/rechnung|abrechnung|kosten|verbrauch|gekostet|bezahlt/.test(t)?'ist':null;if(!f)return null;
+    return {art:'strom',monat:ym,feld:f,wert:b};}
+  // 7) Ferienwohnung: bestehende Buchung ändern
+  if(/buchung|gäste|gast\b|airbnb|booking|ferienwohnung|fewo/.test(t)&&/storn|bar\b|bar bezahlt|erwachsene|kinder|kind\b|abreise|verläng|früher ab|reisen .* ab/.test(t)&&!/neue buchung/.test(t)){
+    const ds=qDates(t);if(!ds.length)return null;const L=fwList().filter(b=>!b.storniert||/reaktiv/.test(t));const d0=ds[0];
+    let hit=L.filter(b=>b.a===d0);if(!hit.length)hit=L.filter(b=>b.a<=d0&&d0<b.ab);const pf=/airbnb/.test(t)?'Airbnb':/booking/.test(t)?'Booking.com':/privat/.test(t)?'Privat':null;if(pf)hit=hit.filter(b=>b.p===pf);if(hit.length!==1)return null;const B=hit[0];
+    const a={art:'buchung',anreise:B.a,plattform:B.p,erwachsene:null,kinder:null,abreise:null,bar:null,storniert:false,notiz:''};let any=false;
+    if(/storn/.test(t)&&!/nicht storn/.test(t)){a.storniert=true;any=true;}
+    const er=t.match(/(\d+) erwachsene/);if(er){a.erwachsene=+er[1];any=true;}const ki=t.match(/(\d+|ein|eine|kein|keine) kind(er)?/);if(ki){a.kinder=/^\d/.test(ki[1])?+ki[1]:/^ein/.test(ki[1])?1:0;any=true;}
+    if(/abreise|verläng|früher ab|reisen .* ab/.test(t)&&ds[1]){a.abreise=ds[1];any=true;}
+    if(/\bbar\b/.test(t)){const b=qAmt(t);if(b==null)return null;a.bar=b;any=true;a.barUrlaub=/nicht aufs urlaub|nicht auf das urlaub/.test(t)?false:/voll|komplett|ganz/.test(t)?'voll':null;}
+    return any?a:null;}
+  // 8) Gehalt in einem Monat / dauerhaft
+  if(/gehalt|lohn|verdient|bekommen/.test(t)&&!/urlaub|tagesgeld|budget|sonstig|essen/.test(t)){const p=qPerson(t);const b=qAmt(t,true);if(!p||b==null)return null;
+    if(/\bab\b|dauerhaft|ab jetzt|künftig|in zukunft/.test(t)){const ym=qDate(t)?qDate(t).slice(0,7):qMonth(t);return {art:'grund',key:p==='Till'?'t_gehalt':'p_gehalt',wert:b,ab:ym};}
+    return {art:'gehalt',person:p,monat:qMonth(t)||month,wert:b};}
+  // 9) Tagesgeld
+  if(/tagesgeld/.test(t)){const p=qPerson(t);const b=qAmt(t);if(!p||b==null)return null;const ym=qMonth(t)||(qDate(t)||'').slice(0,7)||month;const w=qWhy(tx).replace(/^(Ein|Eine|Einen|Einem|Den|Die|Das)\s+/i,'').replace(/^./,c=>c.toUpperCase());
+    if(/\b(vom|aus dem|von dem|vom meinem|von meinem)\b.*tagesgeld|tagesgeld.*(genommen|entnommen|abgehoben|runter)/.test(t))return {art:'eintrag',person:p,monat:ym,bereich:w?'tg_kauf':'tg_raus',bezeichnung:w||'Umbuchung aufs Girokonto',betrag:b,modus:'neu',pauschale:false};
+    if(/(aufs|auf das|ins|in das|zum) tagesgeld|tagesgeld.*(eingezahlt|gespart|zurückgelegt)/.test(t))return {art:'eintrag',person:p,monat:ym,bereich:'tg_rein',bezeichnung:w||'Einzahlung',betrag:b,modus:'neu',pauschale:false};
+    return null;}
+  // 10) Budget Essen/Sonstiges (auch Ausgleich)
+  if(!/restaurant|essen gehen|essen war|pauschale von (till|patrick)/.test(t)){const se=/sonstig|haus,? ?sonst|\bsonst\b/.test(t),es=/\bessen\b|lebensmittel|einkauf|supermarkt|\brewe\b|\baldi\b|\blidl\b|\bedeka\b|\bnetto\b|\bpenny\b|\bkaufland\b/.test(t);
+    if(se!==es){const b=qAmt(t,!/\d\s*(€|euro)/.test(t)&&/^\s*(essen|sonstiges?)\s+\d/.test(t));if(b==null)return null;const ausg=/ausgleich|überwies|zurück|aufgefüllt|auffüllen/.test(t);
+      let n=qWhy(tx);if(!n){const sh=tx.match(/\b(rewe|aldi|lidl|edeka|netto|penny|kaufland|dm|rossmann|amazon|obi|hornbach|bauhaus|toom)\b/i);if(sh)n=sh[1].charAt(0).toUpperCase()+sh[1].slice(1);}if(n&&/^(essen|sonstiges?|lebensmittel)$/i.test(n))n='';
+      return {art:'budget',topf:se?'sonst':'essen',betrag:ausg?-b:b,notiz:n,wer:ausg?qPerson(t):(/\bpatrick\b/.test(t)?'Patrick':/\btill\b/.test(t)?'Till':''),monat:qMonth(t)};}}
+  // 11) Ausgabe vom eigenen Girokonto
+  if(/ausgegeben|bezahlt|gekauft|gezahlt|kostet|gekostet/.test(t)&&!/haus|gemeinsam/.test(t)){const p=qPerson(t);const b=qAmt(t);const w=qWhy(tx);if(!p||b==null||!w)return null;
+    return {art:'eintrag',person:p,monat:qMonth(t)||(qDate(t)||'').slice(0,7)||month,bereich:'giro_aus',bezeichnung:w,betrag:b,modus:'neu',pauschale:/pauschale|restaurant|essen gehen|klamotten|kleidung|friseur|kino|schwimm|café|cafe|bar\b|döner|pizza/.test(t)};}
+  return null;}
+function qLocal(tx){const parts=tx.split(/\n+|;|\s+und dann\s+|\s+außerdem\s+/i).map(s=>s.trim()).filter(s=>s.length>2);if(!parts.length||parts.length>8)return null;
+  const acts=[];for(const p of parts){const a=qParse1(p);if(!a)return null;acts.push(a);}return {aktionen:acts,rueckfrage:null,lokal:true};}
+/* Sieht der Text nach einer NEUEN Buchung aus (Einfügen aus Booking/Airbnb oder diktiert)? */
+function qIsNewBooking(tx){const t=tx.toLowerCase();if(/neue buchung/.test(t))return true;if(tx.length>250&&/(booking|airbnb|buchungsnummer|gesamtpreis|du erhältst|check-in|anreise)/.test(t))return true;
+  return /(booking|airbnb|privat)/.test(t)&&/(\bbis\b|du erhältst|gesamtpreis|kommission|nächte)/.test(t)&&!/storn|bar bezahlt|\bbar\b|hat .* bezahlt/.test(t);}
+/* Vorschau mit Bestätigen – gemeinsam für „Schnell eintragen“ und das Feld bei der Ferienwohnung */
+function qShow(r,msg,prev){const acts=(r?.aktionen||[]).filter(a=>a&&a.art);prev._acts=acts;prev.classList.add('qprev');
+  if(!acts.length){msg.innerHTML=r?.rueckfrage?`<b>Rückfrage:</b> ${esc(r.rueckfrage)}`:'Ich habe daraus keine Änderung erkannt. Formulier es gern etwas genauer.';prev.innerHTML='';return;}
+  msg.innerHTML=(r?.rueckfrage?`<b>Hinweis:</b> ${esc(r.rueckfrage)} `:'')+(r.lokal?'<span class="muted">Ohne KI erkannt.</span> ':'')+'Bitte prüfen und bestätigen:';
+  prev.innerHTML=acts.map((a,i)=>`<label class="qa"><input type="checkbox" checked data-qi="${i}"><span>${qDescribe(a)}</span></label>`).join('')+`<div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="btn" data-qok="1">Bestätigen</button><button type="button" class="btn sec" data-qno="1">Verwerfen</button></div>`;}
+function qErr(e){return e?.code==='no_key'||e?.code==='api_error'?(e.message||'KI-Zugang fehlt. Einstellungen → KI-Zugang.'):e?.code==='not_granted'?'Die KI wurde nicht erlaubt. Trag es im Reiter Monat von Hand ein.':e?.code==='rate_limited'?'Gerade zu viele Anfragen. Bitte gleich noch einmal.':e?.code==='bad_json'?e.message:('Das hat nicht geklappt'+(e?.message?': '+e.message:'.')+' Bitte noch einmal versuchen.');}
+async function qRun(tx,msg,prev,btn){const loc=qLocal(tx);if(loc){qShow(loc,msg,prev);return;}
+  if(!sampleFn){msg.textContent='Das habe ich ohne KI nicht verstanden, und die KI ist in dieser Ansicht nicht verfügbar.';prev.innerHTML='';return;}
+  btn.disabled=true;msg.textContent='Die KI liest deine Nachricht …';
+  try{qShow(await sampleFn.json(qPrompt(tx),{modelTier:'default',cache:false}),msg,prev);}catch(e){msg.textContent=qErr(e);}btn.disabled=false;}
+document.addEventListener('click',async e=>{const prev=e.target.closest('.qprev');if(!prev)return;const box=prev.closest('.card')||document;const msg=prev.previousElementSibling&&prev.previousElementSibling.matches('.qmsg')?prev.previousElementSibling:(box.querySelector('.qmsg')||prev);
+  if(e.target.dataset.qno){prev.innerHTML='';msg.textContent='Verworfen.';return;}
+  if(!e.target.dataset.qok)return;const sel=[...prev.querySelectorAll('[data-qi]')].filter(c=>c.checked).map(c=>prev._acts[+c.dataset.qi]);e.target.disabled=true;
+  const res=await qApply(sel);prev.innerHTML='';const ta=box.querySelector('textarea');if(ta)ta.value='';msg.innerHTML=`<b class="pos">${res.ok} ${res.ok===1?'Änderung':'Änderungen'} gespeichert.</b>`+(res.skip.length?`<br><span class="warnc">Nicht gespeichert: ${res.skip.join('; ')}</span>`:'');});
 $('#q-go').onclick=async()=>{const tx=$('#q-text').value.trim();const msg=$('#q-msg');if(!tx)return;
-  // Schnellweg ohne Claude: nur ein Betrag => Essen
+  // Schnellweg: nur ein Betrag => Essen
   const only=parseNum(tx.replace(/^essen\s*/i,''));if(only!=null&&/^(essen\s*)?[\d.,\s€]+$/i.test(tx)){await addBudget('e',only);$('#q-text').value='';msg.innerHTML=`<b class="pos">${eur(only)} bei Essen abgezogen.</b>`;return;}
-  if(!sampleFn&&!qLocal(tx)){msg.textContent='Die KI ist in dieser Ansicht nicht verfügbar. Nutze die Felder bei Essen & Sonstiges oder den Reiter Monat.';return;}
-  $('#q-go').disabled=true;msg.textContent='Die KI liest deine Nachricht …';
-  try{const r=qLocal(tx)||await sampleFn.json(qPrompt(tx),{modelTier:'default',cache:false});
-    qActs=(r?.aktionen||[]).filter(a=>a&&a.art);
-    if(!qActs.length){msg.innerHTML=r?.rueckfrage?`<b>Rückfrage:</b> ${esc(r.rueckfrage)}`:'Ich habe daraus keine Änderung erkannt. Formulier es gern etwas genauer.';$('#q-prev').innerHTML='';}
-    else{msg.innerHTML=(r?.rueckfrage?`<b>Hinweis:</b> ${esc(r.rueckfrage)} `:'')+'Bitte prüfen und bestätigen:';
-      $('#q-prev').innerHTML=qActs.map((a,i)=>`<label class="qa"><input type="checkbox" checked data-qi="${i}"><span>${qDescribe(a)}</span></label>`).join('')+`<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="q-ok">Bestätigen</button><button class="btn sec" id="q-no">Verwerfen</button></div>`;}
-  }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'KI-Zugang fehlt. Einstellungen → KI-Zugang.'):e?.code==='not_granted'?'Die KI wurde nicht erlaubt. Trag es im Reiter Monat von Hand ein.':e?.code==='rate_limited'?'Gerade zu viele Anfragen. Bitte gleich noch einmal.':e?.code==='bad_json'?e.message:('Das hat nicht geklappt'+(e?.message?': '+e.message:'.')+' Bitte noch einmal versuchen.');}
-  $('#q-go').disabled=false;};
-$('#q-prev').addEventListener('click',async e=>{if(e.target.id==='q-no'){$('#q-prev').innerHTML='';$('#q-msg').textContent='Verworfen.';return;}
-  if(e.target.id!=='q-ok')return;const sel=$$('#q-prev [data-qi]').filter(c=>c.checked).map(c=>qActs[+c.dataset.qi]);e.target.disabled=true;
-  const res=await qApply(sel);$('#q-prev').innerHTML='';$('#q-text').value='';$('#q-msg').innerHTML=`<b class="pos">${res.ok} ${res.ok===1?'Änderung':'Änderungen'} gespeichert.</b>`+(res.skip.length?`<br><span class="warnc">Nicht gespeichert: ${res.skip.join('; ')}</span>`:'');});
+  // Neue Ferienwohnungs-Buchung => in den Reiter Ferienwohnung weiterreichen
+  if(!qLocal(tx)&&qIsNewBooking(tx)){$('#q-text').value='';msg.textContent='Neue Buchung – weiter im Reiter Ferienwohnung.';showTab('fewo');try{history.replaceState(null,'','#fewo')}catch(_){}render();$('#fw-text').value=tx;setTimeout(()=>{$('#fw-readtext').click();$('#fw-text').scrollIntoView({block:'center'});},50);return;}
+  await qRun(tx,msg,$('#q-prev'),$('#q-go'));};
 /* ---------- Ferienwohnung ---------- */
 const FWD={gb:2.1,kom:0.12,serv:0.014,steuer:1.5,airNeu:0.155,airAlt:0.03,mwst:0.19,urlProz:0.3,urlFix:5};
 const FR=()=>({...FWD,...(S.einst.fewo||{})});
@@ -1171,7 +1245,9 @@ async function fwAuslesen(opts,btn,textIn){const msg=$('#fw-shotmsg');btn.disabl
     fwPreview();msg.innerHTML=`<b>Ausgelesen.</b> Bitte prüfen und speichern${(r.unsicher||[]).length?' (gelb = unsicher)':''}.${r.hinweis?' '+esc(r.hinweis):''}`;
   }catch(e){msg.textContent=e?.code==='no_key'||e?.code==='api_error'?(e.message||'KI-Zugang fehlt. Einstellungen → KI-Zugang.'):e?.code==='not_granted'?'Auslesen nicht erlaubt. Bitte von Hand eintragen.':e?.code==='rate_limited'?'Gerade zu viele Anfragen, bitte gleich nochmal.':'Das Auslesen hat nicht geklappt. Bitte nochmal oder von Hand eintragen.';}
   btn.disabled=false;}
-$('#fw-readtext').onclick=async()=>{const tx=$('#fw-text').value.trim();if(tx.length<8){$('#fw-shotmsg').textContent='Bitte zuerst die Buchung eintragen.';return;}if(!sampleFn){$('#fw-shotmsg').textContent='Auslesen ist in dieser Ansicht nicht verfügbar.';return;}await fwAuslesen({},$('#fw-readtext'),tx);};
+$('#fw-readtext').onclick=async()=>{const tx=$('#fw-text').value.trim();if(tx.length<8){$('#fw-shotmsg').textContent='Bitte zuerst die Buchung eintragen.';return;}$('#fw-qprev').innerHTML='';
+  /* 1. ohne KI erkennen (Änderungen, Urlaubskonto, …) 2. keine neue Buchung => allgemeine KI 3. sonst Buchung auslesen */
+  if(qLocal(tx)||(!qIsNewBooking(tx)&&tx.length<250&&!/(booking|airbnb|privat)\b.*\b(bis|erhältst)\b/i.test(tx))){await qRun(tx,$('#fw-shotmsg'),$('#fw-qprev'),$('#fw-readtext'));return;}if(!sampleFn){$('#fw-shotmsg').textContent='Auslesen ist in dieser Ansicht nicht verfügbar.';return;}await fwAuslesen({},$('#fw-readtext'),tx);};
 
 let fwOpen=null,fwAll=false,fwPending=null;
 function rFewo(){
@@ -1196,7 +1272,7 @@ function rFewo(){
   {const byM={};let s0=+U.start||0;(U.e||[]).forEach(x=>{s0+=+x.b||0;byM[(x.d||'').slice(0,7)]=s0;});const ks=Object.keys(byM).filter(Boolean).sort();
    if(ks.length){const ms=[];for(let m=ks[0];m<=ks.at(-1);m=ymAdd(m,1))ms.push(m);let last=+U.start||0;const vals=ms.map(m=>{if(byM[m]!=null)last=byM[m];return r2(last);});
     const cur=CUR;lineChart($('#c-url'),ms,[{n:'Kontostand',c:'var(--acc)',v:ms.map((m,i)=>m<=cur?vals[i]:null)},{n:'geplant',c:'var(--acc)',dash:1,v:ms.map((m,i)=>m>=cur?vals[i]:null)}],{h:200,xl:ymShort,xt:ymName,mark:ms.indexOf(cur),aria:'Verlauf Urlaubskonto'});}}
-  if(!$('#u-table').contains(document.activeElement))$('#u-table').innerHTML=`<thead><tr><th>Datum</th><th>Bemerkung</th><th class="r">Betrag</th><th class="r">Stand</th><th></th></tr></thead><tbody>`+rows.map((x,i)=>[x,i]).reverse().slice(0,150).map(([x,i])=>`<tr${x.d>TODAY?' class="off"':''} data-ui="${i}"><td><input type="date" class="ue" data-uf="d" value="${esc(x.d||'')}"></td><td><input class="ue" data-uf="t" value="${esc(x.t||'')}" title="${x.fid?'gehört zu einer Buchung':''}"></td><td class="r"><input class="ue amt ${sign(x.b)}" inputmode="decimal" data-uf="b" value="${num(x.b)}"></td><td class="r">${eur(x.s)}</td><td class="r"><button class="btn sec sm" data-udel="${i}" aria-label="Löschen">×</button></td></tr>`).join('')+'</tbody>';
+  if(!$('#u-table').contains(document.activeElement))$('#u-table').innerHTML=`<thead><tr><th>Datum</th><th>Bemerkung</th><th class="r">Betrag</th><th class="r">Stand</th><th></th></tr></thead><tbody>`+rows.map((x,i)=>[x,i]).reverse().slice(0,150).map(([x,i])=>`<tr${x.d>TODAY?' class="off"':''} data-ui="${i}"><td><input type="date" class="ue" data-uf="d" value="${esc(x.d||'')}"></td><td><input class="ue" data-uf="t" value="${esc(x.t||'')}" title="${x.fid?'gehört zu einer Buchung':''}"></td><td class="r"><span class="upm"><button type="button" class="btn sec sm" data-upm="${i}" title="Vorzeichen umdrehen (Einzahlung ↔ Entnahme)" aria-label="Vorzeichen umdrehen">±</button><input class="ue amt ${sign(x.b)}" inputmode="decimal" data-uf="b" value="${num(x.b)}"></span></td><td class="r">${eur(x.s)}</td><td class="r"><button class="btn sec sm" data-udel="${i}" aria-label="Löschen">×</button></td></tr>`).join('')+'</tbody>';
   // Gästebeitrag je Monat
   const gbm={};all.forEach(b=>{const k=b.a.slice(0,7);gbm[k]=(gbm[k]||0)+b.gb;});const gk=Object.keys(gbm).filter(k=>k>=ymAdd(CUR,-12)).sort().reverse();
   $('#gb-table').innerHTML=`<thead><tr><th>Monat</th><th class="r">Gästebeitrag</th></tr></thead><tbody>${gk.map(k=>`<tr><td>${ymName(k)}</td><td class="r">${eur(gbm[k])}</td></tr>`).join('')}</tbody>`;
@@ -1204,9 +1280,9 @@ function rFewo(){
 $('#fw-yr').onchange=e=>{fwYr=e.target.value;rFewo();};
 $('#fw-table').onclick=async e=>{const t=e.target;if(t.dataset.fwdel){if(!t.dataset.armed){t.dataset.armed=1;t.textContent='Wirklich?';t.classList.add('danger');return;}const id=t.dataset.fwdel;await fwSaveAll(fwList().filter(b=>b.id!==id));await saveUrlaub(u=>{u.e=u.e.filter(x=>x.fid!==id);});return;}
   if(t.closest('.fwedit'))return;const r=t.closest('tr.fwrow');if(r){fwOpen=fwOpen===r.dataset.fid?null:r.dataset.fid;rFewo();}};
-$('#f-url').onsubmit=e=>{e.preventDefault();const b=parseNum($('#u-b').value);if(b==null||!$('#u-d').value)return;saveUrlaub(u=>{u.e.push({d:$('#u-d').value,b:r2(b),t:$('#u-t').value.trim()});});e.target.reset();};
+$('#f-url').onsubmit=e=>{e.preventDefault();let b=parseNum($('#u-b').value);if(b!=null&&b>0)b=b*(+$('#u-art').value||1);if(b==null||!$('#u-d').value)return;saveUrlaub(u=>{u.e.push({d:$('#u-d').value,b:r2(b),t:$('#u-t').value.trim()});});e.target.reset();};
 $('#u-table').addEventListener('change',e=>{const f=e.target.dataset.uf;if(!f)return;const i=+e.target.closest('tr').dataset.ui;let v=e.target.value;if(f==='b'){v=parseNum(v);if(v==null)return;v=r2(v);}saveUrlaub(u=>{if(u.e[i])u.e[i][f]=f==='t'?String(v).trim():v;});});
-$('#u-table').onclick=e=>{const b=e.target.closest('[data-udel]');if(!b)return;if(!b.dataset.armed){b.dataset.armed=1;b.textContent='✓';return;}saveUrlaub(u=>{u.e.splice(+b.dataset.udel,1);});};
+$('#u-table').onclick=e=>{const pm=e.target.closest('[data-upm]');if(pm){pm.blur();const i=+pm.dataset.upm;saveUrlaub(u=>{if(u.e[i])u.e[i].b=r2(-(+u.e[i].b||0));});return;}const b=e.target.closest('[data-udel]');if(!b)return;if(!b.dataset.armed){b.dataset.armed=1;b.textContent='✓';return;}saveUrlaub(u=>{u.e.splice(+b.dataset.udel,1);});};
 
 
 $('#st-box').addEventListener('toggle',e=>{if(e.target.open)rSteuer();});
@@ -1884,7 +1960,7 @@ const HILFE=[
 - spart ab Februar für das nächste Jahr den Gesamtbetrag des Bescheids an. Der Januar (noch alter Bescheid, meist schon abgeschlossen) wird verrechnet, damit bis Dezember genau der Gesamtbetrag zusammenkommt; ab Januar des Folgejahres Gesamtbetrag ÷ 12.
 Wasser und Grundsteuer werden immer im Vorjahr angespart (Januar–Dezember für die Raten des Folgejahres); der Balken im Ausblick („Wasser 2027“) wächst bis Dezember auf 100 %. Geht auch per Schnell eintragen: „Wasserbescheid 2027: Februar 297 €, danach 280 €“. Falsch eingetragen: Bescheid in der Liste mit × löschen und neu eintragen.`],
 ['Neuer Beitrag Versicherung, Abfall, ADAC',`Einstellungen → Gemeinsam → „+ Neuer Bescheid“ → Posten (Wohngebäude-, Hausrat-, Haftpflichtversicherung, Abfallgebühr, ADAC) → neuer Jahresbetrag und Fälligkeitsmonat (vorausgefüllt) → Übernehmen. Die Zahlung im Fälligkeitsmonat wird angepasst. Reicht das in den 12 Monaten davor Angesparte nicht (oder ist etwas übrig), zahlen Till und Patrick im Fälligkeitsmonat je die Hälfte nach (bzw. weniger). Danach wird der neue Betrag ÷ 12 angespart. Diese Posten werden jeweils bis zur nächsten Zahlung angespart. Per Schnell eintragen: „Wohngebäudeversicherung kostet ab April 2027 2.000 €“.`],
-['Schnell eintragen (KI)',`In der Übersicht oben einfach schreiben, was sich geändert hat, z. B. „Essen 36,34“, „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“, „Till Tanken im Oktober 60 statt 115“, „Patrick hat im Oktober 2.610 € bekommen“, „Goldpreis 3.820“, „ING-Rate ab November 2030 auf 0“. Die KI schlägt die Einträge vor, du bestätigst. Ohne KI geht alles auch von Hand.`],
+['Schnell eintragen (KI)',`Beide Textfelder (Übersicht und Ferienwohnung) erkennen viele Befehle OHNE KI (spart Daten, geht sofort): Essen/Sonstiges-Einkäufe und -Ausgleich, Urlaubskonto abheben/einzahlen („200 € vom Urlaubskonto abgehoben am 12.10. für Fähre“), Tagesgeld-Entnahmen, Gehalt eines Monats oder dauerhaft („ab Februar 2027“), Strom (Abrechnung, Einspeisevergütung, Stromkonto), Sondertilgung, Sparda-Restschuld, Wasser-/Grundsteuerbescheid, Jahresbeiträge, Ausgaben vom Girokonto („Patrick 45 € Restaurant bezahlt für Essen gehen“) und Änderungen an Buchungen („Gäste vom 3.10. haben 20 € bar bezahlt“, „Buchung vom 14.11. storniert“). Mehrere Befehle mit Semikolon oder neuer Zeile trennen. „ich/mein“ = wer angemeldet ist. Nur was die App nicht versteht, geht an die KI. Eine neue Buchung in der Übersicht wird automatisch an den Reiter Ferienwohnung weitergereicht. In der Übersicht oben einfach schreiben, was sich geändert hat, z. B. „Essen 36,34“, „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“, „Till Tanken im Oktober 60 statt 115“, „Patrick hat im Oktober 2.610 € bekommen“, „Goldpreis 3.820“, „ING-Rate ab November 2030 auf 0“. Die KI schlägt die Einträge vor, du bestätigst. Ohne KI geht alles auch von Hand.`],
 ['Essen & Sonstiges',`Budget Essen = Grundbetrag Essen, Sonstiges = „sonstiges: freie Verwendung“ minus 100 € fürs Kredit-Sparen bis April 2027. Einkauf: Betrag eintragen → „− Essen“ oder „− Sonstiges“. Ausgleichen: Betrag mit Minus (−2,89); mit „Wer“ wird er auch bei dessen Girokonto abgezogen.`],
 ['Ferienwohnung',`Buchung einfügen (Text aus der Booking-/Airbnb-App kopieren) → Übernehmen → Felder prüfen → speichern. Tippen auf eine Buchung öffnet den Auszahlungs-Zettel: Brutto, Gebühren, Auszahlung, Gästebeitrag (nur Erwachsene × Nächte), Spartopf (30 % + 5 €), aufs Urlaubskonto. Beträge antippen = von Hand ändern (✎), Feld leeren = wieder automatisch. Bargeld vor Ort: „wie Auszahlung aufteilen“, „komplett aufs Urlaubskonto“ oder „nicht aufs Urlaubskonto“. Buchungen, deren Abreise mehr als 2 Wochen zurückliegt, sind nur noch lesbar. Die Übersicht zeigt die nächste Gutschrift mit Aufteilung.`],
 ['Kredite',`Karten Sparda (blau), ING (orange), Bausparvertrag (gelb). Diagramm: Linien an/aus, Zeitraum. Sondertilgungen bei Sparda/ING hinzufügen; „Rate Sondertilgung Haus“ aus den Monatsplänen wird automatisch als Sondertilgung gerechnet. Die ING-Rate endet automatisch nach der letzten Rate (in fortgeschriebenen Jahren); vorher auf 0 setzen: Grundbetrag „Gemeinschaftskredit ING Rate“ → „erst ab“.`],
