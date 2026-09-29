@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.9 vom 29.09.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.11 vom 29.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -240,7 +240,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.9</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.11</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -317,7 +317,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.9 vom 29.09.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.11 vom 29.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -339,7 +339,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.9 vom 29.09.2026";
+const APP_VERSION = "Version 1.11 vom 29.09.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -459,6 +459,10 @@ const store = {
   async saveRecipe(data){
     if (backend==="fb") { const ref = fs.collection(COL.rez).doc(); await ref.set(clean(data)); return ref.id; }
     const id = "r"+Date.now(); recipes.push({id, ...data}); saveLocal(); render(); return id;
+  },
+  async updateRecipe(id, patch){
+    if (backend==="fb") return fs.doc(`${COL.rez}/${id}`).update(clean(patch));
+    const r = recipes.find(x => x.id === id); if (r) Object.assign(r, patch); saveLocal(); render();
   },
   async deleteRecipe(id){
     if (backend==="fb") return fs.doc(`${COL.rez}/${id}`).delete();
@@ -677,35 +681,64 @@ function openHistory(k){
   openSheet("#stScrim");
 }
 // ---------- Rezepte ----------
+// Vorrat: steht im Rezept, kommt aber nur auf die Liste, wenn man es selbst ankreuzt
+const PANTRY = ["salz","pfeffer","öl","olivenöl","rapsöl","sonnenblumenöl","essig","balsamico","zucker","puderzucker","mehl","speisestärke","stärke","backpulver","natron","hefe trocken","vanillezucker",
+  "brühe","gemüsebrühe","gewürz","kräuter","italienische kräuter","kräuter der provence","oregano","thymian","rosmarin","majoran","basilikum getrocknet","paprikapulver","paprika edelsüß","curry","currypulver",
+  "kreuzkümmel","kümmel","zimt","muskat","muskatnuss","chiliflocken","chilipulver","cayenne","knoblauchpulver","zwiebelpulver","lorbeer","lorbeerblatt","nelken","sojasoße","sojasauce","senf","honig","wasser","eiswürfel"];
+const SMALL_QTY = /^(etwas|1 prise|prise|eine prise|nach belieben|n\. ?b\.|zum (braten|bestreuen|abschmecken|garnieren)|optional)|\b(el|tl|msp|prise|spritzer|schuss)\b/i;
+function isPantry(z){
+  if (z.vorrat) return true;
+  const n = fold(z.name || ""), q = String(z.qty ?? z.menge ?? "").toLowerCase().trim();
+  if (PANTRY.some(p => { const f = fold(p); return n === f || n.endsWith(" " + f) || n.startsWith(f + " ") || (f.length >= 4 && n.endsWith(f)); })) return true;
+  return SMALL_QTY.test(q);   // „1 EL Olivenöl“, „etwas Pfeffer“, „1 Prise Salz“
+}
 function recipeCost(rec){
   let sum = 0, n = 0, tot = 0;
   for (const z of rec.zutaten || []) {
-    if (z.vorrat) continue; tot++;
+    if (isPantry(z)) continue; tot++;
     const pr = priceFor(z.name); if (pr) { sum += pr.p; n++; }   // eine Packung je Zutat – bewusst grob
   }
   return {sum, n, tot};
 }
 const canScan = () => typeof sampleFn !== "undefined" ? !!sampleFn : backend === "fb";
+let rzSort = "neu", rzMax = 0;
 function renderRecipes(){
   const el = $("#rez");
-  const list = [...recipes].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  const withCost = recipes.map(r => ({r, c: recipeCost(r)}));
+  let list = withCost.filter(x => !rzMax || (x.c.n && x.c.sum <= rzMax));
+  const byPrice = (a,b) => (a.c.n ? a.c.sum : 1e9) - (b.c.n ? b.c.sum : 1e9);
+  if (rzSort === "guenstig") list.sort(byPrice);
+  else if (rzSort === "teuer") list.sort((a,b) => (b.c.n ? b.c.sum : -1) - (a.c.n ? a.c.sum : -1));
+  else if (rzSort === "oft") list.sort((a,b) => (b.r.cooked||0) - (a.r.cooked||0) || (b.r.lastCooked||0) - (a.r.lastCooked||0));
+  else if (rzSort === "az") list.sort((a,b) => a.r.title.localeCompare(b.r.title, "de"));
+  else list.sort((a,b) => (b.r.createdAt||0) - (a.r.createdAt||0));
+  const tools = recipes.length ? `<div class="st-tools">
+      <select id="rzSortSel" aria-label="Sortierung" style="flex:1">
+        ${[["neu","Neueste zuerst"],["oft","Oft gekocht"],["guenstig","Günstigste zuerst"],["teuer","Teuerste zuerst"],["az","A–Z"]].map(([v,l]) => `<option value="${v}"${rzSort===v?" selected":""}>${l}</option>`).join("")}
+      </select>
+      <select id="rzMaxSel" aria-label="Preisgrenze">
+        ${[[0,"Alle Preise"],[5,"bis 5 €"],[10,"bis 10 €"],[15,"bis 15 €"],[20,"bis 20 €"]].map(([v,l]) => `<option value="${v}"${rzMax===v?" selected":""}>${l}</option>`).join("")}
+      </select></div>` : "";
   el.innerHTML = `
     <button class="choice" id="rzScan" style="margin:0 0 14px"><span>📖</span><span><b>Rezept einlesen</b><small>Foto oder PDF – nur die Zutaten werden gespeichert</small></span></button>
-    ${list.length ? `<div class="list">${list.map(r => { const c = recipeCost(r); return `
+    ${tools}
+    ${!list.length && recipes.length ? `<div class="empty" style="padding:24px">Kein Rezept in dieser Preisklasse</div>` : ""}
+    ${list.length ? `<div class="list">${list.map(({r, c}) => { return `
       <div class="st-row"><button class="st-open rz-open" data-rid="${esc(r.id)}">
         <span class="ico" aria-hidden="true">🍽️</span>
-        <span class="txt"><span class="name">${esc(r.title)}</span><span class="meta">${(r.zutaten||[]).length} Zutaten${r.portionen ? `, für ${esc(r.portionen)} Portionen` : ""}</span></span>
+        <span class="txt"><span class="name">${esc(r.title)}</span><span class="meta">${r.cooked ? `${r.cooked}× gekocht, zuletzt ${new Date(r.lastCooked).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}` : `${(r.zutaten||[]).length} Zutaten${r.portionen ? `, für ${esc(r.portionen)} Portionen` : ""}`}</span></span>
         <span class="st-p">${c.n ? `ca. ${eur(c.sum)}` : "–"}${c.n && c.n < c.tot ? `<small class="same">${c.n} von ${c.tot} mit Preis</small>` : ""}</span></button>
         <button class="st-add" data-rzadd="${esc(r.id)}" aria-label="Zutaten von ${esc(r.title)} auf die Liste">+</button>
       </div>`; }).join("")}</div>
       <p class="st-foot">Der Preis ist grob geschätzt: je Zutat eine Packung zum letzten bekannten Preis, Vorräte wie Salz oder Öl zählen nicht mit. Er aktualisiert sich mit jedem neuen Bon.</p>`
-    : `<div class="empty"><strong>Noch keine Rezepte</strong>Fotografiere ein Rezept oder lade eine PDF hoch – gespeichert werden nur die Zutaten.</div>`}`;
+    : recipes.length ? "" : `<div class="empty"><strong>Noch keine Rezepte</strong>Fotografiere ein Rezept oder lade eine PDF hoch – gespeichert werden nur die Zutaten.</div>`}`;
 }
 function recipeRows(rec){
   const used = new Set();
   return (rec.zutaten || []).map(z => {
     const hit = findOnList(z.name, null, used); if (hit) used.add(hit.id);
-    return {...z, li: hit, on: !z.vorrat && !hit, pr: priceFor(z.name)};
+    const vor = isPantry(z);
+    return {...z, vorrat: vor, li: hit, on: !vor && !hit, pr: priceFor(z.name)};
   });
 }
 function openRecipe(id){
@@ -721,7 +754,9 @@ function openRecipe(id){
           ${r.li ? `<span class="meta rz-tag">steht schon auf der Liste${fold(r.li.name) !== fold(r.name) ? ` als „${esc(r.li.name)}“` : ""}</span>` : r.vorrat ? `<span class="meta rz-tag">Vorrat – meist im Haus</span>` : ""}</span>
         <span class="price">${r.pr ? `${r.pr.est ? "ca. " : ""}${eur(r.pr.p)}` : ""}</span>
       </label>`).join("")}</div>
-    <div class="actions"><button class="btn-danger" id="rzDel">Löschen</button><button class="btn-main" id="rzAdd"></button></div>`;
+    <div class="actions"><button class="btn-danger" id="rzDel">Löschen</button><button class="btn-main" id="rzAdd"></button></div>
+    <div class="actions" style="margin-top:8px"><button class="btn-ghost" id="rzCooked">Heute gekocht${rec.cooked ? ` (bisher ${rec.cooked}×)` : ""}</button></div>`;
+  $("#rzCooked").onclick = async () => { closeSheets(); await markCooked(rec); showToast(`${rec.title}: ${(rec.cooked||0)+1}× gekocht`); };
   const upd = () => { const n = rows.filter(r => r.on).length; $("#rzAdd").textContent = n ? `${n} ${n===1?"Zutat":"Zutaten"} auf die Liste` : "Nichts ausgewählt"; $("#rzAdd").disabled = !n; };
   $("#rzRows").addEventListener("change", e => { const i = +e.target.dataset.i; if (rows[i]) { rows[i].on = e.target.checked; upd(); } });
   upd();
@@ -745,9 +780,16 @@ async function addRecipeToList(rec, rows){
     if (await addItem("", {name: r.name, qty: r.qty, cat: r.cat, recipe: rec.title, quiet: true})) added++; else merged++;
   }
   const skipped = rows.filter(r => r.li && !r.on).length;
+  if (added || merged) await markCooked(rec);   // Zutaten eingekauft = wird zubereitet
   showToast(added ? `${added} ${added===1?"Zutat":"Zutaten"} für ${rec.title} auf der Liste${skipped ? `, ${skipped} ${skipped===1?"stand":"standen"} schon drauf` : ""}` : `Alles für ${rec.title} steht schon auf der Liste`);
   if (tab === "rez") renderRecipes();
 }
+$("#rez").addEventListener("change", e => {
+  if (e.target.id === "rzSortSel") { rzSort = e.target.value; renderRecipes(); }
+  if (e.target.id === "rzMaxSel") { rzMax = +e.target.value; renderRecipes(); }
+});
+// Zubereitung zählen: beim Einkaufen der Zutaten oder per „Heute gekocht“
+async function markCooked(rec){ await safe(store.updateRecipe(rec.id, {cooked: (rec.cooked||0) + 1, lastCooked: Date.now()})); }
 $("#rez").addEventListener("click", e => {
   if (e.target.closest("#rzScan")) {
     if (pendingScan) { openPending(); return; }
@@ -1294,7 +1336,7 @@ Offene Einkaufsliste: ${openNames() || "(leer)"}`;
 }
 function rezeptPrompt(){
   return `Lies dieses Rezept (Foto oder PDF). Gib NUR dieses JSON zurück:
-{"t":"Name des Gerichts","p":Portionen oder null,"z":[{"n":"Zutat wie auf einer Einkaufsliste","m":"Menge mit Einheit, z. B. 500 g","k":"Kategorie","li":"Listeneintrag oder null","v":true wenn fast immer im Haus (Salz, Pfeffer, Öl, Zucker, Mehl, Gewürze)}]}
+{"t":"Name des Gerichts","p":Portionen oder null,"z":[{"n":"Zutat wie auf einer Einkaufsliste","m":"Menge mit Einheit, z. B. 500 g","k":"Kategorie","li":"Listeneintrag oder null","v":true wenn Vorrat: Salz, Pfeffer, Öl, Essig, Zucker, Mehl, Brühe, Gewürze, getrocknete Kräuter sowie alles mit Mengen wie "etwas", "1 Prise", "EL" oder "TL"}]}
 k ist eine von: ${CAT_IDS.join(", ")}
 Gleiche Zutaten zusammenfassen, keine Zubereitung.
 li: Steht die Zutat schon auf unserer offenen Einkaufsliste – auch unter anderem Namen (Liste "Nudeln" ↔ Zutat "Spaghetti", Liste "Möhren" ↔ "Karotten") –, schreibe den Listeneintrag GENAU so; sonst null.
@@ -1440,7 +1482,7 @@ async function saveBon(){
 }
 
 function showRezeptReview(res){
-  const rows = (res.zutaten||[]).map(z => ({name: cap(String(z.name||"").trim()), qty: String(z.menge||"").trim(), cat: CAT_IDS.includes(z.kategorie)?z.kategorie:null, on: !z.vorrat, vorrat: !!z.vorrat, ai: z.li || null})).filter(r=>r.name);
+  const rows = (res.zutaten||[]).map(z => ({name: cap(String(z.name||"").trim()), qty: String(z.menge||"").trim(), cat: CAT_IDS.includes(z.kategorie)?z.kategorie:null, on: !isPantry(z), vorrat: isPantry(z), ai: z.li || null})).filter(r=>r.name);
   { const used = new Set(); for (const r of rows) { const hit = findOnList(r.name, r.ai, used); if (hit) { r.li = hit; r.on = false; used.add(hit.id); } } }
   const already = rows.filter(r => r.li).length;
   review = {type:"rezept", rows, titel: String(res.titel||"Rezept").trim(), portionen: num(res.portionen)};
@@ -1461,7 +1503,7 @@ function showRezeptReview(res){
     $("#rvSave").disabled = true;
     const titel = $("#rvTitel").value.trim() || "Rezept";
     const saveRec = fromRez || $("#rvRecOpt").checked, toList = !fromRez || $("#rvRecOpt").checked;
-    if (saveRec) await safe(store.saveRecipe({title: titel, portionen: review.portionen || null, by: S.me || "", createdAt: Date.now(),
+    if (saveRec) await safe(store.saveRecipe({title: titel, portionen: review.portionen || null, by: S.me || "", createdAt: Date.now(), ...(toList ? {cooked: 1, lastCooked: Date.now()} : {}),
       zutaten: review.rows.filter(r => r.name.trim()).map(r => ({name: cap(r.name.trim()), qty: r.qty || "", cat: r.cat || null, vorrat: !!r.vorrat}))}));
     let added = 0;
     for (const r of (toList ? review.rows : []).filter(r=>r.on && r.name.trim())) {
