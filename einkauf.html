@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.11 vom 29.09.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.12 vom 30.09.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -240,7 +240,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.11</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.12</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -317,7 +317,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.11 vom 29.09.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.12 vom 30.09.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -339,7 +339,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.11 vom 29.09.2026";
+const APP_VERSION = "Version 1.12 vom 30.09.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -913,7 +913,11 @@ function inGroup(g, name){
 // Gleiche Sache, anderer Name: Liste „Tortellini“ ↔ Bon „Tortellini Ricotta-Spinat“, „Klopapier“ ↔ „Toilettenpapier“
 const SYN = [["klopapier","toilettenpapier","wc-papier"],["hack","hackfleisch","gehacktes"],["möhren","karotten","mohren"],["sahne","schlagsahne"],["lauch","porree"],
   ["brötchen","semmeln","schrippen"],["pommes","pommes frites"],["frikadellen","buletten"],["küchenrolle","küchenpapier","haushaltsrolle"],["spülmaschinentabs","geschirrspültabs","spültabs"],
-  ["taschentücher","tempo"],["sprudel","mineralwasser"],["paprika","paprikaschote"],["hähnchen","hühnchen","huhn"],["kartoffeln","erdäpfel"]];
+  ["taschentücher","tempo"],["sprudel","mineralwasser"],["paprika","paprikaschote"],["hähnchen","hühnchen","huhn"],["kartoffeln","erdäpfel"],
+  ["kirschtomate","cherrytomate","cocktailtomate","cocktailrispe","snacktomate","minitomate","datteltomate","partytomate"],
+  ["rispentomate","strauchtomate","tomaten an der rispe"],["frühlingszwiebel","lauchzwiebel"],["champignon","pilze"],["zucchini","zucchino"],
+  ["aubergine","melanzani"],["weiße bohnen","cannellini"],["kichererbse","garbanzo"],["koriander","koriandergrün"],["rinderhack","hackfleisch rind"],
+  ["hähnchenbrust","hähnchenbrustfilet","hühnerbrust"],["crème fraîche","creme fraiche","creme fraîche"],["schmand","saure sahne"],["quark","speisequark"]];
 const stemW = w => fold(w).replace(/(en|er|n|e|s)$/,"");
 const words = s => fold(s||"").split(/[^a-z0-9]+/).filter(w => w.length >= 3);
 function sameThing(listName, otherName){
@@ -951,12 +955,23 @@ function priceFor(name){
     const n = usual.reduce((a,e) => a + e.count, 0);
     return {p: usual.reduce((a,e) => a + e.price * e.count, 0) / n, est: true, usual: true, from: usual.map(e => e.name)};
   }
+  const priced = Object.values(products).filter(x => x.price && x.name && fold(x.name) !== fold(name));
+  const median = list => { const v = list.map(x => x.price).sort((a,b)=>a-b); return v.length % 2 ? v[(v.length-1)/2] : (v[v.length/2-1] + v[v.length/2]) / 2; };
+  // 1) gleiche Sache unter anderem Namen (Kirschtomaten = Cocktailrispentomaten), bzw. Sorten eines Oberbegriffs
   const g = groupOf(name);
-  const like = Object.values(products).filter(x => x.price && x.name && fold(x.name) !== fold(name) && (g ? inGroup(g, x.name) : sameThing(name, x.name)));
-  if (!like.length) return null;
-  const vals = like.map(x => x.price).sort((a,b)=>a-b);
-  const mid = vals.length % 2 ? vals[(vals.length-1)/2] : (vals[vals.length/2-1] + vals[vals.length/2]) / 2;
-  return {p: mid, est: true, from: like.map(x => x.name)};
+  const like = priced.filter(x => g ? inGroup(g, x.name) : sameThing(name, x.name));
+  if (like.length) return {p: median(like), est: true, from: like.map(x => x.name)};
+  // 2) Sorte unbekannt → Durchschnitt aller gekauften Sorten der Obergruppe („Kirschtomaten“ → eure Tomaten)
+  const parents = GROUPS.filter(gr => inGroup(gr, name));
+  for (const gr of parents) {
+    const fam = priced.filter(x => inGroup(gr, x.name) || groupOf(x.name) === gr);
+    if (fam.length) return {p: median(fam), est: true, family: gr.n, from: fam.map(x => x.name)};
+  }
+  // 3) zusammengesetztes Wort: „Räuchertofu“ → Tofu, „Kirschtomaten“ → Tomaten
+  const last = fold(name).split(/[^a-z0-9]+/).filter(Boolean).pop() || "";
+  const tail = priced.filter(x => { const w = fold(x.name); return !/\s/.test(w) && w.length >= 4 && last !== w && (last.endsWith(w) || last.endsWith(stemW(w))); });
+  if (tail.length) return {p: median(tail), est: true, family: tail[0].name, from: tail.map(x => x.name)};
+  return null;
 }
 function suggestions(q){
   // Mit Umlaut getippt → genau suchen; ohne → „bro“ findet auch „Brötchen“
@@ -1041,6 +1056,7 @@ function openEdit(id){
   const pr = priceFor(it.name);
   $("#edPrice").textContent = p?.price ? `Zuletzt ${eur(p.price)}${p.store?` bei ${p.store}`:""}${p.priceDate?` am ${fmtDate(p.priceDate)}`:""}`
     : pr?.usual ? `Geschätzt ca. ${eur(pr.p)} – ihr kauft dafür meistens ${pr.from.slice(0,3).join(", ")}.`
+    : pr?.family ? `Geschätzt ca. ${eur(pr.p)} – Durchschnitt eurer ${pr.family} (${pr.from.slice(0,4).join(", ")}${pr.from.length>4?" …":""}).`
     : pr?.est ? `Geschätzt ca. ${eur(pr.p)} – aus euren Preisen für (${pr.from.slice(0,4).join(", ")}${pr.from.length>4?" …":""}).`
     : "Noch kein Preis – kommt mit dem nächsten Kassenbon.";
   drawCats(); openSheet("#editScrim");
@@ -1316,7 +1332,8 @@ async function askGemini(prompt, doc, {signal, status, schema} = {}){
   if (parsed) return parsed;
   throw kiError("Die Antwort war nicht lesbar. Bitte nochmal versuchen.", String(text).slice(0,120));
 }
-const knownNames = () => [...new Set([...Object.values(products).sort((a,b)=>(b.count||0)-(a.count||0)).map(p=>p.name), ...items.map(i=>i.name)])].slice(0,150);
+const knownNames = () => [...new Set([...Object.values(products).sort((a,b)=>(b.count||0)-(a.count||0)).map(p=>p.name), ...items.map(i=>i.name),
+  ...recipes.flatMap(r => (r.zutaten||[]).filter(z => !isPantry(z)).map(z => z.name))])].slice(0,200);
 const openNames = () => items.filter(i => !i.done).map(i => {
   const l = learnedFor(i.name).slice(0,2).map(e => e.name);
   return l.length ? `${i.name} (bisher gekauft als: ${l.join(", ")})` : i.name;
