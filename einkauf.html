@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.14 vom 01.10.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.15 vom 01.10.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -251,7 +251,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.14</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.15</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -297,6 +297,7 @@ button.rv-li{text-decoration:underline dotted}
   <h3 id="edT">Artikel bearbeiten</h3>
   <label for="edName">Name</label><input id="edName" type="text">
   <label for="edQty">Menge</label><input id="edQty" type="text" placeholder="z. B. 500 g">
+  <label for="edPack">Packungsgröße beim Kauf</label><input id="edPack" type="text" placeholder="z. B. 10 Stück, 500 g, 1 l">
   <span class="lbl">Bereich im Laden</span><div class="cats" id="edCats"></div>
   <p class="note" id="edPrice"></p>
   <div class="actions"><button class="btn-danger" id="edDel">Löschen</button><button class="btn-main" id="edSave">Speichern</button></div>
@@ -329,7 +330,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.14 vom 01.10.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.15 vom 01.10.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -351,7 +352,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.14 vom 01.10.2026";
+const APP_VERSION = "Version 1.15 vom 01.10.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte", plan:"einkauf_plan"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -754,7 +755,7 @@ function renderRecipes(){
     ${list.length ? `<div class="list">${list.map(({r, c}) => { return `
       <div class="st-row"><button class="st-open rz-open" data-rid="${esc(r.id)}">
         <span class="ico" aria-hidden="true">🍽️</span>
-        <span class="txt"><span class="name">${esc(r.title)}</span><span class="meta">${r.cooked ? `${r.cooked}× gekocht, zuletzt ${new Date(r.lastCooked).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}` : `${(r.zutaten||[]).length} Zutaten${r.portionen ? `, für ${esc(r.portionen)} Portionen` : ""}`}</span></span>
+        <span class="txt"><span class="name">${esc(r.title)}</span><span class="meta">${r.cooked ? `${r.cooked}× gekocht${r.lastCooked ? `, zuletzt ${new Date(r.lastCooked).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}` : ""}` : `${(r.zutaten||[]).length} Zutaten${r.portionen ? `, für ${esc(r.portionen)} Portionen` : ""}`}</span></span>
         <span class="st-p">${c.n ? `ca. ${eur(c.sum)}` : "–"}${c.n && c.n < c.tot ? `<small class="same">${c.n} von ${c.tot} mit Preis</small>` : ""}</span></button>
         <button class="st-add" data-rzadd="${esc(r.id)}" aria-label="Zutaten von ${esc(r.title)} auf die Liste">+</button>
       </div>`; }).join("")}</div>
@@ -865,6 +866,7 @@ function renderPlan(){
       <input id="plInput" type="text" placeholder="Essen eintragen, z. B. Pizza" aria-label="Essen eintragen" enterkeyhint="done">
       <button class="addbtn" type="submit">Dazu</button>
     </form>
+    <div class="chips suggest" id="plChips" hidden style="margin:-2px 0 10px"></div>
     <button class="choice" id="plPick" style="margin:0 0 14px"><span>📖</span><span><b>Aus Rezepten wählen</b><small>${recipes.length ? `${recipes.length} gespeicherte Rezepte` : "Noch keine Rezepte gespeichert"}</small></span></button>
     ${open.length ? `<div class="count" style="margin:0 4px 8px;font-size:15px"><b>${open.length}</b> ${open.length===1?"Essen":"Essen"} geplant${priced ? `, ca. ${eur(sum)}` : ""}</div><div class="list">${open.map(row).join("")}</div>`
       : `<div class="empty" style="padding:30px 20px"><strong>Noch nichts geplant</strong>Tragt ein, was ihr in den nächsten Tagen essen wollt – ganz ohne Wochentage.</div>`}
@@ -872,6 +874,27 @@ function renderPlan(){
   const go = () => { const v = $("#plInput").value.trim(); if (!v) return; $("#plInput").value = "";
     const rec = recipes.find(r => fold(r.title) === fold(v));
     rec ? planRecipe(rec, false) : safe(store.planAdd({title: cap(v), recipeId: null, done: false, createdAt: Date.now(), by: S.me || ""})); };
+  const sug = () => {
+    const q = fold($("#plInput").value.trim()); const box = $("#plChips");
+    if (!q) { box.hidden = true; box.innerHTML = ""; return; }
+    const planned = new Set(plan.filter(m => !m.done).map(m => fold(m.title)));
+    const rank = t => { const f = fold(t); return f.startsWith(q) ? 0 : f.split(/[^a-z0-9]+/).some(w => w.startsWith(q)) ? 1 : f.includes(q) ? 2 : -1; };
+    const recs = recipes.map(r => ({t: r.title, id: r.id, r: rank(r.title), c: r.cooked || 0})).filter(x => x.r >= 0 && !planned.has(fold(x.t)));
+    const free = [...new Set(plan.filter(m => !m.recipeId).map(m => m.title))].map(t => ({t, id: "", r: rank(t), c: 0})).filter(x => x.r >= 0 && !planned.has(fold(x.t)) && !recs.some(y => fold(y.t) === fold(x.t)));
+    const list = [...recs, ...free].sort((a,b) => a.r - b.r || (b.id ? 1 : 0) - (a.id ? 1 : 0) || b.c - a.c).slice(0, 8);
+    box.innerHTML = list.map(x => `<button type="button" class="chip" data-sg="${esc(x.t)}" data-sgid="${esc(x.id)}"><span aria-hidden="true">${x.id ? "🍽️" : "📝"}</span> ${highlight(x.t, $("#plInput").value.trim())}</button>`).join("");
+    box.hidden = !list.length;
+  };
+  $("#plInput").addEventListener("input", sug);
+  $("#plChips").addEventListener("pointerdown", e => e.preventDefault());   // Tastatur bleibt offen
+  $("#plChips").addEventListener("click", async e => {
+    const c = e.target.closest("[data-sg]"); if (!c) return;
+    $("#plInput").value = ""; sug();
+    const rec = c.dataset.sgid && recipes.find(r => r.id === c.dataset.sgid);
+    if (rec) await planRecipe(rec, false);
+    else await safe(store.planAdd({title: c.dataset.sg, recipeId: null, done: false, createdAt: Date.now(), by: S.me || ""}));
+    $("#plInput").focus();
+  });
   $("#plForm").addEventListener("submit", e => { e.preventDefault(); go(); });
   $("#plForm .addbtn").addEventListener("click", e => { e.preventDefault(); go(); });
   $("#plInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); go(); } });
@@ -967,7 +990,7 @@ function render(){
   const open = items.filter(i=>!i.done);
   const done = items.filter(i=>i.done).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
   let sum = 0, priced = 0;
-  for (const i of open) { const pr = priceFor(i.name); if (pr) { sum += pr.p * multiplier(i.qty); priced++; } }
+  for (const i of open) { const pr = priceFor(i.name); if (pr) { sum += pr.p * packsNeeded(i.name, i.qty, pr); priced++; } }
   let c = open.length ? `<b>${open.length}</b> ${open.length===1?"Artikel fehlt":"Artikel fehlen"}` : (done.length ? "Alles im Wagen" : "Liste ist leer");
   if (priced) c += `<br><span style="font-size:15px">rund ${eur(sum)}${priced<open.length?` (${priced} von ${open.length} mit Preis)`:""}</span>`;
   $("#count").innerHTML = c;
@@ -984,8 +1007,8 @@ function render(){
   renderChips();
 }
 function row(i){
-  const pr = priceFor(i.name), mul = multiplier(i.qty);
-  const price = pr ? `<span class="price">${pr.est?"ca. ":""}${eur(pr.p * mul)}${pr.est ? `<small>geschätzt</small>` : mul>1 ? `<small>${eur(pr.p)} / Stk.</small>` : ""}</span>` : "";
+  const pr = priceFor(i.name), mul = pr ? packsNeeded(i.name, i.qty, pr) : 1, pcs = pr ? packPieces(packOf(i.name, pr)) : 0;
+  const price = pr ? `<span class="price">${pr.est?"ca. ":""}${eur(pr.p * mul)}${pr.est ? `<small>geschätzt</small>` : pcs > 1 ? `<small>${mul>1?`${mul} × `:""}${pcs}er-Packung</small>` : mul>1 ? `<small>${eur(pr.p)} / Packung</small>` : ""}</span>` : "";
   const meta = [i.recipe ? `für ${esc(i.recipe)}` : "", i.by ? `<span class="${esc(i.by)}">${esc(i.by)}</span>` : ""].filter(Boolean).join(", ");
   return `<div class="item${i.done?" done":""}" data-id="${esc(i.id)}">
     <button class="check" data-act="toggle" aria-label="${esc(i.name)} ${i.done?"wieder auf die Liste":"abhaken"}"><span class="box"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--leaf-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></span></button>
@@ -1072,6 +1095,28 @@ function findOnList(name, aiRef, used){
   return open.find(i => fold(i.name) === fold(name)) || open.find(i => sameThing(i.name, name)) || null;
 }
 // Preis für einen Listeneintrag: eigener letzter Preis, sonst bei Oberbegriffen der mittlere Preis eurer Sorten
+// Packungsgröße: „10 Stück“ (Eier), „500 g“ … – Stückzahl daraus, sonst 0
+function packOf(name, pr){
+  const own = products[keyOf(name)]?.pack || (pr?.from?.length ? products[keyOf(pr.from[0])]?.pack : "");
+  if (own) return own;
+  const f = fold(name || "");
+  return (f === "ei" || f.endsWith("eier")) ? "10 Stück" : "";   // Eier gibt es fast immer im 10er
+}
+function packPieces(pack){
+  const m = String(pack || "").toLowerCase().match(/(\d+)\s*(er\b|x\b|stk|stück|st\.|eier|pack)/);
+  return m ? +m[1] : 0;
+}
+// Wie viele Packungen braucht man? „6 Eier“ bei 10er-Packung → 1, „12 Eier“ → 2
+function packsNeeded(name, qty, pr){
+  const pieces = packPieces(packOf(name, pr));
+  const m = String(qty || "").trim().match(/^(\d+(?:[.,]\d+)?)\s*([a-zäöüß.]*)/i);
+  if (pieces > 1 && m) {
+    const unit = fold(m[2] || "");
+    if (!unit || /^(x|stk|stuck|st\.?|ei|eier)$/.test(unit) || fold(name).startsWith(unit.slice(0,3)))
+      return Math.max(1, Math.ceil(num(m[1]) / pieces));
+  }
+  return multiplier(qty);
+}
 function priceFor(name){
   const p = products[keyOf(name)];
   if (p?.price) return {p: p.price, est: false};
@@ -1179,8 +1224,9 @@ function openEdit(id){
   editing = id; edCat = CAT[it.cat] ? it.cat : "sonst";
   $("#edName").value = it.name; $("#edQty").value = it.qty || "";
   const p = products[keyOf(it.name)];
-  const pr = priceFor(it.name);
-  $("#edPrice").textContent = p?.price ? `Zuletzt ${eur(p.price)}${p.store?` bei ${p.store}`:""}${p.priceDate?` am ${fmtDate(p.priceDate)}`:""}`
+  const pr = priceFor(it.name), pk = packOf(it.name, pr), pcs = packPieces(pk);
+  $("#edPack").value = p?.pack || pk || "";
+  $("#edPrice").textContent = p?.price ? `Zuletzt ${eur(p.price)}${pk ? ` für ${pk}` : ""}${pcs > 1 ? ` (${eur(p.price / pcs)} pro Stück)` : ""}${p.store?` bei ${p.store}`:""}${p.priceDate?` am ${fmtDate(p.priceDate)}`:""}`
     : pr?.usual ? `Geschätzt ca. ${eur(pr.p)} – ihr kauft dafür meistens ${pr.from.slice(0,3).join(", ")}.`
     : pr?.family ? `Geschätzt ca. ${eur(pr.p)} – Durchschnitt eurer ${pr.family} (${pr.from.slice(0,4).join(", ")}${pr.from.length>4?" …":""}).`
     : pr?.est ? `Geschätzt ca. ${eur(pr.p)} – aus euren Preisen für (${pr.from.slice(0,4).join(", ")}${pr.from.length>4?" …":""}).`
@@ -1193,7 +1239,8 @@ $("#edSave").addEventListener("click", async () => {
   const name = cap($("#edName").value.trim()); if (!name || !editing) return;
   const id = editing; closeSheets();
   await safe(store.update(id, {name, qty: $("#edQty").value.trim(), cat: edCat}));
-  safe(store.product(name, {cat: edCat}));
+  const pack = $("#edPack").value.trim();
+  safe(store.product(name, pack ? {cat: edCat, pack} : {cat: edCat}));
 });
 $("#edDel").addEventListener("click", async () => {
   const it = items.find(i=>i.id===editing); if (!it) return;
@@ -1486,13 +1533,14 @@ const openNames = () => items.filter(i => !i.done).map(i => {
 }).slice(0, 80).join("; ");
 function bonPrompt(){
   return `Lies diesen deutschen Kassenbon (Foto oder PDF). Gib NUR dieses JSON zurück:
-{"l":"Geschäft oder null","d":"YYYY-MM-DD oder null","s":Gesamtsumme als Zahl oder null (steht meist unten bei SUMME),"a":[{"n":"Artikelname","m":Stückzahl,"p":Preis pro Stück,"k":"Kategorie","li":"Listeneintrag oder null"}]}
+{"l":"Geschäft oder null","d":"YYYY-MM-DD oder null","s":Gesamtsumme als Zahl oder null (steht meist unten bei SUMME),"a":[{"n":"Artikelname","m":Stückzahl,"p":Preis pro Stück,"k":"Kategorie","pk":"Packungsinhalt oder null","li":"Listeneintrag oder null"}]}
 k ist eine von: ${CAT_IDS.join(", ")}
 Regeln:
 - n: kurzer normaler Name wie auf einer Einkaufsliste ("H-MILCH 3,5% 1L" → "Milch", "BIO BANANE" → "Bananen").
 - Sorte behalten: "EISBERGSALAT" → "Eisbergsalat", nicht nur "Salat"; "RUCOLA" → "Rucola".
 - Wenn dasselbe Produkt (gleiche Sorte), schreibe n GENAU wie hier: ${knownNames().filter(n => !groupOf(n)).join("; ")}
 - Rabatte beim vorherigen Artikel abziehen. Pfand, Tüten, Zahlungs-, Steuer- und Summenzeilen weglassen.
+- pk: Inhalt einer Packung, wenn auf dem Bon erkennbar: "EIER 10ER" → "10 Stück", "M-L 6ER" → "6 Stück", "500G" → "500 g", "1L" → "1 l"; sonst null.
 - Gewichtsware: m 1, p = Zeilenbetrag. Zahlen mit Punkt, ohne €.
 - li: Entspricht der Artikel einem Eintrag unserer offenen Einkaufsliste – auch wenn er dort anders heißt (Liste "Tortellini" ↔ Bon "RANA TORTELL. RICOTTA", Liste "Klopapier" ↔ "TOILETTENPAPIER") –, schreibe den Listeneintrag GENAU so; sonst null.
 Offene Einkaufsliste: ${openNames() || "(leer)"}`;
@@ -1507,7 +1555,7 @@ Offene Einkaufsliste: ${openNames() || "(leer)"} Wenn dieselbe Zutat, schreibe n
 }
 const BON_SCHEMA = {type:"OBJECT", properties:{
   l:{type:"STRING", nullable:true}, d:{type:"STRING", nullable:true}, s:{type:"NUMBER", nullable:true},
-  a:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"NUMBER"}, p:{type:"NUMBER"}, k:{type:"STRING", enum:CAT_IDS}, li:{type:"STRING", nullable:true}}, required:["n","p"], propertyOrdering:["n","m","p","k","li"]}}},
+  a:{type:"ARRAY", items:{type:"OBJECT", properties:{n:{type:"STRING"}, m:{type:"NUMBER"}, p:{type:"NUMBER"}, k:{type:"STRING", enum:CAT_IDS}, pk:{type:"STRING", nullable:true}, li:{type:"STRING", nullable:true}}, required:["n","p"], propertyOrdering:["n","m","p","k","pk","li"]}}},
   required:["a"], propertyOrdering:["l","d","s","a"]};
 const REZEPT_SCHEMA = {type:"OBJECT", properties:{
   t:{type:"STRING"}, p:{type:"NUMBER", nullable:true},
@@ -1517,7 +1565,7 @@ const REZEPT_SCHEMA = {type:"OBJECT", properties:{
 function normalizeScan(r){
   r = r || {};
   if (Array.isArray(r.a)) return {partial: !!r._partial, laden:r.l ?? r.laden, datum:r.d ?? r.datum, summe:r.s ?? r.summe,
-    artikel:r.a.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, einzelpreis:x.p ?? x.einzelpreis, kategorie:x.k ?? x.kategorie, bon:"", li:x.li ?? null}))};
+    artikel:r.a.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, einzelpreis:x.p ?? x.einzelpreis, kategorie:x.k ?? x.kategorie, bon:"", pk:x.pk ?? x.packung ?? null, li:x.li ?? null}))};
   if (Array.isArray(r.z)) return {titel:r.t ?? r.titel, portionen:r.p ?? r.portionen,
     zutaten:r.z.map(x => ({name:x.n ?? x.name, menge:x.m ?? x.menge, kategorie:x.k ?? x.kategorie, vorrat:!!(x.v ?? x.vorrat), li:x.li ?? null}))};
   return r;
@@ -1527,7 +1575,7 @@ function showBonReview(res){
   const rows = (res.artikel||[]).map(a => ({
     raw: a.bon||"", name: cap(String(a.name||a.bon||"").trim()),
     menge: num(a.menge) || 1, price: num(a.einzelpreis) ?? (num(a.gesamt)!=null ? num(a.gesamt)/(num(a.menge)||1) : null),
-    line: num(a.gesamt), cat: CAT_IDS.includes(a.kategorie) ? a.kategorie : null, on: true, ai: a.li || null
+    line: num(a.gesamt), cat: CAT_IDS.includes(a.kategorie) ? a.kategorie : null, on: true, ai: a.li || null, pk: a.pk || null
   })).filter(r => r.name);
   { const used = new Set(); for (const r of rows) { const hit = findOnList(r.name, r.ai, used); if (hit) { r.li = hit; used.add(hit.id); } } }
   review = {type:"bon", rows, laden: res.laden||"", datum: /^\d{4}-\d\d-\d\d$/.test(res.datum||"") ? res.datum : today(), summe: num(res.summe)};
@@ -1617,6 +1665,7 @@ async function saveBon(){
     const name = cap(r.name.trim()), p = products[keyOf(name)];
     const patch = {cat: p?.cat || r.cat || guessCat(name), count:(p?.count||0)+1, last:now};
     if (r.price != null) Object.assign(patch, {price: Math.round(r.price*100)/100, priceDate: datum, store: laden});
+    if (r.pk) patch.pack = r.pk;
     await safe(store.product(name, patch));
   }
   let ticked = 0;
