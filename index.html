@@ -1177,6 +1177,11 @@ function fwD(b){const R=FR();const p=normPlat(b.p||b.pRaw);const n=nightsOf(b.a,
 function fwListAll(){return Object.entries(S.fewo).filter(([k])=>/^\d{4}$/.test(k)).flatMap(([,v])=>v||[]).filter(b=>b&&b.a).map(fwD).sort((a,b)=>a.a.localeCompare(b.a));}
 function fwList(){return fwListAll().filter(b=>!b.storniert);}
 function fwAlt(){return (S.fewo.alt||[]).map(x=>({...x,p:normPlat(x.p)}));}
+/* Belegung für Home Assistant: nur Anreise, Abreise und Personenzahl – ohne Namen und Beträge (Dokument public/belegung, ohne Anmeldung lesbar) */
+let _belPub=null;async function fwPublish(){try{if(!db)return;const von=dAdd(TODAY,-2),bis=dAdd(TODAY,400);
+  const b=fwList().filter(x=>x.ab>=von&&x.a<=bis).map(x=>({a:x.a,ab:x.ab,erw:+x.erw||0,ki:+x.ki||0}));const j=JSON.stringify(b);if(j===_belPub)return;
+  if(_belPub===null){const d=(await db.doc('public/belegung').get()).data();if(d&&JSON.stringify(d.b||[])===j){_belPub=j;return;}}
+  await db.doc('public/belegung').set({stand:new Date().toISOString(),b});_belPub=j;}catch(_){}}
 async function fwSaveAll(list){const ids=new Set(list.map(b=>b.id));list=[...list,...fwListAll().filter(b=>b.storniert&&!ids.has(b.id))];const g={};list.forEach(b=>{const y=b.a.slice(0,4);(g[y]??=[]).push(strip(b));});const years=new Set([...Object.keys(S.fewo).filter(k=>/^\d{4}$/.test(k)),...Object.keys(g)]);years.forEach(y=>S.fewo[y]=g[y]||[]);render();for(const y of years)await save('fewo/'+y,{b:g[y]||[]});}
 const strip=b=>{const o={};['id','p','pRaw','a','ab','erw','ki','sto','gb','H','I','J','K','src','gesamt','created','bar','notiz','barUrlaub','storniert','stornoAm','bm','gbM','spO','uO'].forEach(k=>{if(b[k]!==undefined&&b[k]!==null&&b[k]!=='')o[k]=b[k];});return o;};
 function saveUrlaub(mut){const d=structuredClone(S.urlaub);d.e=d.e||[];mut(d);d.e.sort((a,b)=>(a.d||'').localeCompare(b.d||''));S.urlaub=d;render();return save('config/urlaub',d);}
@@ -2026,7 +2031,7 @@ render();
   cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);cfg('sicherung',d=>S.sich=d);
   db.collection('plan').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('plan/'+d.id,m[d.id]);});S.plan=m;if(!window.__mset&&m[CUR]&&CUR<PLAN0){month=CUR;}window.__mset=1;later();},onErr);
   db.collection('budget').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('budget/'+d.id,m[d.id]);});S.budget=m;later();},onErr);
-  db.collection('fewo').onSnapshot(q=>{const f={};q.docs.forEach(d=>{const x=d.data();remember('fewo/'+d.id,x);f[d.id]=(x?.b)||[];});S.fewo=f;later();},onErr);
+  db.collection('fewo').onSnapshot(q=>{const f={};q.docs.forEach(d=>{const x=d.data();remember('fewo/'+d.id,x);f[d.id]=(x?.b)||[];});S.fewo=f;later();clearTimeout(fwPublish.t);fwPublish.t=setTimeout(fwPublish,3000);},onErr);
 })();
 $('#app-close').onclick=()=>{document.activeElement?.blur();try{window.close();}catch(_){}setTimeout(()=>{$('#closed').hidden=false;document.body.classList.add('is-closed');},250);};
 $('#app-reopen').onclick=()=>{$('#closed').hidden=true;document.body.classList.remove('is-closed');};
