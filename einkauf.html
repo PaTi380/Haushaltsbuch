@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.15 vom 01.10.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.16 vom 04.10.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -251,7 +251,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.15</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.16</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -330,7 +330,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.15 vom 01.10.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.16 vom 04.10.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -352,7 +352,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.15 vom 01.10.2026";
+const APP_VERSION = "Version 1.16 vom 04.10.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte", plan:"einkauf_plan"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -371,6 +371,7 @@ const CATS = [
 
 // Kleine Symbole: erst passendes Produkt, sonst Symbol des Bereichs
 const ICONS = [
+  ["zucchini","🥒"],["mascarpone","🧀"],["ricotta","🧀"],
   ["kirschtomate","🍅"],["cocktailtomate","🍅"],["cocktailrispe","🍅"],["halloumi","🧀"],
   ["tortellini","🥟"],["ravioli","🥟"],["gnocchi","🥟"],["maultasche","🥟"],
   ["rucola","🥬"],["lollo","🥬"],["salatherz","🥬"],["babyspinat","🥬"],["schalotte","🧅"],["cherrytomate","🍅"],["drilling","🥔"],["elstar","🍎"],["braeburn","🍎"],["pink lady","🍎"],["granny","🍏"],["penne","🍝"],["fusilli","🍝"],["farfalle","🍝"],["tagliatelle","🍝"],["makkaroni","🍝"],["lasagne","🍝"],["gouda","🧀"],["emmentaler","🧀"],["camembert","🧀"],["cheddar","🧀"],["ciabatta","🥖"],["skyr","🥣"],["mortadella","🍖"],["lyoner","🍖"],["seelachs","🐟"],["forelle","🐟"],["kaffeekapsel","☕"],["kaffeepad","☕"],
@@ -725,7 +726,7 @@ function recipeCost(rec){
   let sum = 0, n = 0, tot = 0;
   for (const z of rec.zutaten || []) {
     if (isPantry(z)) continue; tot++;
-    const pr = priceFor(z.name); if (pr) { sum += pr.p; n++; }   // eine Packung je Zutat – bewusst grob
+    const c = ingredientCost(z.name, z.qty); if (c) { sum += c.cost; n++; }   // anteilig nach Menge
   }
   return {sum, n, tot};
 }
@@ -759,7 +760,7 @@ function renderRecipes(){
         <span class="st-p">${c.n ? `ca. ${eur(c.sum)}` : "–"}${c.n && c.n < c.tot ? `<small class="same">${c.n} von ${c.tot} mit Preis</small>` : ""}</span></button>
         <button class="st-add" data-rzadd="${esc(r.id)}" aria-label="Zutaten von ${esc(r.title)} auf die Liste">+</button>
       </div>`; }).join("")}</div>
-      <p class="st-foot">Der Preis ist grob geschätzt: je Zutat eine Packung zum letzten bekannten Preis, Vorräte wie Salz oder Öl zählen nicht mit. Er aktualisiert sich mit jedem neuen Bon.</p>`
+      <p class="st-foot">Der Preis ist geschätzt: anteilig nach Menge, also 20 g Parmesan aus einer 200-g-Packung zählen ein Zehntel. Vorräte wie Salz oder Öl zählen nicht mit. Er aktualisiert sich mit jedem neuen Bon.</p>`
     : recipes.length ? "" : `<div class="empty"><strong>Noch keine Rezepte</strong>Fotografiere ein Rezept oder lade eine PDF hoch – gespeichert werden nur die Zutaten.</div>`}`;
 }
 function recipeRows(rec){
@@ -782,7 +783,7 @@ function openRecipe(id){
         <span class="ico" aria-hidden="true">${iconFor(r.name, r.cat || guessCat(r.name))}</span>
         <span class="txt"><span class="name">${esc(r.name)}</span>${r.qty ? ` <span class="qty">${esc(r.qty)}</span>` : ""}
           ${r.li ? `<span class="meta rz-tag">steht schon auf der Liste${fold(r.li.name) !== fold(r.name) ? ` als „${esc(r.li.name)}“` : ""}</span>` : r.vorrat ? `<span class="meta rz-tag">Vorrat – meist im Haus</span>` : ""}</span>
-        <span class="price">${r.pr ? `${r.pr.est ? "ca. " : ""}${eur(r.pr.p)}` : ""}</span>
+        <span class="price">${(() => { const c = ingredientCost(r.name, r.qty); if (!c) return ""; return `${c.pr.est || c.share != null ? "ca. " : ""}${eur(c.cost)}${c.share != null ? `<small class="same" style="display:block;font-weight:500">von ${eur(c.pr.p)} / ${esc(c.pack)}</small>` : c.whole ? `<small class="same" style="display:block;font-weight:500">ganze Packung</small>` : ""}`; })()}</span>
       </label>`).join("")}</div>
     <div class="actions"><button class="btn-danger" id="rzDel">Löschen</button><button class="btn-main" id="rzAdd"></button></div>
     <div class="actions" style="margin-top:8px"><button class="btn-ghost" id="rzPlan">${plan.some(p => !p.done && p.recipeId === rec.id) ? "Eingeplant ✓" : "Einplanen"}</button><button class="btn-ghost" id="rzCooked">Heute gekocht${rec.cooked ? ` (bisher ${rec.cooked}×)` : ""}</button></div>`;
@@ -1007,9 +1008,9 @@ function render(){
   renderChips();
 }
 function row(i){
-  const pr = priceFor(i.name), mul = pr ? packsNeeded(i.name, i.qty, pr) : 1, pcs = pr ? packPieces(packOf(i.name, pr)) : 0;
-  const price = pr ? `<span class="price">${pr.est?"ca. ":""}${eur(pr.p * mul)}${pr.est ? `<small>geschätzt</small>` : pcs > 1 ? `<small>${mul>1?`${mul} × `:""}${pcs}er-Packung</small>` : mul>1 ? `<small>${eur(pr.p)} / Packung</small>` : ""}</span>` : "";
-  const meta = [i.recipe ? `für ${esc(i.recipe)}` : "", i.by ? `<span class="${esc(i.by)}">${esc(i.by)}</span>` : ""].filter(Boolean).join(", ");
+  const pr = priceFor(i.name), mul = pr ? packsNeeded(i.name, i.qty, pr) : 1, pl = pr ? packLabel(packOf(i.name, pr)) : "";
+  const price = pr ? `<span class="price">${pr.est?"ca. ":""}${eur(pr.p * mul)}${pr.est ? `<small>geschätzt</small>` : pl && (mul > 1 || i.qty) ? `<small>${mul>1?`${mul} × `:""}${pl}</small>` : mul>1 ? `<small>${eur(pr.p)} / Packung</small>` : ""}</span>` : "";
+  const meta = i.recipe ? `für ${esc(i.recipe)}` : "";
   return `<div class="item${i.done?" done":""}" data-id="${esc(i.id)}">
     <button class="check" data-act="toggle" aria-label="${esc(i.name)} ${i.done?"wieder auf die Liste":"abhaken"}"><span class="box"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--leaf-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></span></button>
     <button class="body" data-act="edit"><span class="ico" aria-hidden="true">${iconFor(i.name,i.cat)}</span>
@@ -1096,26 +1097,60 @@ function findOnList(name, aiRef, used){
 }
 // Preis für einen Listeneintrag: eigener letzter Preis, sonst bei Oberbegriffen der mittlere Preis eurer Sorten
 // Packungsgröße: „10 Stück“ (Eier), „500 g“ … – Stückzahl daraus, sonst 0
+// Übliche Packungsgrößen, solange vom Bon oder von euch nichts Genaueres bekannt ist
+const DEFAULT_PACKS = [["eier","10 Stück"],["ei","10 Stück"],["parmesan","200 g"],["grana padano","200 g"],["pecorino","200 g"],["mozzarella","125 g"],["burrata","125 g"],
+  ["feta","200 g"],["hirtenkäse","200 g"],["halloumi","225 g"],["mascarpone","250 g"],["ricotta","250 g"],["frischkäse","200 g"],["gouda","400 g"],["emmentaler","200 g"],
+  ["reibekäse","200 g"],["streukäse","200 g"],["butter","250 g"],["milch","1 l"],["hafermilch","1 l"],["sahne","200 ml"],["schlagsahne","200 ml"],["kochsahne","200 ml"],
+  ["crème fraîche","200 g"],["creme fraiche","200 g"],["schmand","200 g"],["saure sahne","200 g"],["quark","500 g"],["joghurt","500 g"],["skyr","450 g"],["kokosmilch","400 ml"],
+  ["mehl","1 kg"],["zucker","1 kg"],["reis","1 kg"],["basmatireis","1 kg"],["couscous","500 g"],["bulgur","500 g"],["nudeln","500 g"],["spaghetti","500 g"],["penne","500 g"],
+  ["fusilli","500 g"],["farfalle","500 g"],["tagliatelle","500 g"],["linsen","500 g"],["haferflocken","500 g"],["hackfleisch","500 g"],["hähnchenbrust","400 g"],["lachs","250 g"],
+  ["speck","150 g"],["schinkenwürfel","150 g"],["passierte tomaten","500 g"],["stückige tomaten","400 g"],["dosentomaten","400 g"],["tomatenmark","200 g"],["kichererbsen","400 g"],
+  ["kidneybohnen","400 g"],["erbsen","450 g"],["blattspinat","250 g"],["kirschtomaten","250 g"],["cherrytomaten","250 g"],["cocktailtomaten","250 g"],["champignons","250 g"],
+  ["rucola","125 g"],["feldsalat","150 g"],["kartoffeln","2 kg"],["zwiebeln","1 kg"],["möhren","1 kg"],["karotten","1 kg"],["tortellini","400 g"],["gnocchi","500 g"],["tofu","200 g"],
+  ["räuchertofu","200 g"],["hefe","42 g"],["paniermehl","400 g"],["oliven","200 g"]];
 function packOf(name, pr){
   const own = products[keyOf(name)]?.pack || (pr?.from?.length ? products[keyOf(pr.from[0])]?.pack : "");
   if (own) return own;
   const f = fold(name || "");
-  return (f === "ei" || f.endsWith("eier")) ? "10 Stück" : "";   // Eier gibt es fast immer im 10er
+  let best = "", len = 0;
+  for (const [k, v] of DEFAULT_PACKS) { const fk = fold(k); if ((f === fk || f.endsWith(fk) || f.endsWith(fk + "n")) && fk.length > len) { best = v; len = fk.length; } }
+  return best;
 }
-function packPieces(pack){
-  const m = String(pack || "").toLowerCase().match(/(\d+)\s*(er\b|x\b|stk|stück|st\.|eier|pack)/);
-  return m ? +m[1] : 0;
+// „200 g“, „1,5 kg“, „1 l“, „10 Stück“, „3“, „2 Dosen“ → {v, d}  (d: g | ml | stk | pack)
+function parseAmount(s){
+  const m = String(s || "").toLowerCase().replace(",", ".").match(/(\d+(?:\.\d+)?)\s*(kg|g\b|gr\b|gramm|mg|l\b|liter|ml|cl|stk|stück|st\.|er\b|x\b|eier|dosen?|becher|packung(?:en)?|pck|pkg|gläser|glas|beutel|bund|kopf|köpfe|knollen?)?/);
+  if (!m) return null;
+  let v = parseFloat(m[1]); const u = m[2] || "";
+  if (u === "kg") return {v: v*1000, d: "g"};
+  if (/^(g|gr|gramm)$/.test(u)) return {v, d: "g"};
+  if (u === "mg") return {v: v/1000, d: "g"};
+  if (/^(l|liter)$/.test(u)) return {v: v*1000, d: "ml"};
+  if (u === "ml") return {v, d: "ml"};
+  if (u === "cl") return {v: v*10, d: "ml"};
+  if (/^(dose|dosen|becher|packung|packungen|pck|pkg|gläser|glas|beutel|bund|kopf|köpfe|knolle|knollen)$/.test(u)) return {v, d: "pack"};
+  return {v, d: "stk"};
 }
-// Wie viele Packungen braucht man? „6 Eier“ bei 10er-Packung → 1, „12 Eier“ → 2
+const sameDim = (a, b) => a && b && (a.d === b.d || (["g","ml"].includes(a.d) && ["g","ml"].includes(b.d)));   // Gramm ≈ Milliliter
+function packPieces(pack){ const p = parseAmount(pack); return p && p.d === "stk" ? p.v : 0; }
+function packLabel(pack){ const p = parseAmount(pack); if (!p) return ""; if (p.d === "stk") return p.v > 1 ? `${p.v}er-Packung` : ""; return `${String(pack).trim()}-Packung`; }
+// Einkaufsliste: wie viele Packungen kaufen? „6 Eier“ → 1 (10er), „500 g Parmesan“ → 3 (200 g), „2 Milch“ → 2
 function packsNeeded(name, qty, pr){
-  const pieces = packPieces(packOf(name, pr));
-  const m = String(qty || "").trim().match(/^(\d+(?:[.,]\d+)?)\s*([a-zäöüß.]*)/i);
-  if (pieces > 1 && m) {
-    const unit = fold(m[2] || "");
-    if (!unit || /^(x|stk|stuck|st\.?|ei|eier)$/.test(unit) || fold(name).startsWith(unit.slice(0,3)))
-      return Math.max(1, Math.ceil(num(m[1]) / pieces));
-  }
-  return multiplier(qty);
+  const need = parseAmount(qty); if (!need) return 1;
+  const pack = parseAmount(packOf(name, pr));
+  if (need.d === "pack") return Math.max(1, Math.round(need.v));
+  if (pack && sameDim(need, pack)) return Math.max(1, Math.ceil(need.v / pack.v - 1e-9));
+  if (need.d === "stk") return Math.max(1, Math.round(need.v));   // Stückzahl ohne bekannte Packung = so viele Packungen/Stück
+  return 1;
+}
+// Rezept: was kostet die benötigte Menge anteilig? 20 g Parmesan von 200 g zu 2,99 € → 0,30 €
+function ingredientCost(name, qty){
+  const pr = priceFor(name); if (!pr) return null;
+  const pack = parseAmount(packOf(name, pr)), need = parseAmount(qty);
+  let cost = pr.p, share = null;
+  if (need?.d === "pack") cost = pr.p * need.v;
+  else if (need && pack && sameDim(need, pack)) { share = need.v / pack.v; cost = pr.p * share; }
+  else if (need?.d === "stk" && !pack) cost = pr.p * need.v;
+  return {cost, share, pr, pack: packOf(name, pr), whole: share == null && !(need?.d === "pack" || (need?.d === "stk" && !pack))};
 }
 function priceFor(name){
   const p = products[keyOf(name)];
