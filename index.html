@@ -612,7 +612,13 @@ const parseNum=s=>{if(typeof s==='number')return s;s=String(s??'').trim().replac
 const r2=x=>Math.round((+x||0)*100)/100;
 const now=new Date();const CUR=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 const TODAY=now.toISOString().slice(0,10);
-const ymAdd=(ym,n)=>{let[y,m]=ym.split('-').map(Number);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return `${y}-${String(m).padStart(2,'0')}`};
+/* Monat aus verschiedenen Schreibweisen: 2026-08, 08.2026, 8/2026, August 2026 → '2026-08'; sonst null */
+const YMN=['jan','feb','mär','apr','mai','jun','jul','aug','sep','okt','nov','dez'];
+function normYm(v){if(v==null)return null;const s=String(v).trim().toLowerCase().replace('maerz','märz');let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})(-\d{1,2})?$/)))return +m[2]>=1&&+m[2]<=12?`${m[1]}-${m[2].padStart(2,'0')}`:null;
+  if((m=s.match(/^(?:\d{1,2}\.)?(\d{1,2})[./ -](\d{4})$/)))return +m[1]>=1&&+m[1]<=12?`${m[2]}-${m[1].padStart(2,'0')}`:null;
+  if((m=s.match(/^([a-zä]{3})[a-zä]*\.? ?(\d{4})$/))){const i=YMN.indexOf(m[1]);return i>=0?`${m[2]}-${String(i+1).padStart(2,'0')}`:null;}return null;}
+const ymAdd=(ym,n)=>{let[y,m]=String(ym).split('-').map(Number);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return `${y}-${String(m).padStart(2,'0')}`};
 const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
@@ -1338,15 +1344,15 @@ $('#fw-table').addEventListener('focusout',e=>{if(e.target.classList?.contains('
 /* ---------- Kredite ---------- */
 const BANK={'2026-12':320595.22,'2027-12':316043.84,'2028-12':311299.48,'2029-12':306353.94,'2030-12':301198.71,'2031-12':295824.89,'2032-12':290223.22,'2043-12':210485.72,'2044-12':201265.45,'2045-12':191654.21,'2046-12':181635.43,'2047-12':171191.84,'2048-12':160305.41,'2049-12':148957.37,'2050-12':137128.15,'2051-12':124797.35,'2052-12':111943.68,'2053-03':108645.98};
 const K=()=>S.kredit||{sparda:{},bauspar:{},ing:{}};
-function bausparZuteil(){const b=K().bauspar;if(!b.summe)return null;const ziel=b.summe*(b.zuteilProz||40)/100;let s=+b.saldo||0,ym=b.stand||CUR;let n=0;while(s<ziel&&n<400){ym=ymAdd(ym,1);s+=+b.monat||0;n++;}return {ym,saldo:r2(s),ziel};}
+function bausparZuteil(){const b=K().bauspar;if(!b.summe)return null;const ziel=b.summe*(b.zuteilProz||40)/100;let s=+b.saldo||0,ym=normYm(b.stand)||CUR;let n=0;while(s<ziel&&n<400){ym=ymAdd(ym,1);s+=+b.monat||0;n++;}return {ym,saldo:r2(s),ziel};}
 function planSonder(){const byY={};for(let ym=PLAN0;ym<=PLAN1;ym=ymAdd(ym,1)){useYm(ym);['TILL','PATRICK'].forEach(sh=>{const b=S.plan[ym]?.[sh];(b?.C||[]).forEach(e=>{if(/sonde?r?tilgung/i.test(e.l||'')){const y=ym.slice(0,4);byY[y]=(byY[y]||0)+entryVal(e,b,sh);}});});}
   useYm(month);
   return Object.entries(byY).filter(([,v])=>v>0).map(([y,v])=>({ym:y+'-12',b:r2(v),src:'plan'}));}
 function spardaSonder(){const sp=K().sparda;const l=[...planSonder(),...(sp.sonder||[]).map((x,i)=>({...x,src:'manuell',i}))];const bs=bausparZuteil();if(K().bauspar.alsSonder&&bs)l.push({ym:bs.ym,b:bs.saldo,src:'bauspar'});return l.sort((a,b)=>a.ym.localeCompare(b.ym));}
 /* Werte laut Sparda (Tilgungsplan): Restschuld nach der Rate in einem Monat, optional die Rate ab diesem Monat.
    Vergangene/aktuelle Monate: Stand wird exakt übernommen. Künftige Monate: die Abweichung zur eigenen Rechnung (ohne Sondertilgungen) wird als Korrektur übernommen, damit geplante Sondertilgungen erhalten bleiben. */
-function spBank(){return [...(K().sparda.bank||[])].map((x,i)=>({...x,i})).filter(x=>x.ym&&(x.st!=null||x.rate!=null)).sort((a,b)=>a.ym.localeCompare(b.ym));}
-function sparda(withSonder=true){const sp=K().sparda;let st=+sp.stand||0,ym=sp.standNach||'2026-08';const z=(+sp.zins||0)/100;let rate=+sp.rate||0;const son=withSonder?spardaSonder():[];const mu=sp.szenario||{};
+function spBank(){return [...(K().sparda.bank||[])].map((x,i)=>({...x,i,ym:normYm(x.ym)})).filter(x=>x.ym&&(x.st!=null||x.rate!=null)).sort((a,b)=>a.ym.localeCompare(b.ym));}
+function sparda(withSonder=true){const sp=K().sparda;let st=+sp.stand||0,ym=normYm(sp.standNach)||'2026-08';const z=(+sp.zins||0)/100;let rate=+sp.rate||0;const son=withSonder?spardaSonder():[];const mu=sp.szenario||{};
   const bank=spBank();const corr={};if(withSonder&&bank.length)sparda(false).forEach(r=>{if(r.corr!=null)corr[r.ym]=r.corr;});
   const rows=[];let n=0;while(st>0.005&&n<600){ym=ymAdd(ym,1);n++;const bp=bank.find(x=>x.ym===ym);if(bp&&+bp.rate>0)rate=+bp.rate;
     const zi=r2(st*z/12);let tg=Math.min(rate-zi,st);st=r2(st-tg);let so=0;son.filter(x=>x.ym===ym).forEach(x=>{const b=Math.min(x.b,st);so+=b;st=r2(st-b);});let mut=0;if(withSonder&&mu.aktiv&&mu.an===ym){mut=Math.min(+mu.betrag||0,st);st=r2(st-mut);}
@@ -1367,10 +1373,12 @@ $('#p-kredite').addEventListener('click',e=>{const b=e.target.closest('[data-kc]
 function rKredite(){
   const k=K();$$('#p-kredite [data-k]').forEach(i=>{if(document.activeElement===i)return;const v=i.dataset.k.split('.').reduce((o,x)=>o?.[x],k);if(i.type==='checkbox')i.checked=!!v;else i.value=v??'';});
   $('#ing-start').value=gv('ing_start')||'';
+  {const bad=[['sparda.standNach','„nach Rate im“ (Sparda)'],['bauspar.stand','„Stand“ (Bausparvertrag)'],['sparda.szenario.an','Szenario-Monat']].filter(([p])=>{const v=p.split('.').reduce((o,x)=>o?.[x],k);return v!=null&&v!==''&&!normYm(v);});
+    let w=$('#k-warn');if(!w){w=document.createElement('div');w.id='k-warn';w.className='note neg';$('#k-kpis').before(w);}w.innerHTML=bad.length?`⚠️ Ungültiger Monat bei ${bad.map(x=>x[1]).join(', ')} – bitte neu eintragen, z. B. „08.2026“. Bis dahin rechnet die App mit einem Ersatzwert.`:'';w.hidden=!bad.length;}
   const A=sparda(true),B=sparda(false),I=ingRows();
   const endY=r=>{const m={};r.forEach(x=>{m[x.ym.slice(0,4)]=x;});return m;};
   const ea=endY(A),eb=endY(B),ei=endY(I);const years=[];for(let y=2026;y<=2053;y++)years.push(String(y));
-  const bsRows=(()=>{const b=k.bauspar;if(!b.summe)return {};const z=bausparZuteil();let sd=+b.saldo||0,ym=b.stand||CUR;const m={};m[ym.slice(0,4)]=sd;let n=0;while(n<400&&(!z||ym<z.ym)){ym=ymAdd(ym,1);sd+=+b.monat||0;m[ym.slice(0,4)]=r2(sd);n++;}return m;})();
+  const bsRows=(()=>{const b=k.bauspar;if(!b.summe)return {};const z=bausparZuteil();let sd=+b.saldo||0,ym=normYm(b.stand)||CUR;const m={};m[ym.slice(0,4)]=sd;let n=0;while(n<400&&(!z||ym<z.ym)){ym=ymAdd(ym,1);sd+=+b.monat||0;m[ym.slice(0,4)]=r2(sd);n++;}return m;})();
   const KS=[['sp','Sparda','var(--till)'],['sp0','Sparda ohne Sondertilgungen','var(--till)'],['ing','ING','var(--pat)'],['bs','Bausparvertrag','var(--gold)']];
   const lastY=kRng==='all'?'2053':kRng;const yv=years.filter(y=>y<=lastY);
   $('#kc-ser').innerHTML=KS.map(([x,l])=>`<button type="button" data-kc="${x}" aria-pressed="${kSer.has(x)}">${l}</button>`).join('');
@@ -1381,7 +1389,7 @@ function rKredite(){
   $('#kc-leg').innerHTML=act.map(([x,l,c])=>`<span><i style="background:${c}${x==='sp0'?';opacity:.5':''}"></i>${l}</span>`).join('');
   const zA=A.reduce((a,x)=>a+x.zi,0),zB=B.reduce((a,x)=>a+x.zi,0);const at=(r,ym)=>{const x=r.filter(x=>x.ym<=ym).at(-1);return x?x.st:null;};
   const bs=bausparZuteil();
-  const ing0=I.filter(x=>x.ym<=CUR).at(-1)?.st??(+k.ing.betrag||0);const bsNow=(()=>{const b=k.bauspar;if(!b.summe)return null;let sd=+b.saldo||0,ym=b.stand||CUR;while(ym<CUR){ym=ymAdd(ym,1);sd+=+b.monat||0;}return sd;})();
+  const ing0=I.filter(x=>x.ym<=CUR).at(-1)?.st??(+k.ing.betrag||0);const bsNow=(()=>{const b=k.bauspar;if(!b.summe)return null;let sd=+b.saldo||0,ym=normYm(b.stand)||CUR;while(ym<CUR){ym=ymAdd(ym,1);sd+=+b.monat||0;}return sd;})();
   const kg=(t,col,main,mainL,rows)=>`<div class="kg card" style="--kc:${col}"><div class="kg-h">${t}</div><div class="kg-m"><span class="muted">${mainL}</span><b class="num">${main}</b></div>${rows.map(([l,v])=>`<div class="row"><span>${l}</span><span class="num">${v}</span></div>`).join('')}</div>`;
   $('#k-kpis').innerHTML=kg('🏠 Sparda · Hauskredit','var(--till)',eur(at(A,CUR)??k.sparda.stand,0),'Restschuld heute',[['Restschuld 03/2053 (Ende Zinsbindung)',eur(at(A,'2053-03')||0,0)],['ohne Sondertilgungen',eur(at(B,'2053-03'),0)],['Zinsen gespart',`<b class="pos">${eur(zB-zA,0)}</b>`]])
     +kg('🤝 ING · Gemeinschaftskredit','var(--pat)',I.length?ymName(I.at(-1).ym):'–','abbezahlt',[['Restschuld heute',eur(ing0,0)],['Rate',eur(gn('ing_rate'),2)+' (je '+eur(gn('ing_rate')/2)+')'],['Zinsen gesamt',eur(I.reduce((a,x)=>a+x.zi,0),0)]])
@@ -1397,11 +1405,11 @@ function rKredite(){
   const Y={};A.forEach(x=>{const y=x.ym.slice(0,4);const o=Y[y]??={zi:0,tg:0,so:0,st:0};o.zi+=x.zi;o.tg+=x.tg;o.so+=x.so+x.mut;o.st=x.st;});
   if($('#k-table'))$('#k-table').innerHTML=`<thead><tr><th>Jahr</th><th class="r">Zinsen</th><th class="r">Tilgung</th><th class="r">Sondertilgung</th><th class="r">Restschuld</th><th class="r">Bank</th></tr></thead><tbody>`+Object.entries(Y).map(([y,o])=>`<tr><td>${y}</td><td class="r">${eur(o.zi,0)}</td><td class="r">${eur(o.tg,0)}</td><td class="r">${o.so?eur(o.so,0):''}</td><td class="r">${eur(o.st,0)}</td><td class="r muted">${BANK[y+'-12']?eur(BANK[y+'-12'],0):''}</td></tr>`).join('')+'</tbody>';
 }
-$('#p-kredite').addEventListener('change',e=>{const i=e.target;if(i.id==='ing-start'){if(i.value)setGrund('ing_start',i.value);return;}const k=i.dataset.k;if(!k)return;const v=i.type==='checkbox'?i.checked:i.type==='month'?i.value:(i.value===''?null:+i.value);setK(k,v);});
-$('#f-spbank').onsubmit=e=>{e.preventDefault();const ym=$('#spb-m').value;const st=qPn($('#spb-st').value||''),rt=qPn($('#spb-r').value||'');if(!ym||(st==null&&rt==null))return;const l=(K().sparda.bank||[]).filter(x=>x.ym!==ym);l.push({ym,...(st!=null?{st:r2(st)}:{}),...(rt!=null?{rate:r2(rt)}:{}),am:TODAY});l.sort((a,b)=>a.ym.localeCompare(b.ym));setK('sparda.bank',l);e.target.reset();};
+$('#p-kredite').addEventListener('change',e=>{const i=e.target;if(i.id==='ing-start'){if(i.value)setGrund('ing_start',i.value);return;}const k=i.dataset.k;if(!k)return;const v=i.type==='checkbox'?i.checked:i.getAttribute('type')==='month'?(i.value===''?null:normYm(i.value)):(i.value===''?null:+i.value);setK(k,v);});
+$('#f-spbank').onsubmit=e=>{e.preventDefault();const ym=normYm($('#spb-m').value);const st=qPn($('#spb-st').value||''),rt=qPn($('#spb-r').value||'');if(!ym||(st==null&&rt==null))return;const l=(K().sparda.bank||[]).filter(x=>x.ym!==ym);l.push({ym,...(st!=null?{st:r2(st)}:{}),...(rt!=null?{rate:r2(rt)}:{}),am:TODAY});l.sort((a,b)=>a.ym.localeCompare(b.ym));setK('sparda.bank',l);e.target.reset();};
 $('#sp-bank').onclick=e=>{const b=e.target.closest('[data-spbdel]');if(!b)return;if(!b.dataset.armed){b.dataset.armed=1;b.textContent='Wirklich?';b.classList.add('danger');return;}const l=[...(K().sparda.bank||[])];l.splice(+b.dataset.spbdel,1);setK('sparda.bank',l);};
-$('#f-spadd').onsubmit=e=>{e.preventDefault();const l=[...(K().sparda.sonder||[]),{ym:$('#sp-m').value,b:+$('#sp-b').value}];setK('sparda.sonder',l);e.target.reset();};
-$('#f-ingadd').onsubmit=e=>{e.preventDefault();const l=[...(K().ing.sonder||[]),{ym:$('#ing-m').value,b:+$('#ing-b').value}].sort((a,b)=>a.ym.localeCompare(b.ym));setK('ing.sonder',l);e.target.reset();};
+$('#f-spadd').onsubmit=e=>{e.preventDefault();const l=[...(K().sparda.sonder||[]),{ym:normYm($('#sp-m').value),b:+$('#sp-b').value}].filter(x=>x.ym);setK('sparda.sonder',l);e.target.reset();};
+$('#f-ingadd').onsubmit=e=>{e.preventDefault();const l=[...(K().ing.sonder||[]),{ym:normYm($('#ing-m').value),b:+$('#ing-b').value}].filter(x=>x.ym).sort((a,b)=>a.ym.localeCompare(b.ym));setK('ing.sonder',l);e.target.reset();};
 $('#sp-sonder').onclick=e=>{const b=e.target.closest('[data-spdel]');if(!b)return;const l=[...(K().sparda.sonder||[])];l.splice(+b.dataset.spdel,1);setK('sparda.sonder',l);};
 $('#ing-sonder').onclick=e=>{const b=e.target.closest('[data-ingdel]');if(!b)return;const l=[...(K().ing.sonder||[])];l.splice(+b.dataset.ingdel,1);setK('ing.sonder',l);};
 
@@ -1529,7 +1537,7 @@ $('#g-list').addEventListener('click',e=>{
   const gd=e.target.closest('[data-gdel]');if(gd){if(!gd.dataset.armed){gd.dataset.armed=1;gd.textContent='Wirklich entfernen?';setTimeout(()=>{if(gd.isConnected){gd.dataset.armed='';gd.textContent='Entfernen';}},3000);return;}
     const k=gd.dataset.gdel;const it=S.grund.items.find(i=>i.k===k);const items=S.grund.items.filter(i=>i.k!==k);S.grund={items};GED=null;document.activeElement?.blur();$('#g-list').innerHTML=grundHTML();render();save('config/grund',{items});flash('ok',`„${it?.l||k}“ entfernt`);return;}
 const b=e.target.closest('[data-hdel]');if(!b)return;const[k,hi]=b.dataset.hdel.split(':');const items=structuredClone(S.grund.items);const it=items.find(x=>x.k===k);it.hist.splice(+hi,1);S.grund={items};render();save('config/grund',{items});});
-$('#f-gh').addEventListener('submit',e=>{e.preventDefault();const val=parseNum($('#gh-v').value);if(val==null)return;askGrund($('#gh-k').value,val,null,$('#gh-ab').value||null);e.target.reset();});
+$('#f-gh').addEventListener('submit',e=>{e.preventDefault();const val=parseNum($('#gh-v').value);if(val==null)return;askGrund($('#gh-k').value,val,null,normYm($('#gh-ab').value)||null);e.target.reset();});
 $('#g-list').addEventListener('input',e=>{const fm=e.target.closest('#f-bsch');if(!fm)return;const d=Object.fromEntries(new FormData(fm));BSF={k:d.k,y:+d.y||0,f:d.f,r:d.r,j:d.j,ab:d.ab};clearTimeout(bsT);bsT=setTimeout(()=>{const pos=e.target.name;$('#g-list').innerHTML=grundHTML();const el=$(`#f-bsch [name=${pos}]`);if(el){el.focus();const v=el.value;if(el.setSelectionRange&&el.type!=='number')el.setSelectionRange(v.length,v.length);}},600);});
 let bsT=null;
 $('#g-list').addEventListener('submit',e=>{if(e.target.id==='f-bsch'){e.preventDefault();const d=Object.fromEntries(new FormData(e.target));if(BSJ[d.k]){const j=parseNum(d.j);if(j==null||!d.ab)return;const items=structuredClone(S.grund.items);const it=items.find(i=>i.k===d.k);it.bsch={...(it.bsch||{}),[d.ab.slice(0,4)]:{j:r2(j),ab:d.ab,am:TODAY}};S.grund={items};BSF=null;document.activeElement?.blur();$('#g-list').innerHTML=grundHTML();render();save('config/grund',{items});flash('ok',`${BSJ[d.k][0]}: neuer Beitrag ab ${ymName(d.ab)} übernommen`);return;}const f=parseNum(d.f),r=parseNum(d.r),y=+d.y;if(f==null||r==null||!y)return;
@@ -2053,6 +2061,11 @@ render();
 $('#app-close').onclick=()=>{document.activeElement?.blur();try{window.close();}catch(_){}setTimeout(()=>{$('#closed').hidden=false;document.body.classList.add('is-closed');},250);};
 $('#app-reopen').onclick=()=>{$('#closed').hidden=true;document.body.classList.remove('is-closed');};
 window.__goto=ym=>{month=ym;render();};window.__dbg=()=>({ING_END});
+/* Monatsfelder: Browser ohne Monats-Auswahl zeigen ein Textfeld – dort „08.2026“, „August 2026“ o. ä. erlauben */
+$$('input[type=month]').forEach(i=>{if(i.type!=='month'){i.placeholder=i.placeholder||'MM.JJJJ';i.style.minWidth='110px';}});
+document.addEventListener('change',e=>{const i=e.target;if(!(i instanceof HTMLInputElement)||i.getAttribute('type')!=='month'||i.type==='month')return;
+  if(i.value==='')return;const ym=normYm(i.value);if(!ym){e.stopImmediatePropagation();i.style.outline='2px solid var(--neg,#c33)';i.title='Bitte als Monat eingeben, z. B. 08.2026';return;}i.style.outline='';i.title='';i.value=ym;},true);
 })();
 document.addEventListener('input',e=>{const t=e.target;if(t.tagName!=='TEXTAREA')return;t.classList.add('grow');t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,window.innerHeight*0.5)+'px';});
+
 </script></body></html>
