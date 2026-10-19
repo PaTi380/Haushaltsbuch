@@ -566,7 +566,7 @@ function saunaPrice(d){ const arr = String(S.settings.saunaPreise).split(/[;,]\s
 function calc(b){
   const st = S.settings, n = Math.max(0, nightsBetween(b.anreise, b.abreise));
   const unterkunft = r2(b.preisModus==="nacht" ? num(b.preis)*n : num(b.preis));
-  const hund = b.hund ? r2(num(b.hundGeb)) : 0;
+  const hund = (b.hund && b.channel!=="booking" && b.channel!=="airbnb") ? r2(num(b.hundGeb)) : 0;
   const allEx = (b.extras||[]).filter(e=>e.text||num(e.betrag)).map(e=>({text:e.text, betrag:r2(num(e.betrag)), gb:!!e.gb, vorOrt:!!e.vorOrt}));
   const extras = allEx.filter(e=>!e.gb), gbExtras = allEx.filter(e=>e.gb);
   const extrasSum = r2(extras.reduce((a,e)=>a+e.betrag,0));
@@ -1279,14 +1279,14 @@ function formBooking(b){
     ${plat?"":F("Sprache der Dokumente","lang",b.lang,{type:"select",options:[["de","Deutsch"],["en","English"]]})}
     ${plat?"":F("Vertragsdatum","vertragDatum",b.vertragDatum,{type:"date"})}
   </div></fieldset>
-  <fieldset><legend>Gast</legend><div class="grid">
+  ${plat?"":`<fieldset><legend>Gast</legend><div class="grid">
     ${F("Art","gTyp",b.gTyp,{type:"select",options:[["privat","Privatperson"],["firma","Firma"]]})}
     ${b.gTyp==="firma"?F("Firma","gFirma",b.gFirma)+F("Anschrift der Firma","gFirmaAdr",b.gFirmaAdr,{ph:"Straße, PLZ Ort, Land"}):""}
     ${F(b.gTyp==="firma"?"Hauptgast (Name)":"Hauptgast (Vor- und Nachname)","gName",b.gName)}
     ${F("Straße und Nr.","gStrasse",b.gStrasse)}${F("PLZ","gPlz",b.gPlz)}${F("Ort","gOrt",b.gOrt)}${F("Land","gLand",b.gLand)}
     ${F("Geburtsdatum","gGeb",b.gGeb,{type:"date"})}${F("E-Mail","gEmail",b.gEmail,{type:"email"})}${F("Telefon","gTel",b.gTel)}
     ${F("Mitreisende (eine Person pro Zeile)","begleit",b.begleit,{type:"area",wide:true})}
-  </div></fieldset>
+  </div></fieldset>`}
   <fieldset><legend>Preis und Leistungen</legend><div class="grid">
     ${plat?"":F("Preisangabe","preisModus",b.preisModus,{type:"select",options:[["gesamt","Gesamtpreis Unterkunft"],["nacht","Preis pro Nacht"]]})}
     ${F(plat?(b.channel==="booking"?"Gesamtpreis der Buchung (€)":"Vom Gast bezahlt, Übernachtungen (€)"):(b.preisModus==="nacht"?"Preis pro Nacht (€)":"Unterkunft gesamt (€)"),"preis",b.preis,{dec:true})}
@@ -1294,9 +1294,9 @@ function formBooking(b){
     ${b.channel==="booking"?F("Kommissionspflichtiger Betrag (€)","kommPfl",b.kommPfl,{dec:true,hint:"leer = Gesamtpreis − 1,50 € je Erw./Nacht"}):""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px 22px;margin:12px 0">
-    ${plat?"":C("Sauna optional anbieten","saunaOpt",b.saunaOpt)} ${plat?"":C("Zusätzliche Dusche kostenlos","dusche",b.dusche)} ${C("Hund als Ausnahme","hund",b.hund)}
+    ${plat?"":C("Sauna optional anbieten","saunaOpt",b.saunaOpt)} ${plat?"":C("Zusätzliche Dusche kostenlos","dusche",b.dusche)} ${plat?"":C("Hund als Ausnahme","hund",b.hund)}
   </div>
-  ${b.hund?`<div class="grid">${F("Anzahl Hunde","hundAnz",b.hundAnz,{type:"number"})}${F("Hundegebühr einmalig (€)","hundGeb",b.hundGeb,{dec:true})}</div>`:""}
+  ${b.hund&&!plat?`<div class="grid">${F("Anzahl Hunde","hundAnz",b.hundAnz,{type:"number"})}${F("Hundegebühr einmalig (€)","hundGeb",b.hundGeb,{dec:true})}</div>`:""}
   <div class="hint" style="margin:12px 0 6px">${plat?"Vor Ort kassiert (z. B. zusätzliche Person, Brennholz): ohne Provision, geht wie im Haushaltsbuch als „bar vor Ort“ in die Aufteilung.":"Weitere Leistungen (z. B. Zustellbett). Als „Gästebeitrag“ markierte Zeilen werden durchgereicht."}</div>
   <div class="rows">${(b.extras||[]).map((e,i)=>`<div class="row ex"><input data-f="extras.${i}.text" value="${esc(e.text)}" placeholder="Bezeichnung" aria-label="Bezeichnung"><input data-f="extras.${i}.betrag" inputmode="decimal" value="${esc(e.betrag)}" placeholder="Betrag €" aria-label="Betrag"><select data-f="extras.${i}.gb" aria-label="Art"><option value=""${e.gb?"":" selected"}>Leistung${e.vorOrt?" (vor Ort)":""}</option><option value="1"${e.gb?" selected":""}>Gästebeitrag</option></select><button class="x" data-act="delEx" data-i="${i}" aria-label="Entfernen">✕</button></div>`).join("")}</div>
   <button class="btn" data-act="addEx" style="margin-top:6px">+ ${plat?"Betrag vor Ort":"Leistung"}</button>
