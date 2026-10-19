@@ -293,6 +293,7 @@ function defaultSettings(){ return {
   aufteilProzent:30, aufteilFix:5,
 }; }
 
+function fixChannel(b){ if(b && !CHANNEL[b.channel]) b.channel="direkt"; return b; }
 function newBooking(st){ st = st || S.settings; return { id:uid(), created:todayISO(), channel:"direkt", status:"anfrage", lang:"de",
   gTyp:"privat", gFirma:"", gFirmaAdr:"", gName:"", gStrasse:"", gPlz:"", gOrt:"", gLand:"", gEmail:"", gTel:"", gGeb:"", begleit:"",
   anreise:"", abreise:"", erw:2, kinder:0, preisModus:"gesamt", preis:"", hund:false, hundAnz:1, hundGeb:st.hundGebuehr,
@@ -386,7 +387,7 @@ function viewFromCore(core, ext){
   const R=FR(), d=fwD(core); const ch = d.p==="Booking.com"?"booking":d.p==="Airbnb"?"airbnb":"direkt";
   const v = Object.assign(newBooking(), ext ? clean(ext) : {status:"bestaetigt", saunaOpt:false, lang:"de"});
   v.id=core.id; v.core=true; v.src=core.src||"";
-  if(!(ext && ext.channel==="sonstige" && ch==="direkt")) v.channel = ch;
+  v.channel = ch;
   v.anreise=core.a; v.abreise=core.ab; v.erw = core.erw ?? v.erw ?? 0; v.kinder = core.ki ?? 0;
   v.status = core.storniert ? "storniert" : core.stoBez ? "storniert_bezahlt" : (ext && ext.status && !["storniert","storniert_bezahlt",...OFFEN].includes(ext.status) ? ext.status : "bestaetigt");
   v.stoTage = core.sto ?? "";
@@ -428,7 +429,7 @@ function rebuildBookings(){
   const cores = coresAll(); const ids = new Set(cores.map(c=>c.id));
   const old = {}; S.bookings.forEach(b=>old[b.id]=b);
   const views = cores.map(c=>{ const o=old[c.id]; if(o && o._dirty) return o; const v=viewFromCore(c, S.ext[c.id]); v._base=coreSig(v); return v; });
-  Object.entries(S.ext).forEach(([id,e])=>{ if(ids.has(id)) return; const o=old[id]; if(o && o._dirty){ views.push(o); return; } const v=Object.assign(newBooking(), clean(e)); v.id=id; v.core=false; v._base=coreSig(v); views.push(v); });
+  Object.entries(S.ext).forEach(([id,e])=>{ if(ids.has(id)) return; const o=old[id]; if(o && o._dirty){ views.push(o); return; } const v=fixChannel(Object.assign(newBooking(), clean(e))); v.id=id; v.core=false; v._base=coreSig(v); views.push(v); });
   S.bookings = [...views, ...S.bookings.filter(b=>b._draft)];
 }
 
@@ -1184,7 +1185,7 @@ const F = (label, path, val, opts={}) => {
 const C = (label, path, val) => `<label class="chk"><input type="checkbox" data-f="${path}" id="f_${path.replace(/\W/g,"_")}"${val?" checked":""}> ${esc(label)}</label>`;
 
 const STATUS = {anfrage:["Anfrage",""], vertrag:["Vertrag versendet","warn"], bestaetigt:["Bestätigt","acc"], bezahlt:["Bezahlt","ok"], abgeschlossen:["Abgeschlossen",""], storniert:["Storniert","err"], storniert_bezahlt:["Storniert, Gast zahlt","warn"]};
-const CHANNEL = {direkt:"Direkt", booking:"Booking.com", airbnb:"Airbnb", sonstige:"Sonstige"};
+const CHANNEL = {direkt:"Direkt (privat)", booking:"Booking.com", airbnb:"Airbnb"};
 
 function docToolbar(kind, lang, extra, noOut){
   return `<div class="toolbar">
