@@ -1072,36 +1072,43 @@ function pRechner(p){ const r = privatPreis(p);
   ${LEG}
   <div class="chans">${col("Direkt", r.eD, `<span class="pill acc">Privatpreis</span>`)}${col("Booking.com", r.eB, `<span class="pill">${money(r.B)}</span>`)}${col("Airbnb", r.eA, `<span class="pill">${money(r.AB)}</span>`)}</div>`;
 }
+function zgCalc(p, b){
+  const st=S.settings, c=calc(b), n=c.n, k=Math.max(1,num(p.zgAnz)), nx=Math.min(n, num(p.zgNaechte)>0?num(p.zgNaechte):n);
+  const pOld=num(b.erw)+num(b.kinder), pNew=pOld+k, maxP=num(st.maxPers)||0;
+  const gezahlt = c.unterkunft; /* bei Plattformen: Gästepreis inkl. allem, wie in der Tarifliste */
+  const G=num(st.bkGenius)||0; const cands=[];
+  [[{},"Standard"],[{ohne:true},"ohne Storno"],[{sauna:true},"Sauna-Rate"]].forEach(([o,l])=>[0,G].forEach(g=>{ if(g===0 || isPlat(b)) cands.push({o:{...o,genius:g}, label:l+(n>=num(st.tarifWeeklyAb)&&!o.sauna?" (Woche)":"")+(g?`, Genius ${g} %`:""), list:listPrice(pOld,n,{...o,genius:g})}); }));
+  cands.forEach(x=>x.dev=Math.abs(x.list-gezahlt)/Math.max(1,gezahlt));
+  const best=cands.sort((x,y)=>x.dev-y.dev)[0]; const sicher = best.dev<0.03;
+  const o = sicher ? best.o : {genius:0};
+  const g = 1-num(o.genius)/100;
+  const rateOld=r2(tarifRate(pOld,n,o)*g), rateNew=r2(tarifRate(pNew,n,o)*g);
+  const listeDiff=r2((rateNew-rateOld)*nx), listOld=listPrice(pOld,n,o);
+  const faktor = listOld ? gezahlt/listOld : 1, anteilig=r2(listeDiff*faktor);
+  let auf = p.zgMethode==="liste" ? listeDiff : anteilig; if(p.zgRund) auf=Math.round(auf);
+  const gbNeu=r2(num(st.gbSatz)*k*nx), tb=r2(auf*tbRate());
+  return { c, n, k, nx, pOld, pNew, maxP, zuViel: maxP>0 && pNew>maxP, gezahlt, rate: sicher?best.label:"eigener Preis (keine Rate passt genau)", sicher, rateOld, rateNew, listeDiff, listOld, faktor, anteilig, auf, gbNeu, plus:r2(auf-tb) };
+}
 function pZusatz(p){
-  const sel = S.bookings.filter(b=>b.status!=="storniert").sort((a,b)=>(b.anreise||"").localeCompare(a.anreise||""));
+  const sel = S.bookings.filter(b=>!b._draft && b.status!=="storniert" && b.status!=="storniert_bezahlt" && (b.abreise||"")>=todayISO()).sort((a,b)=>(a.anreise||"").localeCompare(b.anreise||""));
   const b = S.bookings.find(x=>x.id===p.zgBooking) || null;
   let res = `<div class="empty">Wähle eine Buchung, um den Aufpreis zu berechnen.</div>`;
-  if(b){ const c=calc(b), n=c.n, k=Math.max(1,num(p.zgAnz)); const nx = Math.min(n, num(p.zgNaechte)>0?num(p.zgNaechte):n);
-    const pOld = num(b.erw)+num(b.kinder), pNew = pOld+k;
-    const opt = {sauna:false, ohne:false};
-    const rateOld = tarifRate(pOld, n, opt), rateNew = tarifRate(pNew, n, opt);
-    const listeDiff = r2((rateNew-rateOld)*nx);
-    const listOld = listPrice(pOld, n, opt);
-    const gezahlt = c.platform ? r2(c.unterkunft - c.gbBase) : c.unterkunft;
-    const faktor = listOld ? gezahlt/listOld : 1;
-    const anteilig = r2(listeDiff*faktor);
-    let auf = p.zgMethode==="liste" ? listeDiff : anteilig; if(p.zgRund) auf = Math.round(auf);
-    const gbNeu = r2(num(S.settings.gbSatz)*k*nx);
-    const tb = r2(auf*tbRate()), plus = r2(auf - tb);
-    res = `<div class="zg">
-      <div class="sum"><span class="k">Buchung</span><span>${esc(guestLabel(b))}, ${fD(b.anreise)}–${fD(b.abreise)} (${n} N.)</span>
-      <span class="k">Personen</span><span>${pOld} → ${pNew} (für ${nx} von ${n} Nächten)</span>
-      <span class="k">Tarif pro Nacht laut Liste</span><span>${money(rateOld)} → ${money(rateNew)} (+${money(rateNew-rateOld)})</span>
-      <span class="k">Aufpreis nach Liste</span><span>${money(listeDiff)}</span>
-      <span class="k">Bisher gezahlt (Unterkunft) / Listenpreis</span><span>${money(gezahlt)} / ${money(listOld)} = ${fmtNum(faktor*100)} %</span>
-      <span class="k">Aufpreis anteilig zum gezahlten Preis</span><span>${money(anteilig)}</span>
-      <span class="k tot">Aufpreis Unterkunft</span><span class="tot">${money(auf)}</span>
-      <span class="k">+ Gästebeitrag ${k} × ${nx} × ${money(S.settings.gbSatz)}</span><span>${money(gbNeu)}</span>
-      <span class="k tot">Vom Gast zu kassieren</span><span class="tot">${money(r2(auf+gbNeu))}</span>
-      <span class="k">Davon bleibt euch (nach Tourismusbeitrag)</span><span>${money(plus)}</span></div>
-      ${c.platform?`<div class="check warn" style="margin-top:10px"><b>Achtung</b><span>${CHANNEL[b.channel]}-Buchung: Lass die Personenzahl möglichst über die Plattform ändern. Kassierst du den Aufpreis vor Ort, fällt zwar keine Provision an, die Plattform weiß aber nichts von der Person (Versicherung, Bewertungen, Regeln der Plattform).</span></div>`:""}
+  if(b){ const z=zgCalc(p,b);
+    res = z.zuViel ? `<div class="check err"><b>Geht nicht</b><span>${z.pNew} Personen überschreiten die Höchstbelegung von ${z.maxP} Personen (Einstellungen). Ein weiterer Gast ist nicht möglich.</span></div>` : `<div class="zg">
+      <div class="sum"><span class="k">Buchung</span><span>${esc(guestLabel(b))}, ${fD(b.anreise)}–${fD(b.abreise)} (${z.n} N.)</span>
+      <span class="k">Personen</span><span>${z.pOld} → ${z.pNew} (für ${z.nx} von ${z.n} Nächten)</span>
+      <span class="k">Erkannter Tarif</span><span>${esc(z.rate)}</span>
+      <span class="k">Preis pro Nacht laut Liste</span><span>${money(z.rateOld)} → ${money(z.rateNew)} (+${money(z.rateNew-z.rateOld)})</span>
+      <span class="k">Aufpreis nach Liste</span><span>${money(z.listeDiff)}</span>
+      <span class="k">Bisher gezahlt / Listenpreis</span><span>${money(z.gezahlt)} / ${money(z.listOld)} = ${fmtNum(z.faktor*100)} %</span>
+      <span class="k">Aufpreis anteilig zum gezahlten Preis</span><span>${money(z.anteilig)}</span>
+      <span class="k tot">Aufpreis Unterkunft</span><span class="tot">${money(z.auf)}</span>
+      <span class="k">+ Gästebeitrag ${z.k} × ${z.nx} × ${money(S.settings.gbSatz)}</span><span>${money(z.gbNeu)}</span>
+      <span class="k tot">Vom Gast zu kassieren</span><span class="tot">${money(r2(z.auf+z.gbNeu))}</span>
+      <span class="k">Davon bleibt euch (nach Tourismusbeitrag)</span><span>${money(z.plus)}</span></div>
+      ${z.c.platform?`<div class="check warn" style="margin-top:10px"><b>Achtung</b><span>${CHANNEL[b.channel]}-Buchung: Lass die Personenzahl möglichst über die Plattform ändern. Kassierst du den Aufpreis vor Ort, fällt zwar keine Provision an, die Plattform weiß aber nichts von der Person (Versicherung, Bewertungen, Regeln der Plattform).</span></div>`:""}
       <button class="btn primary" data-act="zgApply" style="margin-top:12px">In die Buchung übernehmen</button>
-      <p class="hint">Fügt die Leistung „Zusätzliche Person“ und den Gästebeitrag zur Buchung hinzu${nx===n?" und erhöht die Zahl der Erwachsenen":""}${c.platform?" (bei Plattformbuchungen als „vor Ort kassiert“ markiert, ohne Provision)":""}. Bei einer Direktbuchung danach Vertrag oder Nachtrag neu senden.</p></div>`;
+      <p class="hint">Fügt die Leistung „Zusätzliche Person“ und den Gästebeitrag zur Buchung hinzu${z.nx===z.n&&!z.c.platform?" und erhöht die Zahl der Erwachsenen":""}${z.c.platform?" (als „vor Ort kassiert“, ohne Provision)":""}. Bei einer Direktbuchung danach Vertrag oder Nachtrag neu senden.</p></div>`;
   }
   return `<div class="grid">
     ${F("Buchung","zgBooking",p.zgBooking,{type:"select",options:[["","– bitte wählen –"],...sel.map(b=>[b.id,`${guestLabel(b)} · ${fD(b.anreise)} · ${CHANNEL[b.channel]}`])]})}
@@ -1698,12 +1705,10 @@ document.addEventListener("click", async ev=>{
     case "copyMail": copy(mails(b)[+t.dataset.i][1]); break;
     case "subP": S.ui.subP=t.dataset.v; ru(); break;
     case "prToBooking": { const p=prState(), r=privatPreis(p); newDraft({anreise:p.von||"",abreise:p.bis||"",erw:num(p.erw),kinder:num(p.kinder),preis:String(r.direkt),saunaOpt:!p.saunaTarif, sonder:p.saunaTarif?"Saunanutzung ist im Preis enthalten.":""}); ru(); window.scrollTo(0,0); toast("Direktbuchung mit Privatpreis vorbereitet"); break; }
-    case "zgApply": { const p=prState(); const bk=S.bookings.find(x=>x.id===p.zgBooking); if(!bk) break; const c=calc(bk), n=c.n, k=Math.max(1,num(p.zgAnz)), nx=Math.min(n, num(p.zgNaechte)>0?num(p.zgNaechte):n);
-        const pOld=num(bk.erw)+num(bk.kinder); const diff=r2((tarifRate(pOld+k,n,{})-tarifRate(pOld,n,{}))*nx); const listOld=listPrice(pOld,n,{});
-        const gez = c.platform? r2(c.unterkunft-c.gbBase):c.unterkunft; let auf = p.zgMethode==="liste"?diff:r2(diff*(listOld?gez/listOld:1)); if(p.zgRund) auf=Math.round(auf);
-        const ab = nx===n ? fD(bk.anreise) : fD(addDays(bk.abreise,-nx));
-        bk.extras=bk.extras||[]; bk.extras.push({text:`Zusätzliche Person${k>1?"en ("+k+")":""} ab ${ab} (${nx} ${nx===1?"Nacht":"Nächte"})`, betrag:String(auf), vorOrt:c.platform});
-        if(nx===n && !c.platform){ bk.erw = num(bk.erw)+k; } else { bk.extras.push({text:`Gästebeitrag zusätzliche Person: ${k} × ${nx} × ${fmtNum(S.settings.gbSatz)} €`, betrag:String(r2(num(S.settings.gbSatz)*k*nx)), gb:true, vorOrt:c.platform}); }
+    case "zgApply": { const p=prState(); const bk=S.bookings.find(x=>x.id===p.zgBooking); if(!bk) break; const z=zgCalc(p,bk); if(z.zuViel){ toast("Höchstbelegung überschritten"); break; }
+        const ab = z.nx===z.n ? fD(bk.anreise) : fD(addDays(bk.abreise,-z.nx));
+        bk.extras=bk.extras||[]; bk.extras.push({text:`Zusätzliche Person${z.k>1?"en ("+z.k+")":""} ab ${ab} (${z.nx} ${z.nx===1?"Nacht":"Nächte"})`, betrag:String(z.auf), vorOrt:z.c.platform});
+        if(z.nx===z.n && !z.c.platform){ bk.erw = num(bk.erw)+z.k; } else { bk.extras.push({text:`Gästebeitrag zusätzliche Person: ${z.k} × ${z.nx} × ${fmtNum(S.settings.gbSatz)} €`, betrag:String(z.gbNeu), gb:true, vorOrt:z.c.platform}); }
         bk._dirty=true; bk._touched=true; S.ui.selB=bk.id; S.ui.subB="daten"; S.ui.tab="buchungen"; rr(); window.scrollTo(0,0); toast("Aufpreis in die Buchung übernommen"); break; }
     case "calDay": S.ui.calDay=t.dataset.d; S.ui.noteEdit=null; ru(); break;
     case "calNav": { const v=+t.dataset.v; if(!v){ S.ui.calYm=todayISO().slice(0,7); S.ui.calDay=todayISO(); } else { const cur=S.ui.calYm||todayISO().slice(0,7); const d=new Date(+cur.slice(0,4), +cur.slice(5,7)-1+v, 1); S.ui.calYm=iso(d).slice(0,7); } ru(); break; }
