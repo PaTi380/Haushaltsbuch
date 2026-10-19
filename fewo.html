@@ -265,7 +265,7 @@ function defaultSettings(){ return {
   objName:"Vulkaneifeloase optional mit Sauna",
   objBeschr:"Ferienwohnung (Einliegerwohnung im Erdgeschoss), ca. 83 m², 2 Schlafzimmer, Sauna",
   objBeschrEn:"Holiday apartment (ground-floor self-contained flat), approx. 83 m², 2 bedrooms, sauna",
-  maxPers:"3",
+  maxPers:"3", maxPersAusnahme:"4",
   kontoinhaber:"Patrick Morbach", iban:"", bic:"", bank:"",
   steuerModus:"klein", ustSatz:7, ustSatzSauna:19,
   gbSatz:2.10, gbKinder:false,
@@ -615,7 +615,9 @@ function checksBooking(b){
   if(b.gTyp!=="firma" && (!b.gStrasse||!b.gOrt)) E("Die vollständige Anschrift des Hauptgastes fehlt. Ohne Anschrift lassen sich Forderungen kaum durchsetzen.");
   if(b.gTyp==="firma" && !b.gFirmaAdr) E("Die Anschrift der Firma fehlt.");
   if(!b.gEmail) W("Keine E-Mail-Adresse: Annahme, Stornierung und Belege laufen in Textform, die E-Mail ist dafür der Nachweis.");
-  if(st.maxPers && (num(b.erw)+num(b.kinder))>num(st.maxPers)) E(`Mehr Personen als die Höchstbelegung (${st.maxPers}).`);
+  { const pp=num(b.erw)+num(b.kinder), mx=num(st.maxPers), ma=Math.max(mx, num(st.maxPersAusnahme)||mx);
+    if(mx && pp>ma) E(`Mehr Personen (${pp}) als selbst in Ausnahmefällen möglich (${ma}).`);
+    else if(mx && pp>mx) W(`${pp} Personen: Ausnahme über der Regelbelegung (${mx}). Mit den Gästen absprechen und unter „Besondere Vereinbarungen“ festhalten.`); }
   const ov = overlaps(b); if(ov.length) E("Überschneidung mit: " + ov.map(o=>`${bookingLabel(o)} (${fD(o.anreise)}–${fD(o.abreise)})`).join(", "));
   const nc = noteClash(b); if(nc.length) W("Im Kalender eingetragen: " + nc.map(n=>`${(NOTE_ART[n.art]||[""])[0]} ${fD(n.d)}${n.bis?"–"+fD(n.bis):""}`).join(", "));
   if(b.channel!=="direkt") W("Bei Booking.com- und Airbnb-Buchungen gelten deren Preis- und Stornobedingungen. Diese Vereinbarung darf ihnen nicht widersprechen; nutze sie dort höchstens für Hausregeln.");
@@ -1074,7 +1076,7 @@ function pRechner(p){ const r = privatPreis(p);
 }
 function zgCalc(p, b){
   const st=S.settings, c=calc(b), n=c.n, k=Math.max(1,num(p.zgAnz)), nx=Math.min(n, num(p.zgNaechte)>0?num(p.zgNaechte):n);
-  const pOld=num(b.erw)+num(b.kinder), pNew=pOld+k, maxP=num(st.maxPers)||0;
+  const pOld=num(b.erw)+num(b.kinder), pNew=pOld+k, maxP=num(st.maxPers)||0, maxA=Math.max(maxP, num(st.maxPersAusnahme)||maxP);
   const gezahlt = c.unterkunft; /* bei Plattformen: Gästepreis inkl. allem, wie in der Tarifliste */
   const G=num(st.bkGenius)||0; const cands=[];
   [[{},"Standard"],[{ohne:true},"ohne Storno"],[{sauna:true},"Sauna-Rate"]].forEach(([o,l])=>[0,G].forEach(g=>{ if(g===0 || isPlat(b)) cands.push({o:{...o,genius:g}, label:l+(n>=num(st.tarifWeeklyAb)&&!o.sauna?" (Woche)":"")+(g?`, Genius ${g} %`:""), list:listPrice(pOld,n,{...o,genius:g})}); }));
@@ -1082,19 +1084,21 @@ function zgCalc(p, b){
   const best=cands.sort((x,y)=>x.dev-y.dev)[0]; const sicher = best.dev<0.03;
   const o = sicher ? best.o : {genius:0};
   const g = 1-num(o.genius)/100;
-  const rateOld=r2(tarifRate(pOld,n,o)*g), rateNew=r2(tarifRate(pNew,n,o)*g);
+  const cap = maxP>0 ? maxP : pNew; /* über der Regelbelegung: eigener Aufschlag ohne Rabatte */
+  const rateOld=r2(tarifRate(Math.min(pOld,cap),n,o)*g + Math.max(0,pOld-cap)*num(st.tarifExtraPerson)), rateNew=r2(tarifRate(Math.min(pNew,cap),n,o)*g + Math.max(0,pNew-cap)*num(st.tarifExtraPerson));
   const listeDiff=r2((rateNew-rateOld)*nx), listOld=listPrice(pOld,n,o);
   const faktor = listOld ? gezahlt/listOld : 1, anteilig=r2(listeDiff*faktor);
   let auf = p.zgMethode==="liste" ? listeDiff : anteilig; if(p.zgRund) auf=Math.round(auf);
   const gbNeu=r2(num(st.gbSatz)*k*nx), tb=r2(auf*tbRate());
-  return { c, n, k, nx, pOld, pNew, maxP, zuViel: maxP>0 && pNew>maxP, gezahlt, rate: sicher?best.label:"eigener Preis (keine Rate passt genau)", sicher, rateOld, rateNew, listeDiff, listOld, faktor, anteilig, auf, gbNeu, plus:r2(auf-tb) };
+  return { c, n, k, nx, pOld, pNew, maxP, maxA, zuViel: maxA>0 && pNew>maxA, ausnahme: maxP>0 && pNew>maxP && pNew<=maxA, gezahlt, rate: sicher?best.label:"eigener Preis (keine Rate passt genau)", sicher, rateOld, rateNew, listeDiff, listOld, faktor, anteilig, auf, gbNeu, plus:r2(auf-tb) };
 }
 function pZusatz(p){
   const sel = S.bookings.filter(b=>!b._draft && b.status!=="storniert" && b.status!=="storniert_bezahlt" && (b.abreise||"")>=todayISO()).sort((a,b)=>(a.anreise||"").localeCompare(b.anreise||""));
   const b = S.bookings.find(x=>x.id===p.zgBooking) || null;
   let res = `<div class="empty">Wähle eine Buchung, um den Aufpreis zu berechnen.</div>`;
   if(b){ const z=zgCalc(p,b);
-    res = z.zuViel ? `<div class="check err"><b>Geht nicht</b><span>${z.pNew} Personen überschreiten die Höchstbelegung von ${z.maxP} Personen (Einstellungen). Ein weiterer Gast ist nicht möglich.</span></div>` : `<div class="zg">
+    res = z.zuViel ? `<div class="check err"><b>Geht nicht</b><span>${z.pNew} Personen sind mehr, als selbst in Ausnahmefällen möglich ist (${z.maxA}, Einstellungen).</span></div>` : `<div class="zg">
+      ${z.ausnahme?`<div class="check warn" style="margin-bottom:10px"><b>Ausnahme</b><span>${z.pNew} Personen liegen über der Regelbelegung von ${z.maxP}. Nur nach Absprache mit den Gästen. Für die ${z.pNew}. Person gibt es keinen Booking-Preis; gerechnet wird mit dem Aufschlag je weitere Person aus den Einstellungen (${money(S.settings.tarifExtraPerson)} pro Nacht).</span></div>`:""}
       <div class="sum"><span class="k">Buchung</span><span>${esc(guestLabel(b))}, ${fD(b.anreise)}–${fD(b.abreise)} (${z.n} N.)</span>
       <span class="k">Personen</span><span>${z.pOld} → ${z.pNew} (für ${z.nx} von ${z.n} Nächten)</span>
       <span class="k">Erkannter Tarif</span><span>${esc(z.rate)}</span>
@@ -1534,7 +1538,7 @@ function viewSettings(v){ const s=S.settings;
    ${F("E-Mail","vEmail",s.vEmail,{review:!s.vEmail})}${F("Telefon","vTel",s.vTel,{review:!s.vTel})}
    ${F("Name der Unterkunft","objName",s.objName)}
    ${F("Beschreibung (DE)","objBeschr",s.objBeschr,{wide:true,review:true})}${F("Beschreibung (EN)","objBeschrEn",s.objBeschrEn,{wide:true,review:true})}
-   ${F("Höchstbelegung (Personen)","maxPers",s.maxPers,{type:"number",review:!s.maxPers,hint:"wird bei Buchungen geprüft"})}
+   ${F("Regelbelegung (Personen)","maxPers",s.maxPers,{type:"number",hint:"so viele Gäste ohne Absprache"})}${F("Höchstens in Ausnahmefällen","maxPersAusnahme",s.maxPersAusnahme,{type:"number",hint:"nur nach Absprache mit den Gästen"})}
   </div></fieldset>
   <fieldset><legend>Steuer und Bank</legend><div class="grid">
    ${F("Steuernummer","steuernr",s.steuernr,{review:!s.steuernr,hint:"Pflichtangabe auf jeder Rechnung"})}
@@ -1705,7 +1709,7 @@ document.addEventListener("click", async ev=>{
     case "copyMail": copy(mails(b)[+t.dataset.i][1]); break;
     case "subP": S.ui.subP=t.dataset.v; ru(); break;
     case "prToBooking": { const p=prState(), r=privatPreis(p); newDraft({anreise:p.von||"",abreise:p.bis||"",erw:num(p.erw),kinder:num(p.kinder),preis:String(r.direkt),saunaOpt:!p.saunaTarif, sonder:p.saunaTarif?"Saunanutzung ist im Preis enthalten.":""}); ru(); window.scrollTo(0,0); toast("Direktbuchung mit Privatpreis vorbereitet"); break; }
-    case "zgApply": { const p=prState(); const bk=S.bookings.find(x=>x.id===p.zgBooking); if(!bk) break; const z=zgCalc(p,bk); if(z.zuViel){ toast("Höchstbelegung überschritten"); break; }
+    case "zgApply": { const p=prState(); const bk=S.bookings.find(x=>x.id===p.zgBooking); if(!bk) break; const z=zgCalc(p,bk); if(z.zuViel){ toast("Mehr Personen als möglich"); break; }
         const ab = z.nx===z.n ? fD(bk.anreise) : fD(addDays(bk.abreise,-z.nx));
         bk.extras=bk.extras||[]; bk.extras.push({text:`Zusätzliche Person${z.k>1?"en ("+z.k+")":""} ab ${ab} (${z.nx} ${z.nx===1?"Nacht":"Nächte"})`, betrag:String(z.auf), vorOrt:z.c.platform});
         if(z.nx===z.n && !z.c.platform){ bk.erw = num(bk.erw)+z.k; } else { bk.extras.push({text:`Gästebeitrag zusätzliche Person: ${z.k} × ${z.nx} × ${fmtNum(S.settings.gbSatz)} €`, betrag:String(z.gbNeu), gb:true, vorOrt:z.c.platform}); }
