@@ -460,7 +460,8 @@ body{margin:0;padding:0 16px}
 
 <!-- FEWO -->
 <section role="tabpanel" id="p-fewo" hidden>
-  <div class="card">
+  <div class="card"><div class="head"><h2>Ferienwohnung</h2></div><div class="note" style="margin-top:0">Buchungen, Verträge, Rechnungen, Kalender, Preise und Auswertungen der Ferienwohnung laufen jetzt im <b>Verwaltungsprogramm</b>. Jede Buchung dort bucht ihren Anteil automatisch hier aufs Urlaubskonto.</div><div style="margin-top:10px"><a class="btn" href="fewo.html">Verwaltungsprogramm öffnen</a></div></div>
+  <div class="card" hidden>
     <div class="head"><h2>Neue Buchung</h2></div>
     <div class="quick"><textarea id="fw-text" rows="3" placeholder="Neue Buchung, z. B. „Airbnb, 13. bis 15. November, 2 Erwachsene, du erhältst 154,95 €“ – oder eine Änderung bzw. Urlaubskonto-Buchung"></textarea><div class="qbtns"><button type="button" class="btn" id="fw-readtext">Übernehmen</button></div></div>
     <div class="note qmsg" id="fw-shotmsg" style="margin-top:6px">Neue Buchung: Die KI füllt die Felder unten aus, du prüfst und speicherst. Änderungen erkennt die App meist selbst, z. B. „Gäste vom 3.10. haben 20 € bar bezahlt“, „Buchung vom 14.11. storniert“, „150 € vom Urlaubskonto abgehoben für Ausflug“.</div><div id="fw-qprev"></div>
@@ -475,19 +476,19 @@ body{margin:0;padding:0 16px}
     </form>
     <div class="g2" style="margin-top:12px"><div id="fw-prev"></div><div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-end"><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" form="f-fw" type="submit">Buchung speichern</button><button class="btn sec" type="button" id="fw-reset">Leeren</button></div><div class="note" id="fw-msg"></div></div></div>
   </div>
-  <div class="grid" id="f-kpis"></div>
-  <div class="card"><div class="head"><h2>Buchungen</h2><select id="fw-yr" aria-label="Jahr"></select></div>
+  <div class="grid" id="f-kpis" hidden></div>
+  <div class="card" hidden><div class="head"><h2>Buchungen</h2><select id="fw-yr" aria-label="Jahr"></select></div>
     <div class="legend"><span><i style="background:var(--good)"></i>Stornofrist vorbei, Geld sicher</span><span><i style="background:var(--warn)"></i>noch stornierbar</span></div>
     <div class="tw"><table id="fw-table"></table></div><div id="fw-more" style="margin-top:8px"></div>
     <div class="note">Tippe auf eine Buchung für den Auszahlungs-Zettel: wie viel vom Geld Gästebeitrag ist, wie viel in den Spartopf (30 % + 5 €) und wie viel aufs Urlaubskonto geht.</div></div>
-  <div class="g2">
+  <div>
     <div class="card"><div class="head"><h2>Urlaubskonto</h2><b class="num" id="u-stand"></b></div>
       <form class="form" id="f-url"><label>Datum<input type="date" id="u-d" required></label><label>Art<select id="u-art"><option value="-1">Entnahme / Ausgabe (−)</option><option value="1">Einzahlung (+)</option></select></label><label>Betrag (€)<input id="u-b" type="text" inputmode="decimal" required style="width:120px" placeholder="643,95"></label><label>Bemerkung<input id="u-t" placeholder="z. B. Unterkunft London"></label><button class="btn">Eintragen</button></form>
       <div class="tw" style="margin-top:10px;max-height:320px;overflow:auto"><table id="u-table"></table></div><h3>Verlauf</h3><div class="legend" style="margin:0 0 4px"><span><i style="background:var(--acc)"></i>Kontostand</span><span><i class="dash"></i>geplant (Buchungen und Ausgaben in der Zukunft)</span></div><div class="chart" id="c-url"></div></div>
-    <div class="card"><h2>Gästebeitrag je Monat</h2><div class="note" style="margin-top:0">Für die Meldung an die Gemeinde. Nach Anreisemonat.</div><div class="tw"><table id="gb-table"></table></div></div>
+    <div class="card" hidden><h2>Gästebeitrag je Monat</h2><div class="note" style="margin-top:0">Für die Meldung an die Gemeinde. Nach Anreisemonat.</div><div class="tw"><table id="gb-table"></table></div></div>
   </div>
-  <div class="g2"><div class="card"><h2>Kontonetto pro Jahr</h2><div class="chart" id="c-fw"></div></div><div class="card"><h2>Was die Plattformen kosten</h2><div id="fw-pl"></div></div></div>
-  <details class="card" id="st-box"><summary class="sumhead"><h2 style="margin:0">Steuer: Einnahmen je Plattform (DAC7)</h2><span class="muted" style="font-size:12px">antippen zum Öffnen</span></summary><div class="head" style="margin-top:10px"><span></span><select id="st-yr" aria-label="Jahr"></select></div>
+  <div class="g2" hidden><div class="card"><h2>Kontonetto pro Jahr</h2><div class="chart" id="c-fw"></div></div><div class="card"><h2>Was die Plattformen kosten</h2><div id="fw-pl"></div></div></div>
+  <details class="card" id="st-box" hidden><summary class="sumhead"><h2 style="margin:0">Steuer: Einnahmen je Plattform (DAC7)</h2><span class="muted" style="font-size:12px">antippen zum Öffnen</span></summary><div class="head" style="margin-top:10px"><span></span><select id="st-yr" aria-label="Jahr"></select></div>
     <div class="tw"><table id="st-table"></table></div>
     <div class="note"><b>Booking.com:</b> kommissionspflichtiger Betrag = Gesamtpreis minus 1,50 € Übernachtungssteuer je Person und Nacht. <b>Airbnb:</b> Preis für die Übernachtungen vor der Gastgeber-Servicegebühr; fehlt er, aus der Auszahlung zurückgerechnet („geschätzt“). <b>Privat:</b> Betrag vom Gast minus Gästebeitrag, wird nicht per DAC7 gemeldet. Zugeordnet nach Anreisejahr. Zum Abgleich mit den DAC7-Übersichten, die Booking.com und Airbnb im Januar schicken. Keine Steuerberatung.</div></details>
 </section>
@@ -609,7 +610,7 @@ body{margin:0;padding:0 16px}
 <script>
 (function(){
 'use strict';
-const TABS=[['heute','Übersicht'],['monat','Monat'],['fewo','Ferienwohnung'],['kredite','Kredite'],['vermoegen','Vermögen'],['bald','Ausblick'],['strom','Strom'],['einst','Einstellungen']];
+const TABS=[['heute','Übersicht'],['monat','Monat'],['fewo','Urlaubskonto'],['kredite','Kredite'],['vermoegen','Vermögen'],['bald','Ausblick'],['strom','Strom'],['einst','Einstellungen']];
 const MN=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const MS=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 const OZ=31.1035;
@@ -1179,7 +1180,7 @@ $('#q-go').onclick=async()=>{const tx=$('#q-text').value.trim();const msg=$('#q-
   // Schnellweg: nur ein Betrag => Essen
   const only=parseNum(tx.replace(/^essen\s*/i,''));if(only!=null&&/^(essen\s*)?[\d.,\s€]+$/i.test(tx)){await addBudget('e',only);$('#q-text').value='';msg.innerHTML=`<b class="pos">${eur(only)} bei Essen abgezogen.</b>`;return;}
   // Neue Ferienwohnungs-Buchung => in den Reiter Ferienwohnung weiterreichen
-  if(!qLocal(tx)&&qIsNewBooking(tx)){$('#q-text').value='';msg.textContent='Neue Buchung – weiter im Reiter Ferienwohnung.';showTab('fewo');try{history.replaceState(null,'','#fewo')}catch(_){}render();$('#fw-text').value=tx;setTimeout(()=>{$('#fw-readtext').click();$('#fw-text').scrollIntoView({block:'center'});},50);return;}
+  if(!qLocal(tx)&&qIsNewBooking(tx)){msg.innerHTML='Neue Buchungen trägst du im <a href="fewo.html">Verwaltungsprogramm</a> ein (Text dort einfügen und „Auslesen“).';return;}
   await qRun(tx,msg,$('#q-prev'),$('#q-go'));};
 /* ---------- Ferienwohnung ---------- */
 const FWD={gb:2.1,kom:0.12,serv:0.014,steuer:1.5,airNeu:0.155,airAlt:0.03,mwst:0.19,urlProz:0.3,urlFix:5};
@@ -2032,7 +2033,7 @@ Wasser und Grundsteuer werden immer im Vorjahr angespart (Januar–Dezember für
 ['Storniert, aber Gast zahlt trotzdem',`Konnten Gäste nicht mehr kostenlos stornieren, kommt das Geld trotzdem. Ferienwohnung → Buchung antippen → „Storniert, Gast zahlt trotzdem“ (zweimal tippen). Die Buchung zählt dann weiter bei Auszahlung, Spartopf, Urlaubskonto, Steuer und Excel, aber ohne Übernachtung: kein Gästebeitrag, keine belegten Nächte, nicht in der Belegung für Home Assistant. Zahlt die Plattform nur einen Teil aus, die Auszahlung im Zettel antippen und ändern. „Rückgängig“ macht es wieder zur normalen Buchung. Per Textfeld: „Buchung vom 14.11. storniert, Gast zahlt trotzdem“. Für eine kostenlose Stornierung (kein Geld) gibt es weiter „Storniert (kostenlos)“.`],
 ['Schnell eintragen (KI)',`Beide Textfelder (Übersicht und Ferienwohnung) erkennen viele Befehle OHNE KI (spart Daten, geht sofort): Essen/Sonstiges-Einkäufe und -Ausgleich, Urlaubskonto abheben/einzahlen („200 € vom Urlaubskonto abgehoben am 12.10. für Fähre“), Tagesgeld-Entnahmen, Gehalt eines Monats oder dauerhaft („ab Februar 2027“), Strom (Abrechnung, Einspeisevergütung, Stromkonto), Sondertilgung, Sparda-Restschuld, Wasser-/Grundsteuerbescheid, Jahresbeiträge, Ausgaben vom Girokonto („Patrick 45 € Restaurant bezahlt für Essen gehen“) und Änderungen an Buchungen („Gäste vom 3.10. haben 20 € bar bezahlt“, „Buchung vom 14.11. storniert“). Mehrere Befehle mit Semikolon oder neuer Zeile trennen. „ich/mein“ = wer angemeldet ist. Nur was die App nicht versteht, geht an die KI. Eine neue Buchung in der Übersicht wird automatisch an den Reiter Ferienwohnung weitergereicht. In der Übersicht oben einfach schreiben, was sich geändert hat, z. B. „Essen 36,34“, „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“, „Till Tanken im Oktober 60 statt 115“, „Patrick hat im Oktober 2.610 € bekommen“, „Goldpreis 3.820“, „ING-Rate ab November 2030 auf 0“. Die KI schlägt die Einträge vor, du bestätigst. Ohne KI geht alles auch von Hand.`],
 ['Essen & Sonstiges',`Budget Essen = Grundbetrag Essen, Sonstiges = „sonstiges: freie Verwendung“ minus 100 € fürs Kredit-Sparen bis April 2027. Einkauf: Betrag eintragen → „− Essen“ oder „− Sonstiges“. Ausgleichen: Betrag mit Minus (−2,89); mit „Wer“ wird er auch bei dessen Girokonto abgezogen.`],
-['Ferienwohnung',`Buchung einfügen (Text aus der Booking-/Airbnb-App kopieren) → Übernehmen → Felder prüfen → speichern. Tippen auf eine Buchung öffnet den Auszahlungs-Zettel: Brutto, Gebühren, Auszahlung, Gästebeitrag (nur Erwachsene × Nächte), Spartopf (30 % + 5 €), aufs Urlaubskonto. Beträge antippen = von Hand ändern (✎), Feld leeren = wieder automatisch. Bargeld vor Ort: „wie Auszahlung aufteilen“, „komplett aufs Urlaubskonto“ oder „nicht aufs Urlaubskonto“. Buchungen, deren Abreise mehr als 2 Wochen zurückliegt, sind nur noch lesbar. Die Übersicht zeigt die nächste Gutschrift mit Aufteilung.`],
+['Ferienwohnung',`Die Ferienwohnung hat ein eigenes Verwaltungsprogramm (Seite fewo.html, Knopf im Reiter Urlaubskonto): Buchungen von Booking.com, Airbnb und privat, Verträge, Rechnungen, Kalender, Preise und Auswertungen inkl. Steuer und Gästebeitrag. Jede Buchung dort trägt ihren Anteil automatisch aufs Urlaubskonto ein (Auszahlung minus Gästebeitrag minus Spartopf 30 % + 5 €). Im Haushaltsbuch bleibt das Urlaubskonto mit Einzahlungen und Entnahmen. Die FeWo-Rechenregeln (Einstellungen) gelten für beide.`],
 ['Kredite',`Karten Sparda (blau), ING (orange), Bausparvertrag (gelb). Diagramm: Linien an/aus, Zeitraum. Sondertilgungen bei Sparda/ING hinzufügen; „Rate Sondertilgung Haus“ aus den Monatsplänen wird automatisch als Sondertilgung gerechnet. Die ING-Rate endet automatisch nach der letzten Rate (in fortgeschriebenen Jahren); vorher auf 0 setzen: Grundbetrag „Gemeinschaftskredit ING Rate“ → „erst ab“.`],
 ['Ausblick, Vermögen, Strom',`Ausblick: Fragen & Was wäre wenn (KI rechnet durch, speichert nichts), Kontoverlauf bis 2040 (Linien, Werte, Zeitraum wählbar), dauerhafte Änderungen, Rücklagen-Balken, was demnächst ansteht. Vermögen: ETF und Gold, Verlauf mit Rückblick/Zukunft oder einzelnem Jahr. Strom: je Jahr Einzahlung, Verbrauch geplant, Verbrauch echt (rot = mehr, grün = weniger), Vergütung, Kontostand; graue Werte sind vom Vorjahr übernommen.`],
 ['Goldpreis',`Wird täglich automatisch beim Öffnen der App aktualisiert (Stand steht unter dem Feld). Von Hand ändern geht auch; gilt überall außer in abgeschlossenen Monaten.`],
