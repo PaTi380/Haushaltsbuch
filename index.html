@@ -393,6 +393,9 @@ details.row.goldsep{border-bottom:1px solid color-mix(in srgb,var(--gold) 30%,tr
 body.is-closed main,body.is-closed header{visibility:hidden}
 
 .upm{display:inline-flex;gap:4px;align-items:center;justify-content:flex-end}.upm .btn{padding:2px 8px;min-width:0}
+
+/* Tabelle breiter als der Bildschirm: Schatten rechts als Hinweis zum Wischen */
+.tw.tw-x{box-shadow:inset -18px 0 14px -12px rgba(0,0,0,.28)}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
@@ -492,6 +495,11 @@ body{margin:0;padding:0 16px}
 <!-- KREDITE -->
 <section role="tabpanel" id="p-kredite" hidden>
   <div class="kgrp" id="k-kpis"></div>
+  <div class="card" id="k-was"><h2>Was bringt eine Sondertilgung?</h2>
+    <div class="note" style="margin-top:0">Nur zum Ausprobieren – es wird nichts gespeichert. Wenn ihr sie wirklich macht, unten beim Kredit mit Datum eintragen.</div>
+    <form class="form" id="f-kwas" onsubmit="return false"><label>Kredit<select id="kw-k"><option value="sparda">Sparda · Hauskredit</option><option value="ing">ING · Gemeinschaftskredit</option></select></label><label>Betrag (€)<input type="text" inputmode="decimal" id="kw-b" value="5.000" style="width:100px"></label><label>Wann<input type="date" id="kw-d"></label></form>
+    <div id="kw-out" style="margin-top:10px"></div>
+  </div>
   <div class="card"><div class="head"><h2>Kredite im Verlauf</h2></div><div class="filters"><div class="seg" id="kc-ser"></div><div class="seg" id="kc-rng"></div></div><div class="chart" id="c-kred" style="margin-top:8px"></div><div class="leg" id="kc-leg"></div><div class="note" style="margin-top:4px">Stand jeweils am Jahresende. Bausparvertrag: Guthaben bis zur Zuteilung.</div></div>
   <div class="g2">
     <div class="card"><h2>Sparda-Darlehen</h2>
@@ -1042,6 +1050,7 @@ function qDescribe(a){
   if(a.art==='gehalt')return `${esc(a.person)}: echtes Gehalt ${ymName(a.monat)} ${a.wert==null?'zurück auf geplant':eur(+a.wert)}`;
   if(a.art==='strom'){const L={spar:'Einzahlung',verbrauch:'Verbrauch geplant €',ist:'Verbrauch echt €',verg:'Vergütung €'};return `Stromkonto ${ymName(a.monat)}: ${L[a.feld]||esc(a.feld)} ${eur(S.strom.m?.[a.monat]?.[a.feld]??0)} → <b>${eur(a.wert)}</b>`;}
   if(a.art==='sparda_bank')return `Sparda laut Bank: Restschuld ${ymName(a.monat)} ${eur(+a.restschuld)}${a.rate?' · Rate ab dann '+eur(+a.rate):''}`;
+  if(a.art==='kwas')return `Nur ausrechnen: ${eur(+a.betrag,0)} Sondertilgung ${a.kredit==='ing'?'ING':'Sparda'} am ${dDE(a.datum)} – öffnet den Rechner im Reiter Kredite (nichts wird gespeichert)`;
   if(a.art==='urlaub')return `Urlaubskonto ${dDE(a.datum||TODAY)}: <b class="num ${+a.betrag<0?'neg':'pos'}">${+a.betrag<0?'−':'+'}${eur(Math.abs(+a.betrag))}</b> ${+a.betrag<0?'abheben':'einzahlen'}${a.grund?' ('+esc(a.grund)+')':''}`;
   return esc(JSON.stringify(a));
 }
@@ -1068,6 +1077,7 @@ async function qApply(list){let ok=0;const skip=[];
     else if(a.art==='bescheid'){const k=a.posten==='grundsteuer'?'h_grundst':'h_wasser';if(!(+a.jahr>2000)||a.februar==null||a.rate==null){skip.push(qDescribe(a));continue;}const items=structuredClone(S.grund.items);const it=items.find(i=>i.k===k);it.bsch={...(it.bsch||{}),[+a.jahr]:{f:r2(+a.februar),r:r2(+a.rate),am:TODAY}};S.grund={items};render();await save('config/grund',{items});ok++;}
     else if(a.art==='gehalt'){const sh=PSH[a.person];if(!sh||sh==='HAUS'||!S.plan[a.monat]){skip.push(qDescribe(a));continue;}await savePlan(a.monat,d=>{const b=d[sh]=d[sh]||{};if(a.wert==null)delete b.gehIst;else b.gehIst=r2(+a.wert);});ok++;}
     else if(a.art==='sparda_bank'){if(!/^\d{4}-\d{2}$/.test(a.monat||'')||a.restschuld==null){skip.push(qDescribe(a));continue;}const l=(K().sparda.bank||[]).filter(x=>x.ym!==a.monat);l.push({ym:a.monat,st:r2(+a.restschuld),...(a.rate?{rate:r2(+a.rate)}:{}),am:TODAY});l.sort((x,y)=>x.ym.localeCompare(y.ym));await setK('sparda.bank',l);ok++;}
+    else if(a.art==='kwas'){$('#kw-k').value=a.kredit;$('#kw-b').value=num(+a.betrag);$('#kw-d').value=a.datum;showTab('kredite');try{history.replaceState(null,'','#kredite')}catch(_){}render();setTimeout(()=>{try{rKWas();$('#k-was').scrollIntoView({block:'start'});}catch(_){}},80);ok++;}
     else if(a.art==='urlaub'){if(!(+a.betrag)){skip.push(qDescribe(a));continue;}await saveUrlaub(u=>{u.e.push({d:/^\d{4}-\d{2}-\d{2}$/.test(a.datum||'')?a.datum:TODAY,b:r2(+a.betrag),t:a.grund||(+a.betrag<0?'Entnahme':'Einzahlung')});});ok++;}
     else if(a.art==='strom'){if(!['spar','verbrauch','ist','verg'].includes(a.feld)){skip.push(qDescribe(a));continue;}const d=structuredClone(S.strom);d.m=d.m||{};d.m[a.monat]={...(d.m[a.monat]||{}),[a.feld]:+a.wert};S.strom=d;render();await save('config/strom',d);ok++;}
   }
@@ -1103,7 +1113,8 @@ function qParse1(tx){const t=' '+tx.toLowerCase().replace(/\s+/g,' ').replace(/[
   if(/urlaubs?konto|urlaubskasse|urlaubsgeld|urlaubstopf/.test(t)){const b=qAmt(t);if(b==null)return null;
     const minus=/ab(ge)?hoben|abheben|abrufen|abgerufen|entnehm|entnommen|genommen|\braus\b|ausgegeben|bezahlt|runter|\bvom urlaub|aus dem urlaub|von dem urlaub|\babbuch|\babzieh/.test(t),plus=/einzahl|eingezahlt|\bdrauf|aufs urlaub|auf das urlaub|gutschrift|gutgeschrieben|zurückgelegt|zurück ?gezahlt|dazu/.test(t);
     if(minus===plus)return null;return {art:'urlaub',datum:qDate(t)||TODAY,betrag:minus?-b:b,grund:qWhy(tx)};}
-  // 2) Sondertilgung
+  // 2) Sondertilgung (Frage „was bringt …“ → nur Rechner öffnen)
+  if(/sondertilgung/.test(t)&&/was bringt|was würde|lohnt|wie viel (spar|bring)|wieviel (spar|bring)|\?/.test(t)){const k=/\bing\b/.test(t)?'ing':'sparda';const b=qAmt(t,true);if(b==null)return null;const d=qDate(t);return {art:'kwas',kredit:k,betrag:b,datum:d||(qMonth(t)?qMonth(t)+'-15':TODAY)};}
   if(/sondertilgung/.test(t)){const k=/\bing\b/.test(t)?'ing':/sparda/.test(t)?'sparda':null;const b=qAmt(t,true);const ym=qMonth(t);if(!k||b==null||!ym)return null;return {art:'sondertilgung',kredit:k,monat:ym,betrag:b};}
   // 3) Restschuld/Kredit
   if(/restschuld|kreditstand/.test(t)&&/sparda/.test(t)&&!/\bum\b/.test(t)){const b=qAmt(t.replace(/(neue |monats)?rate\D{0,12}?\d[\d.,]*( ?(€|euro))?/,' '),true);if(b==null)return null;const ym=qMonth(t)||(qDate(t)||'').slice(0,7)||null;if(ym&&!/jetzt|heute|aktuell/.test(t)){const r=t.match(/rate\D{0,12}?(\d[\d.,]*)/);return {art:'sparda_bank',monat:ym,restschuld:b,rate:r?qPn(r[1].replace(/[.,]$/,'')):null};}return {art:'kredit',feld:'sparda.stand',wert:b,um:null};}
@@ -1381,6 +1392,20 @@ function setK(path,val){const d=structuredClone(K());const ks=path.split('.');le
   render();return save('config/kredit',d);}
 let kSer=new Set(['sp','sp0','ing','bs']),kRng='all';
 $('#p-kredite').addEventListener('click',e=>{const b=e.target.closest('[data-kc],[data-kr]');if(!b)return;if(b.dataset.kc){kSer.has(b.dataset.kc)?kSer.delete(b.dataset.kc):kSer.add(b.dataset.kc);}if(b.dataset.kr)kRng=b.dataset.kr;rKredite();});
+/* Sondertilgungs-Rechner: Kredit mit und ohne zusätzliche Sondertilgung durchrechnen */
+function kWithSonder(k,extra){const d=structuredClone(K());if(k==='sparda'){d.sparda.sonder=[...(d.sparda.sonder||[]),extra];}else{d.ing.sonder=[...(d.ing.sonder||[]),{ym:extra.ym,b:extra.b}];}const save=S.kredit;S.kredit=d;try{return k==='sparda'?sparda(true):ingRows();}finally{S.kredit=save;}}
+function rKWas(){const k=$('#kw-k').value;const b=qPn($('#kw-b').value||'');const dat=$('#kw-d').value||TODAY;const out=$('#kw-out');
+  if(!(b>0)){out.innerHTML='<div class="muted">Betrag eingeben.</div>';return;}
+  const ym=k==='sparda'?spYm(dat):(dat.slice(0,7));const A=k==='sparda'?sparda(true):ingRows();const B=kWithSonder(k,{dat,ym,b});
+  const zi=r=>r.reduce((a,x)=>a+x.zi,0);const zA=zi(A),zB=zi(B);const endA=A.at(-1)?.ym,endB=B.at(-1)?.ym;const mon=endA&&endB?Math.round((new Date(endA.slice(0,4),endA.slice(5)-1)-new Date(endB.slice(0,4),endB.slice(5)-1))/(30.44*864e5)):0;
+  const at=(r,y)=>{const x=r.filter(x=>x.ym<=y).at(-1);return x?x.st:null;};const bind='2053-03';
+  const ei=B.findIndex((x,i)=>Math.abs((x.so||0)-(A[i]?.so||0))>0.004);const effYm=ei>=0?B[ei].ym:ym;const eff=ei>=0?r2((B[ei].so||0)-(A[ei]?.so||0)):0;const hint=eff<b-0.5?`<div class="note neg">Davon wirken nur ${eur(eff,0)} – mehr ist in dem Monat nicht offen.</div>`:'';
+  const yr=ym.slice(0,4);const jahr=k==='sparda'?spardaSonder().filter(x=>x.ym.startsWith(yr)).reduce((a,x)=>a+x.b,0)+b:0;const lim=k==='sparda'&&jahr>(K().sparda.sonderMax||17250)?`<div class="note neg">Achtung: damit wären es ${eur(jahr,0)} Sondertilgung im Jahr ${yr} – erlaubt sind ${eur(K().sparda.sonderMax||17250,0)}.</div>`:'';
+  const rows=[['Zinsen gespart (bis zum Ende)',`<b class="pos">${eur(zA-zB,0)}</b>`],['Kredit fertig',`${endB?ymName(endB):'–'} <span class="muted">statt ${endA?ymName(endA):'–'}${mon>0?' · '+mon+' Monate früher':''}</span>`]];
+  if(k==='sparda')rows.push(['Restschuld 03/2053 (Ende Zinsbindung)',`${eur(at(B,bind)||0,0)} <span class="muted">statt ${eur(at(A,bind)||0,0)}</span>`]);
+  const pr=(zA-zB)/b;rows.push(['Je 1.000 € Sondertilgung',`<b class="pos">${eur(pr*1000,0)}</b> <span class="muted">Zinsen gespart</span>`]);
+  out.innerHTML=`<div class="row"><span>${eur(b,0)} ${k==='sparda'?'an die Sparda':'an die ING'} am ${dDE(dat)} <span class="muted">(${k==='sparda'?'zählt vor der Rate '+ymName(effYm):'wirkt ab Rate '+ymName(effYm)})</span></span><span></span></div>`+rows.map(([l,v])=>`<div class="row"><span>${l}</span><span class="num">${v}</span></div>`).join('')+hint+lim;}
+['#kw-k','#kw-b','#kw-d'].forEach(sel=>$(sel).addEventListener('input',()=>{try{rKWas();}catch(e){console.error(e);}}));
 function rKredite(){
   const k=K();$$('#p-kredite [data-k]').forEach(i=>{if(document.activeElement===i)return;const v=i.dataset.k.split('.').reduce((o,x)=>o?.[x],k);if(i.type==='checkbox')i.checked=!!v;else i.value=v??'';});
   $('#ing-start').value=gv('ing_start')||'';
@@ -1404,7 +1429,7 @@ function rKredite(){
   const ing0=I.filter(x=>x.ym<=CUR).at(-1)?.st??(+k.ing.betrag||0);const bsNow=(()=>{const b=k.bauspar;if(!b.summe)return null;let sd=+b.saldo||0,ym=normYm(b.stand)||CUR;while(ym<CUR){ym=ymAdd(ym,1);sd+=+b.monat||0;}return sd;})();
   const kg=(t,col,main,mainL,rows)=>`<div class="kg card" style="--kc:${col}"><div class="kg-h">${t}</div><div class="kg-m"><span class="muted">${mainL}</span><b class="num">${main}</b></div>${rows.map(([l,v])=>`<div class="row"><span>${l}</span><span class="num">${v}</span></div>`).join('')}</div>`;
   $('#k-kpis').innerHTML=kg('🏠 Sparda · Hauskredit','var(--till)',eur(at(A,spHeute())??r2((+k.sparda.stand||0)-(k.sparda.sonder||[]).filter(x=>x.dat&&x.dat<=TODAY&&(!k.sparda.standAm||x.dat>k.sparda.standAm)).reduce((a,x)=>a+(+x.b||0),0)),0),`Restschuld heute <small>(nach der Rate vom ${dDE(spHeute()+'-'+String(Math.min(SP_TAG,new Date(+spHeute().slice(0,4),+spHeute().slice(5),0).getDate())).padStart(2,'0'))})</small>`,[['Restschuld 03/2053 (Ende Zinsbindung)',eur(at(A,'2053-03')||0,0)],['ohne Sondertilgungen',eur(at(B,'2053-03'),0)],['Zinsen gespart',`<b class="pos">${eur(zB-zA,0)}</b>`]])
-    +kg('🤝 ING · Gemeinschaftskredit','var(--pat)',I.length?ymName(I.at(-1).ym):'–','abbezahlt',[['Restschuld heute',eur(ing0,0)],['Rate',eur(gn('ing_rate'),2)+' (je '+eur(gn('ing_rate')/2)+')'],['Zinsen gesamt',eur(I.reduce((a,x)=>a+x.zi,0),0)]])
+    +kg('🤝 ING · Gemeinschaftskredit','var(--pat)',I.length?ymName(I.at(-1).ym):'–','abbezahlt',[[(gv('ing_start')||'2026-11')>CUR?'Kreditbetrag (Auszahlung ab '+ymName(gv('ing_start')||'2026-11')+')':'Restschuld heute',eur(ing0,0)],['Rate',eur(gn('ing_rate'),2)+' (je '+eur(gn('ing_rate')/2)+')'],['Zinsen gesamt',eur(I.reduce((a,x)=>a+x.zi,0),0)]])
     +(bs?kg('💰 Bausparvertrag','var(--gold)',ymName(bs.ym),'Zuteilung voraussichtlich',[['Guthaben heute',eur(bsNow,0)],['Mindestguthaben',eur(bs.ziel,0)],['danach',k.bauspar.alsSonder?'als Sondertilgung an die Sparda':'nicht verplant']]):'');
   {const Bm={};B.forEach(r=>{if(r.bank!=null)Bm[r.ym]=r;});const L=spBank();$('#sp-bank').innerHTML=L.map(x=>{const r=Bm[x.ym];const d=r?r.corr:null;return `<div class="row"><span>${x.dat?'Stand '+dDE(x.dat)+' <small class="muted">(nach Rate '+ymName(x.ym)+')</small>':ymName(x.ym)}${x.ym<=spHeute()?' <span class="pill">Ist</span>':''}${+x.rate>0?` <span class="muted">· Rate ab hier ${eur(+x.rate)}</span>`:''}</span><span class="num">${x.st!=null&&x.st!==''?eur(+x.st):''}${d!=null&&Math.abs(d)>=0.5?` <small class="${d<0?'pos':'neg'}" title="So weit lag die eigene Rechnung daneben">(App: ${eur(r.calc,0)}, ${d>0?'+':'−'}${eur(Math.abs(d),0)})</small>`:d!=null?' <small class="pos">✓ passt</small>':''} <button class="btn sec sm" data-spbdel="${x.i}">×</button></span></div>`;}).join('')||'<div class="muted">Noch keine. Trag hier Restschuld-Werte aus dem Tilgungsplan oder Kontoauszug der Sparda ein – der Rechner richtet sich danach.</div>';}
   $('#sp-sonder').innerHTML=spardaSonder().map(x=>`<div class="row"><span>${x.dat?'am '+dDE(x.dat):ymName(x.ym)} <span class="pill">${x.src==='plan'?'aus dem Plan':x.src==='bauspar'?'Bausparvertrag':'manuell'}</span>${x.dat&&k.sparda.standAm&&x.dat<=k.sparda.standAm?' <small class="muted">(schon im Kontostand vom '+dDE(k.sparda.standAm)+' enthalten)</small>':''}</span><span class="num">${eur(x.b,0)} ${x.src==='manuell'?`<button class="btn sec sm" data-spdel="${x.i}">×</button>`:''}</span></div>`).join('')||'<div class="muted">Keine.</div>';
@@ -1413,6 +1438,7 @@ function rKredite(){
   $('#bs-out').innerHTML=bs?`<div class="row"><span>Mindestguthaben (${k.bauspar.zuteilProz||40} % von ${eur(k.bauspar.summe,0)})</span><span class="num">${eur(bs.ziel,0)}</span></div><div class="row"><span>voraussichtlich erreicht</span><b>${ymName(bs.ym)}</b></div><div class="note">Mit ${eur(k.bauspar.monat)} im Monat (145 € vom Haushaltskonto plus vermögenswirksame Leistungen). Die Zuteilung hängt zusätzlich von der Bewertungszahl ab.</div>`:'';
   const ic=ingRows();const ziel=k.ing.ziel;let zielTxt='';if(ziel&&ic.length){if(ic.at(-1).ym<=ziel)zielTxt=`<div class="note ok">Mit der normalen Rate schon im ${ymName(ic.at(-1).ym)} abbezahlt.</div>`;else{let lo=0,hi=3000;for(let n=0;n<40;n++){const m=(lo+hi)/2;const r=ingRows(m);if(r.at(-1).ym<=ziel)hi=m;else lo=m;}zielTxt=`<div class="note">Für abbezahlt bis ${ymName(ziel)}: rund <b>${eur(Math.ceil(hi),0)}</b> im Monat zusätzlich tilgen (je ${eur(Math.ceil(hi/2),0)} pro Person).</div>`;}}
   $('#ing-out').innerHTML=ic.length?`<div class="row"><span>Rate</span><span class="num">${eur(gn('ing_rate'))} (je ${eur(gn('ing_rate')/2)})</span></div><div class="row"><span>letzte Rate</span><b>${ymName(ic.at(-1).ym)}</b></div><div class="row"><span>Zinsen gesamt</span><span class="num">${eur(ic.reduce((a,x)=>a+x.zi,0))}</span></div><div class="row"><span>Restschuld Ende 2033</span><span class="num">${eur(at(ic,'2033-12')??0)}</span></div>${zielTxt}`:'';
+  try{if(!$('#kw-d').value)$('#kw-d').value=TODAY;rKWas();}catch(e){console.error(e);}
   $('#ing-sonder').innerHTML=(k.ing.sonder||[]).map((x,i)=>`<div class="row"><span>${ymName(x.ym)}</span><span class="num">${eur(x.b,0)} <button class="btn sec sm" data-ingdel="${i}">×</button></span></div>`).join('')||'<div class="muted">Keine.</div>';
   const Y={};A.forEach(x=>{const y=x.ym.slice(0,4);const o=Y[y]??={zi:0,tg:0,so:0,st:0};o.zi+=x.zi;o.tg+=x.tg;o.so+=x.so+x.mut;o.st=x.st;});
   if($('#k-table'))$('#k-table').innerHTML=`<thead><tr><th>Jahr</th><th class="r">Zinsen</th><th class="r">Tilgung</th><th class="r">Sondertilgung</th><th class="r">Restschuld</th><th class="r">Bank</th></tr></thead><tbody>`+Object.entries(Y).map(([y,o])=>`<tr><td>${y}</td><td class="r">${eur(o.zi,0)}</td><td class="r">${eur(o.tg,0)}</td><td class="r">${o.so?eur(o.so,0):''}</td><td class="r">${eur(o.st,0)}</td><td class="r muted">${BANK[y+'-12']?eur(BANK[y+'-12'],0):''}</td></tr>`).join('')+'</tbody>';
@@ -1577,7 +1603,7 @@ function upcoming(){
   // vorgemerkte Grundbetrags-Änderungen
   S.grund.items.forEach(it=>(it.hist||[]).forEach(h=>{if(h.ab>=CUR&&h.ab<=end)add(h.ab,'grund',`${it.l}: ${it.fmt==='date'?h.v:eur(gv(it.k,ymAdd(h.ab,-1)))+' → '+eur(h.v)}`);}));
   // Plan: neue, endende und geänderte feste Posten, einmalige größere Zahlungen
-  const val=(ym,sh,g)=>{const P=S.plan[ym];const b=P?.[sh];const m={};if(!b)return m;useYm(ym);(b[g]||[]).forEach(e=>{if(!e.l||e.l===ABGL||e.lk||GIROAUS.test(e.l.trim()))return;if(!isFest(e,sh,g))return;m[e.l]=(m[e.l]||0)+entryVal(e,b,sh);});return m;};
+  const val=(ym,sh,g)=>{const P=S.plan[ym];const b=P?.[sh];const m={};if(!b)return m;useYm(ym);(b[g]||[]).forEach(e=>{if(!e.l||e.l===ABGL||e.lk||GIROAUS.test(e.l.trim()))return;if(!isFest(e,sh,g))return;m[e.l]=(m[e.l]||0)+(sh!=='HAUS'&&isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));});return m;};
   const who={TILL:'Till',PATRICK:'Patrick',HAUS:'Haushaltskonto'};
   for(let ym=start;ym<=end&&ym<=PLAN1;ym=ymAdd(ym,1)){const pm=ymAdd(ym,-1),nm=ymAdd(ym,1);
     [['TILL','C'],['TILL','E'],['PATRICK','C'],['PATRICK','E'],['HAUS','G']].forEach(([sh,g])=>{const a=val(pm,sh,g),b=val(ym,sh,g),c=val(nm,sh,g);const out=g!=='E';
@@ -1609,7 +1635,7 @@ function varFlows(ym){const P=S.plan[ym];const out=[];if(!P)return out;useYm(ym)
 function muRows(){const mu=K().sparda.szenario||{};const rate=+mu.rate||1000;let rest=+mu.betrag||0;if(!mu.an||rate<=0||rest<=0)return[];const out=[];let ym=ymAdd(mu.an,1);while(rest>0.005&&out.length<600){const b=Math.min(rate,rest);rest=r2(rest-b);out.push({ym,b,rest});ym=ymAdd(ym,1);}return out;}
 
 /* ---------- Ausblick: was bleibt übrig ---------- */
-function festMap(ym,sh,g){const b=S.plan[ym]?.[sh];const m={};if(!b)return m;(b[g]||[]).forEach(e=>{if(!e.l||e.l===ABGL||e.lk||!isFest(e,sh,g))return;if(g==='E'&&GIROAUS.test(e.l.trim()))return;m[e.l]=(m[e.l]||0)+entryVal(e,b,sh);});return m;}
+function festMap(ym,sh,g){const b=S.plan[ym]?.[sh];const m={};if(!b)return m;(b[g]||[]).forEach(e=>{if(!e.l||e.l===ABGL||e.lk||!isFest(e,sh,g))return;if(g==='E'&&GIROAUS.test(e.l.trim()))return;m[e.l]=(m[e.l]||0)+(sh!=='HAUS'&&isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));});return m;}
 function uebrig(ym,sh){if(!S.plan[ym])return null;useYm(ym);const pm=ymAdd(ym,-1),nm=ymAdd(ym,1);
   const c=festMap(ym,sh,'C'),e=festMap(ym,sh,'E');useYm(pm);const cp=festMap(pm,sh,'C');useYm(nm);const cn=festMap(nm,sh,'C');useYm(ym);
   let aus=0;const einm=[];Object.entries(c).forEach(([l,v])=>{if(cp[l]==null&&cn[l]==null&&S.plan[pm]&&S.plan[nm]&&v>=50)einm.push([l,v]);else aus+=v;});
@@ -2001,6 +2027,7 @@ const HILFE=[
 - spart ab Februar für das nächste Jahr den Gesamtbetrag des Bescheids an. Der Januar (noch alter Bescheid, meist schon abgeschlossen) wird verrechnet, damit bis Dezember genau der Gesamtbetrag zusammenkommt; ab Januar des Folgejahres Gesamtbetrag ÷ 12.
 Wasser und Grundsteuer werden immer im Vorjahr angespart (Januar–Dezember für die Raten des Folgejahres); der Balken im Ausblick („Wasser 2027“) wächst bis Dezember auf 100 %. Geht auch per Schnell eintragen: „Wasserbescheid 2027: Februar 297 €, danach 280 €“. Falsch eingetragen: Bescheid in der Liste mit × löschen und neu eintragen.`],
 ['Neuer Beitrag Versicherung, Abfall, ADAC',`Einstellungen → Gemeinsam → „+ Neuer Bescheid“ → Posten (Wohngebäude-, Hausrat-, Haftpflichtversicherung, Abfallgebühr, ADAC) → neuer Jahresbetrag und Fälligkeitsmonat (vorausgefüllt) → Übernehmen. Die Zahlung im Fälligkeitsmonat wird angepasst. Reicht das in den 12 Monaten davor Angesparte nicht (oder ist etwas übrig), zahlen Till und Patrick im Fälligkeitsmonat je die Hälfte nach (bzw. weniger). Danach wird der neue Betrag ÷ 12 angespart. Diese Posten werden jeweils bis zur nächsten Zahlung angespart. Per Schnell eintragen: „Wohngebäudeversicherung kostet ab April 2027 2.000 €“.`],
+['Was bringt eine Sondertilgung?',`Reiter Kredite, oben: Kredit (Sparda oder ING), Betrag und Datum eingeben – sofort steht da, wie viel Zinsen das bis zum Ende spart, wann der Kredit fertig ist und (Sparda) was am Ende der Zinsbindung 03/2053 übrig bleibt. Es wird nichts gespeichert. Die App warnt, wenn das Jahreslimit von 17.250 € überschritten würde. Auch per Textfeld: „Was bringt eine Sondertilgung von 5.000 € bei der Sparda?“`],
 ['Sparda: Werte laut Bank',`Reiter Kredite → Sparda-Darlehen → „Werte laut Sparda“: Datum und Restschuld wie im Online-Banking oder Tilgungsplan eintragen (die Rate wird am 30. abgebucht – ein Stand vom 11.10. gilt also nach der September-Rate) (z. B. heute und zwei spätere Werte), optional eine geänderte Rate (gilt ab diesem Monat). Bis heute übernimmt der Rechner den Wert genau, bei künftigen Werten die Abweichung zur eigenen Rechnung – geplante Sondertilgungen zählen weiter. Daneben steht, wie weit die App-Rechnung danebenlag. Geht auch per Textfeld: „Sparda Restschuld Dezember 2027 laut Tilgungsplan 306.000“.`],
 ['Storniert, aber Gast zahlt trotzdem',`Konnten Gäste nicht mehr kostenlos stornieren, kommt das Geld trotzdem. Ferienwohnung → Buchung antippen → „Storniert, Gast zahlt trotzdem“ (zweimal tippen). Die Buchung zählt dann weiter bei Auszahlung, Spartopf, Urlaubskonto, Steuer und Excel, aber ohne Übernachtung: kein Gästebeitrag, keine belegten Nächte, nicht in der Belegung für Home Assistant. Zahlt die Plattform nur einen Teil aus, die Auszahlung im Zettel antippen und ändern. „Rückgängig“ macht es wieder zur normalen Buchung. Per Textfeld: „Buchung vom 14.11. storniert, Gast zahlt trotzdem“. Für eine kostenlose Stornierung (kein Geld) gibt es weiter „Storniert (kostenlos)“.`],
 ['Schnell eintragen (KI)',`Beide Textfelder (Übersicht und Ferienwohnung) erkennen viele Befehle OHNE KI (spart Daten, geht sofort): Essen/Sonstiges-Einkäufe und -Ausgleich, Urlaubskonto abheben/einzahlen („200 € vom Urlaubskonto abgehoben am 12.10. für Fähre“), Tagesgeld-Entnahmen, Gehalt eines Monats oder dauerhaft („ab Februar 2027“), Strom (Abrechnung, Einspeisevergütung, Stromkonto), Sondertilgung, Sparda-Restschuld, Wasser-/Grundsteuerbescheid, Jahresbeiträge, Ausgaben vom Girokonto („Patrick 45 € Restaurant bezahlt für Essen gehen“) und Änderungen an Buchungen („Gäste vom 3.10. haben 20 € bar bezahlt“, „Buchung vom 14.11. storniert“). Mehrere Befehle mit Semikolon oder neuer Zeile trennen. „ich/mein“ = wer angemeldet ist. Nur was die App nicht versteht, geht an die KI. Eine neue Buchung in der Übersicht wird automatisch an den Reiter Ferienwohnung weitergereicht. In der Übersicht oben einfach schreiben, was sich geändert hat, z. B. „Essen 36,34“, „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“, „Till Tanken im Oktober 60 statt 115“, „Patrick hat im Oktober 2.610 € bekommen“, „Goldpreis 3.820“, „ING-Rate ab November 2030 auf 0“. Die KI schlägt die Einträge vor, du bestätigst. Ohne KI geht alles auch von Hand.`],
@@ -2047,7 +2074,8 @@ function showTab(t){tab=t;$$('#nav button').forEach(b=>b.setAttribute('aria-sele
 $('#nav').onclick=e=>{const t=e.target.closest('[data-t]')?.dataset.t;if(!t)return;showTab(t);try{history.replaceState(null,'','#'+t)}catch(_){ }render();};
 const h0=(location.hash||'').slice(1);showTab(TABS.some(([k])=>k===h0)?h0:'heute');
 const R={heute:rHeute,monat:rMonat,fewo:rFewo,kredite:rKredite,vermoegen:rVerm,bald:rBald,strom:rStrom,einst:rEinst};
-let raf;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{try{calcAll();R[tab]();if(tab!=='bald')try{rBald();}catch(_){}}catch(err){console.error(err);}});}
+let raf;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{try{calcAll();R[tab]();if(tab!=='bald')try{rBald();}catch(_){}}catch(err){console.error(err);}try{$$('.tw').forEach(t=>t.classList.toggle('tw-x',t.scrollWidth>t.clientWidth+4&&t.scrollLeft<4));}catch(_){}});}
+document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('tw'))t.classList.toggle('tw-x',t.scrollWidth>t.clientWidth+4&&t.scrollLeft<4);},true);
 let rt,lastW=innerWidth;addEventListener('resize',()=>{if(Math.abs(innerWidth-lastW)<40)return;/* Handy-Tastatur ändert nur die Höhe */lastW=innerWidth;const a=document.activeElement;if(a&&a.matches('input,textarea,select'))return;clearTimeout(rt);rt=setTimeout(render,150);});
 {const t=`Version ${APPV.nr} vom ${APPV.datum}`;$('#appv').textContent=t;$('#appv2').textContent='· '+t;}
 $('#today').textContent='Heute: '+now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -2073,7 +2101,7 @@ render();
 })();
 $('#app-close').onclick=()=>{document.activeElement?.blur();try{window.close();}catch(_){}setTimeout(()=>{$('#closed').hidden=false;document.body.classList.add('is-closed');},250);};
 $('#app-reopen').onclick=()=>{$('#closed').hidden=true;document.body.classList.remove('is-closed');};
-window.__goto=ym=>{month=ym;render();};window.__dbg=()=>({ING_END});
+window.__goto=ym=>{month=ym;render();};window.__dbg=()=>({ING_END,CALC});
 /* Monatsfelder: Browser ohne Monats-Auswahl zeigen ein Textfeld – dort „08.2026“, „August 2026“ o. ä. erlauben */
 $$('input[type=month]').forEach(i=>{if(i.type!=='month'){i.placeholder=i.placeholder||'MM.JJJJ';i.style.minWidth='110px';}});
 document.addEventListener('change',e=>{const i=e.target;if(!(i instanceof HTMLInputElement)||i.getAttribute('type')!=='month'||i.type==='month')return;
