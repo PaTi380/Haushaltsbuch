@@ -226,6 +226,7 @@ textarea.io{width:100%;min-height:160px;font-family:ui-monospace,Menlo,Consolas,
   </header>
   <div id="modeNote" class="note" hidden>Testmodus: nicht mit eurer Datenbank verbunden, Daten bleiben nur in diesem Browser. Beispieldaten sind eingetragen.</div>
   <div id="errNote" class="check err" hidden></div>
+  <div id="offNote" class="note" hidden>Offline: Änderungen werden auf diesem Gerät zwischengespeichert und übertragen, sobald wieder Internet da ist.</div>
   <div id="frameNote" class="note" hidden>Diese Ansicht läuft eingebettet. Drucken, PDF und Word-Download funktionieren in der heruntergeladenen HTML-Datei. Daten hier bleiben nur in diesem Browser.</div>
   <main id="view"></main>
 </div>
@@ -269,7 +270,7 @@ function defaultSettings(){ return {
   objBeschr:"Ferienwohnung (Einliegerwohnung im Erdgeschoss), ca. 83 m², 2 Schlafzimmer, Sauna",
   objBeschrEn:"Holiday apartment (ground-floor self-contained flat), approx. 83 m², 2 bedrooms, sauna",
   objBeschrNl:"Vakantiewoning (zelfstandige benedenwoning), ca. 83 m², 2 slaapkamers, sauna", inklusiveNl:"",
-  maxPers:"3", maxPersAusnahme:"4",
+  maxPers:"3", maxPersAusnahme:"4", kalSync:true,
   kontoinhaber:"Patrick Morbach", iban:"", bic:"", bank:"",
   steuerModus:"klein", ustSatz:7, ustSatzSauna:19,
   gbSatz:2.10, gbKinder:false,
@@ -307,10 +308,13 @@ function newGarage(st){ st = st || S.settings; return { id:uid(), lang:"de", mNa
 /* ================= Speicher: Firebase (Haushaltsbuch-Projekt) oder lokaler Testmodus ================= */
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
+/* Echte Seite (GitHub Pages oder config.js geladen): niemals Testmodus, sondern Fehlermeldung */
+const IS_LIVE = /(^|\.)github\.io$/.test(location.hostname) || !!window.FB_CONFIG;
 const COLV = "fewoverwaltung";
 const clean = d => JSON.parse(JSON.stringify(d ?? null));
 function deepMerge(a, b){ const o = Object.assign({}, a||{}); Object.keys(b||{}).forEach(k=>{ const v=b[k]; o[k] = (v && typeof v==="object" && !Array.isArray(v) && o[k] && typeof o[k]==="object") ? deepMerge(o[k], v) : v; }); return o; }
 const store = (()=>{
+  if(IS_LIVE && !FB_OK) return { fb:false, broken:true, onUser:()=>{}, login:async()=>{}, logout:()=>{}, email:()=>"" };
   if(FB_OK){
     firebase.initializeApp(CFG); const auth=firebase.auth(), fs=firebase.firestore();
     try{ fs.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(_){}
@@ -327,7 +331,10 @@ const store = (()=>{
       set: (p,d)=> fs.doc(p).set(clean(d)).catch(e=>{ throw err(e); }),
       merge: (p,d)=> fs.doc(p).set(clean(d),{merge:true}).catch(e=>{ throw err(e); }),
       get: async p => { const s=await fs.doc(p).get(); return s.exists?s.data():null; },
-      transact: (p,fn)=> fs.runTransaction(async t=>{ const r=fs.doc(p); const s=await t.get(r); const {data,result}=fn(s.exists?s.data():null); t.set(r, clean(data)); return result; }).catch(e=>{ throw err(e); })
+      transact: (p,fn)=> fs.runTransaction(async t=>{ const r=fs.doc(p); const s=await t.get(r); const {data,result}=fn(s.exists?s.data():null); t.set(r, clean(data)); return result; }).catch(e=>{ throw err(e); }),
+      setField: async (p,path,v)=>{ const r=fs.doc(p); const val = v===undefined ? firebase.firestore.FieldValue.delete() : clean(v);
+        try{ await r.update(new firebase.firestore.FieldPath(...path), val); }
+        catch(e){ if(e && e.code==="not-found" && v!==undefined){ let o=clean(v); for(let i=path.length-1;i>=0;i--) o={[path[i]]:o}; await r.set(o,{merge:true}).catch(x=>{ throw err(x); }); } else throw err(e); } }
     };
   }
   const LK="vulkaneifeloase-lokal-db"; let D={}; try{ D=JSON.parse(localStorage.getItem(LK)||"{}")||{}; }catch(_){ D={}; }
@@ -342,6 +349,7 @@ const store = (()=>{
     merge: async (p,d)=>{ D[p]=deepMerge(D[p], clean(d)); persist(); setTimeout(emit,0); },
     get: async p => D[p]?clean(D[p]):null,
     transact: async (p,fn)=>{ const {data,result}=fn(D[p]?clean(D[p]):null); D[p]=clean(data); persist(); setTimeout(emit,0); return result; },
+    setField: async (p,path,v)=>{ D[p]=D[p]||{}; let o=D[p]; for(let i=0;i<path.length-1;i++){ o=o[path[i]]=o[path[i]]||{}; } if(v===undefined) delete o[path[path.length-1]]; else o[path[path.length-1]]=clean(v); persist(); setTimeout(emit,0); },
     empty: ()=> Object.keys(D).length===0, seed: d=>{ D=clean(d); persist(); }
   };
 })();
@@ -438,10 +446,11 @@ function rebuildBookings(){
 }
 
 /* ================= Schreiben ================= */
-const lastW = {};
+const lastW = {}, lastExt = {};
 async function w(path, data){ const j=JSON.stringify(clean(data)); if(lastW[path]===j) return; lastW[path]=j; try{ await store.set(path, data); }catch(e){ delete lastW[path]; showErr(e); throw e; } }
 let saveT, syncing=false, again=false;
 function save(){ saveUi(); clearTimeout(saveT); saveT=setTimeout(syncAll, 700); }
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden"){ clearTimeout(saveT); syncAll(); } });
 async function syncAll(){
   if(!S.loaded.ready) return;
   if(syncing){ again=true; return; } syncing=true;
@@ -454,8 +463,8 @@ async function syncAll(){
     await w(COLV+"/garagen", {g:S.garages});
     await w(COLV+"/kalender", {n:S.notes});
     await w(COLV+"/rechnungen", {r:S.invoices, next:S.nextInvoiceNo});
-    for(const v of S.bookings){ if(!v._draft && (v._touched || S.ext[v.id])) S.ext[v.id] = extOf(v); }
-    await w(COLV+"/buchungen", {m:S.ext});
+    for(const v of S.bookings){ if(v._draft || !(v._touched || S.ext[v.id])) continue; const e=extOf(v); const j=JSON.stringify(e); S.ext[v.id]=e; if(lastExt[v.id]===j) continue; lastExt[v.id]=j;
+      await store.setField(COLV+"/buchungen", ["m", v.id], e).catch(x=>{ delete lastExt[v.id]; showErr(x); throw x; }); }
     for(const v of S.bookings){ await persistCore(v); v._dirty=false; }
     if(S.err && !$("#errNote").hidden){ S.err=""; $("#errNote").hidden=true; }
   }catch(e){ /* Meldung zeigt showErr */ }
@@ -476,18 +485,27 @@ async function writeCore(id, nc, prev){
   const ys = {}; const oy = prev ? prev.a.slice(0,4) : null, ny = nc ? nc.a.slice(0,4) : null;
   [oy,ny].filter(Boolean).forEach(y=>{ ys[y] = ((S.fw[y]&&S.fw[y].b)||[]).filter(x=>x.id!==id); });
   if(nc) ys[ny].push(nc);
-  for(const y of Object.keys(ys)){ ys[y].sort((a,b)=>a.a.localeCompare(b.a)); S.fw[y]={b:ys[y]}; lastW["fewo/"+y]=JSON.stringify(clean({b:ys[y]})); await store.set("fewo/"+y, {b:ys[y]}).catch(e=>{ showErr(e); throw e; }); }
+  for(const y of Object.keys(ys)){
+    if(navigator.onLine){ /* gegen gleichzeitige Änderungen: frischen Stand lesen und nur diese Buchung austauschen */
+      const arr = await store.transact("fewo/"+y, cur=>{ let a=((cur&&cur.b)||[]).filter(x=>x.id!==id); if(nc && y===ny) a.push(nc); a.sort((p,q)=>p.a.localeCompare(q.a)); return {data:{b:a}, result:a}; }).catch(e=>{ showErr(e); throw e; });
+      S.fw[y]={b:arr};
+    } else { ys[y].sort((a,b)=>a.a.localeCompare(b.a)); S.fw[y]={b:ys[y]}; await store.set("fewo/"+y, {b:ys[y]}).catch(e=>{ showErr(e); throw e; }); }
+  }
   await urlaubSync(id, prev, nc);
   publishBelegung();
 }
-async function urlaubSync(id, prev, nc){
-  const U = clean(S.urlaub||{}) || {}; U.e = U.e || [];
+function urlaubApply(U, id, prev, nc){
+  U = clean(U||{}) || {}; U.e = U.e || [];
   const od = prev ? fwD(prev) : null;
   const i = U.e.findIndex(x=>x.fid===id || (od && !x.fid && x.d===od.ud && Math.abs((+x.b)-od.urlaub)<0.06));
-  if(!nc || nc.storniert){ if(i<0) return; U.e.splice(i,1); }
-  else { const d=fwD(nc); if(i>=0){ if(U.e[i].d===d.ud && +U.e[i].b===d.urlaub && U.e[i].fid===id) return; U.e[i].d=d.ud; U.e[i].b=d.urlaub; U.e[i].fid=id; } else U.e.push({d:d.ud, b:d.urlaub, t:d.p, fid:id}); }
-  U.e.sort((a,b)=>(a.d||"").localeCompare(b.d||"")); S.urlaub=U;
-  await store.set("config/urlaub", U).catch(e=>{ showErr(e); throw e; });
+  if(!nc || nc.storniert){ if(i<0) return null; U.e.splice(i,1); }
+  else { const d=fwD(nc); if(i>=0){ if(U.e[i].d===d.ud && +U.e[i].b===d.urlaub && U.e[i].fid===id) return null; U.e[i].d=d.ud; U.e[i].b=d.urlaub; U.e[i].fid=id; } else U.e.push({d:d.ud, b:d.urlaub, t:d.p, fid:id}); }
+  U.e.sort((a,b)=>(a.d||"").localeCompare(b.d||"")); return U;
+}
+async function urlaubSync(id, prev, nc){
+  if(!urlaubApply(S.urlaub, id, prev, nc)) return;
+  if(navigator.onLine){ const U = await store.transact("config/urlaub", cur=>{ const base=cur||{start:0,e:[]}; const nu=urlaubApply(base, id, prev, nc); return {data: nu||base, result: nu||base}; }).catch(e=>{ showErr(e); throw e; }); S.urlaub=U; }
+  else { const U=urlaubApply(S.urlaub, id, prev, nc); S.urlaub=U; await store.set("config/urlaub", U).catch(e=>{ showErr(e); throw e; }); }
 }
 let _belPub=null;
 async function publishBelegung(){ try{ const T=todayISO(), von=addDays(T,-2), bis=addDays(T,400);
@@ -496,7 +514,7 @@ async function publishBelegung(){ try{ const T=todayISO(), von=addDays(T,-2), bi
 async function deleteBooking(v){
   const prev = coreById(v.id);
   if(prev){ if(prev.src!=="app") return false; await writeCore(v.id, null, prev); }
-  delete S.ext[v.id]; S.bookings = S.bookings.filter(x=>x.id!==v.id); await w(COLV+"/buchungen", {m:S.ext}); return true;
+  delete S.ext[v.id]; delete lastExt[v.id]; S.bookings = S.bookings.filter(x=>x.id!==v.id); await store.setField(COLV+"/buchungen", ["m", v.id], undefined).catch(e=>showErr(e)); return true;
 }
 /* Rechnungsnummern über eine Transaktion vergeben, damit nie zwei Geräte dieselbe Nummer nehmen */
 function numbered(fn){ return store.transact(COLV+"/rechnungen", cur=>{ const next=Math.max(num(cur&&cur.next)||0, num(S.nextInvoiceNo)||1); const used=fn(next); S.nextInvoiceNo=next+used; const data={r:clean(S.invoices), next:S.nextInvoiceNo}; lastW[COLV+"/rechnungen"]=JSON.stringify(data); return {data, result:next}; }); }
@@ -545,7 +563,7 @@ function demoSeed(){
   store.seed(d);
 }
 function boot(){
-  if(!store.fb && store.empty()) demoSeed();
+  if(!store.fb && store.empty && store.empty()) demoSeed();
   const need = ["fewo","einst","urlaub","vset","vbu","vre","vga","vka"];
   const done = k => { S.loaded[k]=true; if(!S.loaded.ready && need.every(x=>S.loaded[x])){ S.loaded.ready=true; applyRates(); rebuildBookings(); render(); publishBelegung(); } else if(S.loaded.ready){ scheduleRender(); } };
   const onErr = e => { showErr(e); };
@@ -553,7 +571,7 @@ function boot(){
   store.listenDoc("config/einstellungen", d=>{ S.einst=d||{}; applyRates(); done("einst"); }, onErr);
   store.listenDoc("config/urlaub", d=>{ S.urlaub=d||{start:0,e:[]}; done("urlaub"); }, onErr);
   store.listenDoc(COLV+"/einstellungen", d=>{ if(d){ lastW[COLV+"/einstellungen"]=JSON.stringify(clean(d)); S.settings=Object.assign(defaultSettings(), d); } applyRates(); done("vset"); }, onErr);
-  store.listenDoc(COLV+"/buchungen", d=>{ if(d) lastW[COLV+"/buchungen"]=JSON.stringify(clean(d)); S.ext=(d&&d.m)||{}; if(S.loaded.ready) rebuildBookings(); done("vbu"); }, onErr);
+  store.listenDoc(COLV+"/buchungen", d=>{ S.ext=(d&&d.m)||{}; Object.entries(S.ext).forEach(([k,v])=>lastExt[k]=JSON.stringify(v)); if(S.loaded.ready) rebuildBookings(); done("vbu"); }, onErr);
   store.listenDoc(COLV+"/rechnungen", d=>{ if(d){ lastW[COLV+"/rechnungen"]=JSON.stringify(clean(d)); S.invoices=d.r||[]; S.nextInvoiceNo=d.next||S.nextInvoiceNo; } done("vre"); }, onErr);
   store.listenDoc(COLV+"/garagen", d=>{ if(d){ lastW[COLV+"/garagen"]=JSON.stringify(clean(d)); S.garages=d.g||[]; } done("vga"); }, onErr);
   store.listenDoc(COLV+"/kalender", d=>{ if(d){ lastW[COLV+"/kalender"]=JSON.stringify(clean(d)); S.notes=d.n||[]; } done("vka"); }, onErr);
@@ -563,6 +581,8 @@ function gate(on, msg){ const g=$("#gate"); if(!on){ g.hidden=true; return; } g.
   $("#loginBtn").onclick=async()=>{ try{ await store.login(); }catch(e){ gate(true, "Anmeldung hat nicht geklappt: "+(e.message||e.code)); } }; }
 let booted=false;
 function start(){ $("#view").innerHTML=`<div class="panel empty">Lade Daten …</div>`;
+  if(store.broken){ const g=$("#gate"); g.hidden=false; g.innerHTML=`<div class="gatebox"><div class="brand"><i aria-hidden="true"></i><b>Vulkaneifeloase</b></div><p><b>Keine Verbindung zur Datenbank.</b></p><p class="hint">Bitte Internetverbindung prüfen und die Seite neu laden. Es wurde nichts verändert.</p><button class="btn primary" onclick="location.reload()">Neu laden</button></div>`; return; }
+  const off=()=>{ const n=$("#offNote"); if(n) n.hidden=navigator.onLine; }; window.addEventListener("online",off); window.addEventListener("offline",off); off();
   store.onUser(u=>{ if(!u){ gate(true); return; } gate(false); if(!booted){ booted=true; boot(); } }); }
 
 
@@ -1264,6 +1284,7 @@ function editorBooking(b){
   const sub = tabs.some(t=>t[0]===sub0) ? sub0 : "uebersicht";
   let body = "";
   if(sub==="uebersicht") body = `<div class="cards2"><div><h3>Geld und Urlaubskonto</h3>${zettel(b)}</div><div><h3>Was euch bleibt</h3><div id="bEcon">${econBox(b)}</div></div></div>
+     ${b._draft?"":sperrBox(b)}
      ${b._draft?"":`<div class="toolbar" style="margin-top:16px">${b.status==="storniert"||b.status==="storniert_bezahlt"?`<button class="btn" data-act="reakt">Wieder aktivieren</button>`:`<button class="btn" data-act="stornoFrei">Storniert (kostenlos)</button><button class="btn" data-act="stornoBez">Storniert, Gast zahlt trotzdem</button>`}</div>`}`;
   else if(sub==="daten") body = formBooking(b);
   else if(sub==="vertrag") body = checksHtml(checksBooking(b)) + docToolbar("vertrag", b.lang) + `<div class="sheetwrap"><div class="sheet doc" id="docOut">${docVertrag(b)}</div></div>`;
@@ -1351,6 +1372,18 @@ function sumBooking(b){ const c=calc(b);
 }
 
 /* ---------- Übersicht ---------- */
+/* Kalender der Plattformen: Direktbuchungen dort sperren, Stornos wieder freigeben */
+function sperrBedarf(b){ if(b._draft || !b.anreise) return null; const st=S.settings, sp=b.sperre||{};
+  const plats = !isPlat(b) ? ["booking","airbnb"] : (st.kalSync ? [] : [b.channel==="booking"?"airbnb":"booking"]);
+  if(!plats.length) return null;
+  const aktiv = b.core && b.status!=="storniert" && b.status!=="storniert_bezahlt" && (b.abreise||"")>=todayISO();
+  if(aktiv){ const offen=plats.filter(k=>!sp[k]); return {art:"sperren", plats, offen}; }
+  const frei=plats.filter(k=>sp[k]); if((b.status==="storniert"||b.status==="storniert_bezahlt"||!b.core) && frei.length && (b.abreise||"")>=todayISO()) return {art:"freigeben", plats:frei, offen:frei};
+  return null; }
+const PLAT_NAME = {booking:"Booking.com", airbnb:"Airbnb"};
+function sperrBox(b){ const s=sperrBedarf(b); if(!s) return "";
+  return `<div class="check ${s.offen.length?"warn":"ok"}" style="margin-top:14px"><b>${s.art==="sperren"?"Sperren":"Freigeben"}</b><span>${s.art==="sperren"?`Den Zeitraum ${fD(b.anreise)}–${fD(b.abreise)} in den anderen Kalendern sperren, damit niemand doppelt bucht:`:`Die Buchung ist storniert. Den Zeitraum ${fD(b.anreise)}–${fD(b.abreise)} wieder freigeben:`}
+   <span style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px">${s.plats.map(k=>`<label class="chk"><input type="checkbox" data-sp="${k}" ${(b.sperre||{})[k]?"checked":""}> ${s.art==="sperren"?`bei ${PLAT_NAME[k]} gesperrt`:`bei ${PLAT_NAME[k]} noch gesperrt`}</label>`).join("")}</span></span></div>`; }
 function liveViews(){ return S.bookings.filter(b=>!b._draft && b.core && b.status!=="storniert"); }
 function viewUebersicht(v){
   const T=todayISO(), y=T.slice(0,4), py=String(+y-1), md=T.slice(5);
@@ -1361,6 +1394,7 @@ function viewUebersicht(v){
   const next = S.bookings.filter(b=>!b._draft && b.status!=="storniert" && b.abreise>=T).sort((a,b)=>a.anreise.localeCompare(b.anreise)).slice(0,6);
   const todo = []; S.bookings.filter(b=>!b._draft && !isPlat(b) && OFFEN.includes(b.status)).forEach(b=>todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>${esc(bookingLabel(b))}</b> ${b.status==="anfrage"?"Anfrage: Vertrag senden":"Vertrag versendet: auf Unterschrift warten, dann bestätigen"} · ${fD(b.anreise)}</button>`));
   S.bookings.filter(b=>!b._draft && b.core && b.status!=="storniert" && b.anreise>=T && b.anreise<=addDays(T,2)).forEach(b=>todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>Anreise ${fD(b.anreise)}</b> ${esc(bookingLabel(b))}: Online-Check-in und Gästemeldung prüfen</button>`));
+  S.bookings.forEach(b=>{ const sp=sperrBedarf(b); if(sp && sp.offen.length) todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>${sp.art==="sperren"?"Kalender sperren":"Kalender freigeben"}</b> ${fD(b.anreise)}–${fD(b.abreise)} bei ${sp.offen.map(k=>PLAT_NAME[k]).join(" und ")} (${esc(bookingLabel(b))})</button>`); });
   S.invoices.filter(i=>i.status==="entwurf").forEach(i=>todo.push(`<button class="todo" data-act="goI" data-id="${i.id}"><b>Rechnungsentwurf</b> ${esc((i.empf||{}).firma||(i.empf||{}).name||"")} festschreiben</button>`));
   const ys=Object.keys(by).sort(); const mx=Math.max(1,...ys.map(k=>by[k].b));
   const grp={}; L.filter(x=>x.b.anreise>=`${py}-01-01` && x.d.brutto>0 && x.d.p!=="Privat").forEach(({d})=>{ const k=d.p==="Airbnb"?`Airbnb (${d.modell==="neu"?"neues":"altes"} Modell)`:d.p; const o=grp[k]??={c:0,n:0,g:0,f:0,net:0,p:d.p}; o.c++; o.n+=d.nOcc; o.g+=d.brutto; o.f+=d.geb; o.net+=d.netto; });
@@ -1544,6 +1578,7 @@ function viewSettings(v){ const s=S.settings;
    ${F("Name der Unterkunft","objName",s.objName)}
    ${F("Beschreibung (DE)","objBeschr",s.objBeschr,{wide:true,review:true})}${F("Beschreibung (EN)","objBeschrEn",s.objBeschrEn,{wide:true,review:true})}${F("Beschreibung (NL)","objBeschrNl",s.objBeschrNl,{wide:true,review:true})}
    ${F("Regelbelegung (Personen)","maxPers",s.maxPers,{type:"number",hint:"so viele Gäste ohne Absprache"})}${F("Höchstens in Ausnahmefällen","maxPersAusnahme",s.maxPersAusnahme,{type:"number",hint:"nur nach Absprache mit den Gästen"})}
+   <div class="wide">${C("Booking.com und Airbnb gleichen ihre Kalender bereits gegenseitig ab (iCal oder Channel Manager)","kalSync",s.kalSync)}<span class="hint">Wenn nicht: Das Tool erinnert bei jeder Plattformbuchung daran, die andere Plattform zu sperren. Direktbuchungen müsst ihr immer auf beiden sperren.</span></div>
   </div></fieldset>
   <fieldset><legend>Steuer und Bank</legend><div class="grid">
    ${F("Steuernummer oder Kleinunternehmer-ID","steuernr",s.steuernr,{hint:"steht auf der Rechnung, wenn ausgefüllt (§ 34a UStDV)"})}
@@ -1635,6 +1670,7 @@ const STRUCT = new Set(["gTyp","preisModus","hund","kautionArt","steuerModus","s
 document.addEventListener("input", onField); document.addEventListener("change", onField);
 function onField(ev){
   const el = ev.target;
+  if(el.dataset.sp && ev.type==="change"){ const b=curB(); if(!b) return; b.sperre=Object.assign({}, b.sperre||{}, {[el.dataset.sp]:el.checked}); b._touched=true; save(); deferRender(); return; }
   if(el.id==="bFilter" && ev.type==="change"){ S.ui.bFilter=el.value; saveUi(); deferRender(); return; }
   if(el.id==="stYear" && ev.type==="change"){ S.ui.stYear=el.value; saveUi(); deferRender(); return; }
   if(el.dataset.g){ if(ev.type!=="change") return; S[el.dataset.g] = Math.max(1, Math.round(num(el.value))); save(); toast("Gespeichert"); return; }
@@ -1642,6 +1678,8 @@ function onField(ev){
   const pf = el.closest("form");
   if(pf && pf.dataset.ent==="preise"){ if(ev.type!=="change") return; const p=prState(); p[el.dataset.f] = el.type==="checkbox" ? el.checked : el.value; saveUi(); deferRender(); return; }
   const onChangeOnly = el.type==="checkbox" || el.tagName==="SELECT";
+  /* Buchungen: Textfelder erst beim Verlassen des Feldes speichern (keine Zwischenstände im Urlaubskonto) */
+  if(ev.type==="change" && !onChangeOnly && el.closest("#bForm")){ const bb=curB(); if(bb && !bb._draft){ save(); const ec=$("#bEcon"); if(ec) ec.innerHTML=econBox(bb); } return; }
   if(onChangeOnly ? ev.type!=="change" : ev.type!=="input") return;
   const form = el.closest("form"); if(!form) return;
   const ent = form.dataset.ent;
@@ -1651,7 +1689,7 @@ function onField(ev){
   if(ent==="booking" && /^extras\.\d+\.gb$/.test(el.dataset.f)) val = val==="1";
   setPath(obj, el.dataset.f, val);
   if(ent==="booking"){ obj._dirty=true; obj._touched=true; if(el.dataset.f==="channel" && isPlat(obj) && OFFEN.includes(obj.status)) obj.status="bestaetigt"; }
-  if(!(ent==="booking" && obj._draft)) save(); else saveUi();
+  if(ent!=="booking") save(); else if(onChangeOnly && !obj._draft) save(); else saveUi();
   const key = el.dataset.f.split(".").pop();
   if(STRUCT.has(el.dataset.f) || (ent==="invoice" && key==="art") || ent==="settings" && STRUCT.has(key)){ deferRender(); return; }
   if(ent==="booking"){ const s=$("#bSum"); if(s) s.innerHTML=sumBooking(obj); const l=$("#bList"); if(l) l.innerHTML=listBookings(); }
@@ -1694,7 +1732,7 @@ document.addEventListener("click", async ev=>{
       if(isPlat(b) && !num(b.preis) && !num(b.auszahlung)){ toast("Bitte Preis oder Auszahlung eintragen"); S.ui.subB="daten"; ru(); break; }
       const dup = S.bookings.find(x=>!x._draft && x.id!==b.id && x.status!=="storniert" && x.anreise===b.anreise && x.abreise===b.abreise && x.channel===b.channel);
       if(dup && !arm(t,"Gibt es schon – trotzdem speichern?")) break;
-      delete b._draft; delete b._kiHint; b._touched=true; b._dirty=true; S.ui.subB="uebersicht"; rr(); toast(isPlat(b)||!OFFEN.includes(b.status)?"Gespeichert – Urlaubskonto aktualisiert":"Gespeichert"); break; }
+      delete b._draft; delete b._kiHint; b._touched=true; b._dirty=true; S.ui.subB="uebersicht"; rr(); toast(!isPlat(b)&&!OFFEN.includes(b.status)?"Gespeichert – jetzt bei Booking und Airbnb sperren":isPlat(b)?"Gespeichert – Urlaubskonto aktualisiert":"Gespeichert"); break; }
     case "dropDraft": S.bookings=S.bookings.filter(x=>x!==b); S.ui.selB=null; ru(); break;
     case "dupB": { const nb=newDraft(extOf(b)); Object.assign(nb,{ anreise:"", abreise:"", status:"anfrage", zahlFrist:"", saunaTage:0, vertragDatum:todayISO(), stoTage:"", spO:"", uO:"", auszahlung:"", kommPfl:"", extras:[] }); delete nb.beispiel; ru(); toast("Gast übernommen – Daten eintragen"); break; }
     case "delB": if(arm(t,"Wirklich löschen?")){ if(b._draft){ S.bookings=S.bookings.filter(x=>x!==b); S.ui.selB=null; ru(); break; }
@@ -1770,7 +1808,7 @@ function importData(txt){ try{ const d=JSON.parse(txt); let v=null;
   else if(d && d.settings && Array.isArray(d.bookings)){ const ext={}; d.bookings.filter(b=>!b.beispiel).forEach(b=>{ const x=clean(b); x.status = OFFEN.includes(x.status)?x.status:"anfrage"; ext["v-"+(b.id||uid())]=x; }); v={settings:d.settings, ext, invoices:d.invoices||[], nextInvoiceNo:d.nextInvoiceNo, garages:(d.garages||[]).filter(g=>!g.beispiel), notes:[]}; }
   if(!v) throw new Error("x");
   S.settings=Object.assign(defaultSettings(), v.settings||{}); applyRates();
-  S.ext=Object.assign({}, S.ext, v.ext||{}); S.invoices = mergeById(S.invoices, v.invoices||[]); S.garages=mergeById(S.garages, v.garages||[]); S.notes=mergeById(S.notes, v.notes||[]);
+  S.ext=Object.assign({}, S.ext, v.ext||{}); S.invoices = mergeById(v.invoices||[], S.invoices); /* vorhandene (festgeschriebene) Rechnungen haben Vorrang */ S.garages=mergeById(S.garages, v.garages||[]); S.notes=mergeById(S.notes, v.notes||[]);
   const maxNr=Math.max(0,...S.invoices.map(i=>i.nr||0)); S.nextInvoiceNo=Math.max(S.nextInvoiceNo, num(v.nextInvoiceNo)||0, maxNr+1);
   rebuildBookings(); save(); render(); toast("Sicherung übernommen (Buchungen des Haushaltsbuchs bleiben unverändert)"); } catch(e){ toast("Das ist keine gültige Sicherungsdatei"); } }
 function mergeById(a, b){ const m={}; [...a, ...b].forEach(x=>{ if(x && x.id) m[x.id]=x; }); return Object.values(m); }
