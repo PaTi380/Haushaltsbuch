@@ -888,10 +888,14 @@ function hausInfo(){const now=hsOf(month);if(now==null){useYm(month);return '';}
     why=ch.length?ch.map(([l,d])=>`${l} ${d>0?'+':'−'}${eur(Math.abs(d))}`).join(', '):(nx[0]==='2027-01'?'Heizöl-Rücklage (bis Dezember 2026) fällt weg':'feste Beträge im Plan ändern sich');}
   useYm(month);
   return `<div class="hsinfo"><div class="row"><span><b>Haus, sonst.</b> je Person im ${ymName(month)}</span><b class="num">${eur(now)}</b></div>${nx?`<div class="note" style="margin:2px 0 0">Nächste Änderung ab <b>${ymName(nx[0])}</b>: ${eur(nx[1])} (${nx[1]>now?'+':'−'}${eur(Math.abs(nx[1]-now))}) · ${why}</div>`:'<div class="note" style="margin:2px 0 0">Keine Änderung bis '+ymName(PLAN1)+' geplant.</div>'}</div>`;}
+let fwNOff=0;
 function rFwNext(){const el=$('#h-fw');if(!el||typeof fwList!=='function')return;const R=FR();
-  const L=fwList().filter(b=>b.ud>=TODAY).sort((a,b)=>a.ud.localeCompare(b.ud));if(!L.length){el.hidden=true;return;}el.hidden=false;const b=L[0];
+  const A=fwList().sort((a,b)=>a.ud.localeCompare(b.ud));let i0=A.findIndex(b=>b.ud>=TODAY);if(i0<0)i0=A.length;
+  if(!A.length){el.hidden=true;return;}el.hidden=false;const idx=Math.max(0,Math.min(A.length-1,i0+fwNOff));fwNOff=idx-i0;const b=A[idx];const L=A.slice(idx);
   const spar=b.spar;const tage=Math.round((Date.parse(b.ud)-Date.parse(TODAY))/864e5);
-  el.innerHTML=`<div class="head"><h2>Nächste Gutschrift Ferienwohnung</h2><span class="muted" style="font-size:12px">${tage===0?'heute':tage===1?'morgen':'in '+tage+' Tagen'}</span></div>
+  const wann=tage===0?'heute':tage===1?'morgen':tage>1?'in '+tage+' Tagen':tage===-1?'gestern':'vor '+(-tage)+' Tagen';
+  const nav=`<span style="display:flex;gap:6px;align-items:center"><button type="button" class="btn sec sm" data-fwn="-1" ${idx<=0?'disabled':''} aria-label="Vorherige Gutschrift">←</button>${fwNOff?'<button type="button" class="btn sec sm" data-fwn="0">Nächste</button>':''}<button type="button" class="btn sec sm" data-fwn="1" ${idx>=A.length-1?'disabled':''} aria-label="Spätere Gutschrift">→</button></span>`;
+  el.innerHTML=`<div class="head"><h2>${tage<0?'Frühere Gutschrift':fwNOff>0?'Spätere Gutschrift':'Nächste Gutschrift'} Ferienwohnung</h2>${nav}</div><div class="muted" style="font-size:12px;margin:-4px 0 6px">${wann}${tage<0?' fällig – noch nicht angekommen? Auszahlungen kommen manchmal ein paar Tage später.':''}</div>
   <div class="fwn-top"><div><span class="fwn-d">${dDE(b.ud)}</span><span class="muted">${esc(b.p)} · ${dDE(b.a)}–${dDE(b.ab)} · ${gaeste(b)}</span></div><b class="num fwn-v">${eur(b.netto)}</b></div>
   ${b.bar?`<div class="row"><span>zusätzlich bar vor Ort <small class="muted">${b.barM==='nein'?'(nicht aufs Urlaubskonto)':b.barM==='voll'?'(komplett aufs Urlaubskonto)':'(wird mit aufgeteilt)'}</small></span><span class="num">${eur(b.bar)}</span></div>`:''}
   <div class="fwn-split"><div class="fwn-h">Davon weiterleiten</div>
@@ -900,6 +904,7 @@ function rFwNext(){const el=$('#h-fw');if(!el||typeof fwList!=='function')return
    <div class="fwn-r s"><span>🐷 <b>Spartopf</b> <small class="muted">${Math.round(R.urlProz*100)} % + ${eur(R.urlFix,0)}</small></span><b class="num">${eur(spar)}</b></div></div>
   ${b.sicher?'':`<div class="note">Stornierbar bis ${dDE(b.frist)}.</div>`}
   ${L.length>1?`<div class="fwn-more">Danach: ${L.slice(1,4).map(x=>`${dDE(x.ud)} <b class="num">${eur(x.netto,0)}</b> <span class="muted">(${esc(x.p)})</span>`).join(' · ')}</div>`:''}`;}
+document.getElementById('h-fw')?.addEventListener('click',e=>{const t=e.target.closest('[data-fwn]');if(!t)return;const v=+t.dataset.fwn;fwNOff=v===0?0:fwNOff+v;rFwNext();});
 /* ---------- Monat ---------- */
 let mWho='TILL';
 $('#m-who').innerHTML=SH.map(s=>`<button type="button" data-w="${s}">${SHN[s]}</button>`).join('');
