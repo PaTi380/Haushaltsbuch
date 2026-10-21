@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.19 vom 21.10.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.20 vom 21.10.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -226,6 +226,10 @@ button.rv-li{text-decoration:underline dotted}
 .pl-done .name{text-decoration:line-through;color:var(--mute)}
 .st-open:disabled{opacity:.55}
 .st-add + .st-add{margin-left:-4px}
+.re-x{position:static;flex-shrink:0;background:var(--soft);color:var(--ink)}
+.rz-top{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.rz-top .choice{padding:12px;gap:10px}
+.rz-top .choice span:first-child{font-size:24px}
 .pk-item{border-top:1px solid var(--line)}
 .pk-item:first-child{border-top:0}
 .pk-item .st-row{border-top:0}
@@ -268,7 +272,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.19</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.20</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -352,7 +356,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.19 vom 21.10.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.20 vom 21.10.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -374,7 +378,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.19 vom 21.10.2026";
+const APP_VERSION = "Version 1.20 vom 21.10.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte", plan:"einkauf_plan"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -772,7 +776,8 @@ function renderRecipes(){
         ${[[0,"Alle Preise"],[5,"bis 5 €"],[10,"bis 10 €"],[15,"bis 15 €"],[20,"bis 20 €"]].map(([v,l]) => `<option value="${v}"${rzMax===v?" selected":""}>${l}</option>`).join("")}
       </select></div>` : "";
   el.innerHTML = `
-    <button class="choice" id="rzScan" style="margin:0 0 14px"><span>📖</span><span><b>Rezept einlesen</b><small>Foto oder PDF – nur die Zutaten werden gespeichert</small></span></button>
+    <div class="rz-top"><button class="choice" id="rzScan" style="margin:0"><span>📷</span><span><b>Einlesen</b><small>Foto oder PDF</small></span></button>
+      <button class="choice" id="rzNew" style="margin:0"><span>✏️</span><span><b>Von Hand</b><small>Zutaten eintippen</small></span></button></div>
     ${tools}
     ${!list.length && recipes.length ? `<div class="empty" style="padding:24px">Kein Rezept in dieser Preisklasse</div>` : ""}
     ${list.length ? `<div class="list">${list.map(({r, c}) => { const onL = recipeOnList(r), open = rzOpen.has(r.id); return `
@@ -782,7 +787,7 @@ function renderRecipes(){
         <span class="st-p">${c.n ? `ca. ${eur(c.sum)}` : "–"}${c.n && c.n < c.tot ? `<small class="same">${c.n} von ${c.tot} mit Preis</small>` : ""}</span>
         <span class="pk-chev" aria-hidden="true">${open ? "▴" : "▾"}</span></button>
         <button class="st-add${onL ? " on" : ""}" data-${onL ? "rzdel" : "rzadd"}="${esc(r.id)}" aria-label="${onL ? `Zutaten von ${esc(r.title)} wieder von der Liste nehmen` : `Zutaten von ${esc(r.title)} auf die Liste`}">${onL ? "✓" : "+"}</button></div>
-        ${open ? ingredientsHtml(r) + `<div class="pk-ing" style="padding-top:0"><button class="linkbtn" style="color:var(--leaf)" data-rzdetail="${esc(r.id)}">Rezept öffnen – bearbeiten, einplanen, löschen</button></div>` : ""}
+        ${open ? ingredientsHtml(r) + `<div class="pk-ing" style="padding-top:0"><button class="linkbtn" style="color:var(--leaf);margin-right:18px" data-rzedit="${esc(r.id)}">✏️ Bearbeiten</button><button class="linkbtn" style="color:var(--leaf)" data-rzdetail="${esc(r.id)}">Öffnen – einplanen, löschen</button></div>` : ""}
       </div>`; }).join("")}</div>
       <p class="st-foot">Der Preis ist geschätzt: anteilig nach Menge, also 20 g Parmesan aus einer 200-g-Packung zählen ein Zehntel. Vorräte wie Salz oder Öl zählen nicht mit. Er aktualisiert sich mit jedem neuen Bon.</p>`
     : recipes.length ? "" : `<div class="empty"><strong>Noch keine Rezepte</strong>Fotografiere ein Rezept oder lade eine PDF hoch – gespeichert werden nur die Zutaten.</div>`}`;
@@ -809,7 +814,8 @@ function openRecipe(id){
           ${r.li ? `<span class="meta rz-tag">steht schon auf der Liste${fold(r.li.name) !== fold(r.name) ? ` als „${esc(r.li.name)}“` : ""}</span>` : r.vorrat ? `<span class="meta rz-tag">Vorrat – meist im Haus</span>` : ""}</span>
         <span class="price">${(() => { const c = ingredientCost(r.name, r.qty); if (!c) return ""; return `${c.pr.est || (c.share != null && Math.abs(c.share - 1) > 0.01) ? "ca. " : ""}${eur(c.cost)}${c.share != null ? `<small class="same" style="display:block;font-weight:500">von ${eur(c.pr.p)} / ${esc(c.pack)}</small>` : c.whole ? `<small class="same" style="display:block;font-weight:500">ganze Packung</small>` : ""}`; })()}</span>
       </label>`).join("")}</div>
-    <div class="actions"><button class="btn-danger" id="rzDel">Löschen</button><button class="btn-main" id="rzAdd"></button></div>
+    <div class="actions"><button class="btn-danger" id="rzDel">Löschen</button><button class="btn-ghost" id="rzEdit">Bearbeiten</button></div>
+    <div class="actions" style="margin-top:8px"><button class="btn-main" id="rzAdd"></button></div>
     <div class="actions" style="margin-top:8px"><button class="btn-ghost" id="rzPlan">${plan.some(p => !p.done && p.recipeId === rec.id) ? "Eingeplant ✓ – ausplanen" : "Einplanen"}</button><button class="btn-ghost" id="rzCooked">Heute gekocht${rec.cooked ? ` (bisher ${rec.cooked}×)` : ""}</button></div>`;
   $("#rzPlan").onclick = async () => { closeSheets(); plan.some(p => !p.done && p.recipeId === rec.id) ? await unplanRecipe(rec) : await planRecipe(rec, false); };
   $("#rzCooked").onclick = async () => { closeSheets(); await markCooked(rec); showToast(`${rec.title}: ${(rec.cooked||0)+1}× gekocht`); };
@@ -817,6 +823,7 @@ function openRecipe(id){
   $("#rzRows").addEventListener("change", e => { const i = +e.target.dataset.i; if (rows[i]) { rows[i].on = e.target.checked; upd(); } });
   upd();
   $("#rzAdd").onclick = async () => { closeSheets(); await addRecipeToList(rec, rows); };
+  $("#rzEdit").onclick = () => { closeSheets(); openRecipeEditor(rec); };
   $("#rzDel").onclick = async () => {
     closeSheets(); const {id: rid, ...data} = rec;
     await safe(store.deleteRecipe(rid));
@@ -856,6 +863,8 @@ $("#rez").addEventListener("click", e => {
   }
   const a = e.target.closest("[data-rzadd]"); if (a) { const rec = recipes.find(r => r.id === a.dataset.rzadd); if (rec) addRecipeToList(rec); return; }
   const d = e.target.closest("[data-rzdel]"); if (d) { const rec = recipes.find(r => r.id === d.dataset.rzdel); if (rec) removeRecipeFromList(rec, {uncount: true}); return; }
+  if (e.target.closest("#rzNew")) { openRecipeEditor(null); return; }
+  const ed = e.target.closest("[data-rzedit]"); if (ed) { const rec = recipes.find(r => r.id === ed.dataset.rzedit); if (rec) openRecipeEditor(rec); return; }
   const x = e.target.closest("[data-rzdetail]"); if (x) { openRecipe(x.dataset.rzdetail); return; }
   const o = e.target.closest("[data-rid]"); if (o) { const id = o.dataset.rid; rzOpen.has(id) ? rzOpen.delete(id) : rzOpen.add(id); renderRecipes(); }
 });
@@ -884,7 +893,7 @@ function renderPlan(){
     return `<div class="st-row${m.done ? " pl-done" : ""}"><button class="st-open" data-pl="${esc(m.id)}">
       <span class="ico" aria-hidden="true">${r ? "🍽️" : "📝"}</span>
       <span class="txt"><span class="name">${esc(m.title)}</span><span class="meta">${m.done ? `gekocht am ${new Date(m.doneAt).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}` : meta}</span></span></button>
-      ${m.done ? "" : r && miss.length ? `<button class="st-add" data-plist="${esc(m.id)}" aria-label="Fehlende Zutaten auf die Liste">🛒</button>` : ""}
+      ${m.done ? "" : r && miss.length ? `<button class="st-add" data-plist="${esc(m.id)}" aria-label="Fehlende Zutaten auf die Liste">🛒</button>` : !r ? `<button class="st-add" data-plrec="${esc(m.id)}" aria-label="${esc(m.title)} in Rezepte aufnehmen" title="In Rezepte aufnehmen">📖</button>` : ""}
       ${m.done ? "" : `<button class="st-add" data-pdone="${esc(m.id)}" aria-label="${esc(m.title)} gekocht" title="Gekocht">✓</button>`}
     </div>`;
   };
@@ -991,16 +1000,72 @@ function openPicker(){
   };
 }
 let pkWithList = true;
+// Rezept anlegen oder bearbeiten: Titel, Portionen, Zutaten (Name + Menge)
+function openRecipeEditor(rec, {title = "", planId = null} = {}){
+  $("#stSheet").onclick = null;
+  let rows = (rec?.zutaten || []).map(z => ({...z}));
+  if (!rows.length) rows = [{name: "", qty: ""}, {name: "", qty: ""}, {name: "", qty: ""}];
+  let tVal = rec?.title || title, pVal = rec?.portionen || "";
+  const names = [...new Set([...Object.values(products).map(p => p.name), ...BASIS])].filter(Boolean).sort((a,b) => a.localeCompare(b, "de"));
+  const draw = () => {
+    $("#stSheet").innerHTML = `<h3>${rec ? "Rezept bearbeiten" : "Neues Rezept"}</h3>
+      <p class="sub">Nur die Zutaten – Zubereitung braucht die App nicht. Leere Zeilen werden ignoriert.</p>
+      <div class="rv-head"><div><label for="reT">Name</label><input id="reT" type="text" value="${esc(tVal)}" placeholder="z. B. Kürbissuppe"></div>
+        <div><label for="reP">Portionen</label><input id="reP" type="text" inputmode="numeric" value="${esc(pVal)}" placeholder="–"></div></div>
+      <span class="lbl">Zutaten (Name, Menge)</span>
+      <datalist id="reNames">${names.map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+      <div id="reRows">${rows.map((r,i) => `
+        <div class="rv-row"><input type="text" class="rv-name" list="reNames" data-i="${i}" data-f="name" value="${esc(r.name)}" placeholder="Zutat" aria-label="Zutat">
+          <input type="text" class="rv-small" data-i="${i}" data-f="qty" value="${esc(r.qty || "")}" placeholder="Menge" aria-label="Menge" style="text-align:left">
+          <button type="button" class="pg-x re-x" data-del="${i}" aria-label="Zutat entfernen">✕</button></div>`).join("")}</div>
+      <button type="button" class="linkbtn" id="reAdd" style="color:var(--leaf);margin-top:6px">+ Zutat hinzufügen</button>
+      <div class="actions"><button class="btn-ghost" data-close>Abbrechen</button><button class="btn-main" id="reSave">Speichern</button></div>`;
+    $("#reT").oninput = e => { tVal = e.target.value; }; $("#reP").oninput = e => { pVal = e.target.value; };
+    $("#reRows").addEventListener("input", e => { const r = rows[+e.target.dataset.i]; if (r) r[e.target.dataset.f] = e.target.value; });
+    $("#reRows").querySelectorAll("[data-del]").forEach(b => b.onclick = () => { rows.splice(+b.dataset.del, 1); draw(); });
+    $("#reAdd").onclick = () => { rows.push({name: "", qty: ""}); draw(); $("#reRows").querySelectorAll(".rv-name")[rows.length - 1]?.focus(); };
+    $("#reSave").onclick = save;
+  };
+  const save = async () => {
+    const t = cap($("#reT").value.trim()); if (!t) { showToast("Bitte einen Namen eingeben"); return; }
+    const zutaten = rows.filter(r => r.name.trim()).map(r => ({name: cap(r.name.trim()), qty: String(r.qty || "").trim(),
+      cat: products[keyOf(r.name)]?.cat || r.cat || guessCat(r.name), vorrat: isPantry({name: r.name, qty: r.qty})}));
+    const portionen = num($("#reP").value) || null;
+    $("#reSave").disabled = true;
+    if (rec) {
+      const old = rec.title;
+      await safe(store.updateRecipe(rec.id, {title: t, portionen, zutaten}));
+      if (old !== t) {   // Namen überall mitziehen
+        for (const p of plan.filter(p => p.recipeId === rec.id)) await safe(store.planUpdate(p.id, {title: t}));
+        for (const i of items.filter(i => i.recipe && i.recipe.split(", ").includes(old))) await safe(store.update(i.id, {recipe: i.recipe.split(", ").map(x => x === old ? t : x).join(", ")}));
+      }
+      closeSheets(); showToast(`${t} gespeichert`);
+    } else {
+      const id = await safe(store.saveRecipe({title: t, portionen, zutaten, by: S.me || "", createdAt: Date.now()}));
+      // freie Einträge im Essensplan mit gleichem Namen mit dem neuen Rezept verknüpfen
+      const link = plan.filter(p => !p.recipeId && (p.id === planId || fold(p.title) === fold(title || t)));
+      for (const p of link) await safe(store.planUpdate(p.id, {recipeId: id, title: t}));
+      closeSheets(); showToast(`${t} ist jetzt im Rezepte-Tab${link.length ? " und mit dem Essensplan verknüpft" : ""}`);
+    }
+    if (tab === "rez") renderRecipes(); if (tab === "plan") renderPlan();
+  };
+  draw(); openSheet("#stScrim");
+  if (!rec && title) setTimeout(() => $("#reRows .rv-name")?.focus(), 250);
+}
 function openPlanItem(id){
   const m = plan.find(x => x.id === id); if (!m) return;
   const r = recFor(m), miss = r ? missingFor(r) : [];
   $("#stSheet").onclick = null;
   $("#stSheet").innerHTML = `<h3>${r ? "🍽️" : "📝"} ${esc(m.title)}</h3>
     <p class="sub">${m.done ? "Schon gekocht." : r ? (miss.length ? `Noch nicht auf der Liste: ${miss.slice(0,6).map(z => esc(z.name)).join(", ")}${miss.length>6?" …":""}.` : "Alle Zutaten stehen auf der Liste oder sind schon im Wagen.") : "Ohne gespeichertes Rezept."}</p>
-    ${r ? `<button class="choice" id="piRec"><span>📖</span><span><b>Rezept ansehen</b><small>Zutaten und Preise</small></span></button>` : ""}
+    ${r ? `<button class="choice" id="piRec"><span>📖</span><span><b>Rezept ansehen</b><small>Zutaten und Preise</small></span></button>
+      <button class="choice" id="piEdit"><span>✏️</span><span><b>Rezept bearbeiten</b><small>Name und Zutaten ändern</small></span></button>`
+      : `<button class="choice" id="piNew"><span>📖</span><span><b>In Rezepte aufnehmen</b><small>Zutaten eintragen – dann gibt es Preis und Einkaufsliste</small></span></button>`}
     ${r && miss.length && !m.done ? `<button class="choice" id="piList"><span>🛒</span><span><b>Fehlende Zutaten auf die Liste</b><small>${miss.length} ${miss.length===1?"Zutat":"Zutaten"}</small></span></button>` : ""}
     <div class="actions"><button class="btn-danger" id="piDel">Entfernen</button>${m.done ? `<button class="btn-ghost" id="piUndo">Wieder einplanen</button>` : `<button class="btn-main" id="piDone">Gekocht ✓</button>`}</div>`;
   $("#piRec") && ($("#piRec").onclick = () => { closeSheets(); openRecipe(r.id); });
+  $("#piEdit") && ($("#piEdit").onclick = () => { closeSheets(); openRecipeEditor(r); });
+  $("#piNew") && ($("#piNew").onclick = () => { closeSheets(); openRecipeEditor(null, {title: m.title, planId: m.id}); });
   $("#piList") && ($("#piList").onclick = async () => { closeSheets(); await addRecipeToList(r, null, {count: false}); });
   $("#piDel").onclick = async () => { closeSheets(); const {id: pid, ...data} = m; await safe(store.planRemove(pid)); showToast(`${m.title} entfernt`, () => safe(store.planAdd(data))); };
   $("#piDone") && ($("#piDone").onclick = async () => { closeSheets(); await planDone(m); });
@@ -1016,6 +1081,7 @@ $("#plan").addEventListener("click", async e => {
   if (e.target.closest("#plPick")) { openPicker(); return; }
   if (e.target.closest("#plClear")) { const d = plan.filter(m => m.done); for (const m of d) await safe(store.planRemove(m.id)); return; }
   const l = e.target.closest("[data-plist]"); if (l) { const m = plan.find(x => x.id === l.dataset.plist), r = m && recFor(m); if (r) await addRecipeToList(r, null, {count: false}); return; }
+  const nr = e.target.closest("[data-plrec]"); if (nr) { const m = plan.find(x => x.id === nr.dataset.plrec); if (m) openRecipeEditor(null, {title: m.title, planId: m.id}); return; }
   const d = e.target.closest("[data-pdone]"); if (d) { const m = plan.find(x => x.id === d.dataset.pdone); if (m) await planDone(m); return; }
   const o = e.target.closest("[data-pl]"); if (o) openPlanItem(o.dataset.pl);
 });
