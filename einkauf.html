@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.17 vom 12.10.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.18 vom 21.10.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -226,6 +226,18 @@ button.rv-li{text-decoration:underline dotted}
 .pl-done .name{text-decoration:line-through;color:var(--mute)}
 .st-open:disabled{opacity:.55}
 .st-add + .st-add{margin-left:-4px}
+.pk-item{border-top:1px solid var(--line)}
+.pk-item:first-child{border-top:0}
+.pk-item .st-row{border-top:0}
+.pk-item.open{background:var(--bg)}
+.pk-chev{color:var(--mute);font-size:14px;margin-left:4px;flex-shrink:0}
+.pk-ing{padding:0 14px 10px 52px}
+.pk-z{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed var(--line);font-size:14px}
+.pk-z:first-child{border-top:0}
+.pk-z .ico{font-size:17px;width:22px}
+.pk-z .txt{flex:1;min-width:0}
+.pk-z .name{font-size:14px;font-weight:500}
+.pk-z .price{font-size:13px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
 .st-foot{font-size:12px;color:var(--mute);margin:10px 4px 0}
 .chart{width:100%;height:auto;display:block;margin:6px 0 4px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--mute);margin-bottom:10px}
@@ -256,7 +268,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.17</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.18</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -340,7 +352,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.17 vom 12.10.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.18 vom 21.10.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -362,7 +374,7 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.17 vom 12.10.2026";
+const APP_VERSION = "Version 1.18 vom 21.10.2026";
 const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte", plan:"einkauf_plan"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
@@ -796,8 +808,8 @@ function openRecipe(id){
         <span class="price">${(() => { const c = ingredientCost(r.name, r.qty); if (!c) return ""; return `${c.pr.est || c.share != null ? "ca. " : ""}${eur(c.cost)}${c.share != null ? `<small class="same" style="display:block;font-weight:500">von ${eur(c.pr.p)} / ${esc(c.pack)}</small>` : c.whole ? `<small class="same" style="display:block;font-weight:500">ganze Packung</small>` : ""}`; })()}</span>
       </label>`).join("")}</div>
     <div class="actions"><button class="btn-danger" id="rzDel">Löschen</button><button class="btn-main" id="rzAdd"></button></div>
-    <div class="actions" style="margin-top:8px"><button class="btn-ghost" id="rzPlan">${plan.some(p => !p.done && p.recipeId === rec.id) ? "Eingeplant ✓" : "Einplanen"}</button><button class="btn-ghost" id="rzCooked">Heute gekocht${rec.cooked ? ` (bisher ${rec.cooked}×)` : ""}</button></div>`;
-  $("#rzPlan").onclick = async () => { closeSheets(); await planRecipe(rec, false); };
+    <div class="actions" style="margin-top:8px"><button class="btn-ghost" id="rzPlan">${plan.some(p => !p.done && p.recipeId === rec.id) ? "Eingeplant ✓ – ausplanen" : "Einplanen"}</button><button class="btn-ghost" id="rzCooked">Heute gekocht${rec.cooked ? ` (bisher ${rec.cooked}×)` : ""}</button></div>`;
+  $("#rzPlan").onclick = async () => { closeSheets(); plan.some(p => !p.done && p.recipeId === rec.id) ? await unplanRecipe(rec) : await planRecipe(rec, false); };
   $("#rzCooked").onclick = async () => { closeSheets(); await markCooked(rec); showToast(`${rec.title}: ${(rec.cooked||0)+1}× gekocht`); };
   const upd = () => { const n = rows.filter(r => r.on).length; $("#rzAdd").textContent = n ? `${n} ${n===1?"Zutat":"Zutaten"} auf die Liste` : "Nichts ausgewählt"; $("#rzAdd").disabled = !n; };
   $("#rzRows").addEventListener("change", e => { const i = +e.target.dataset.i; if (rows[i]) { rows[i].on = e.target.checked; upd(); } });
@@ -910,24 +922,60 @@ function renderPlan(){
   $("#plForm .addbtn").addEventListener("click", e => { e.preventDefault(); go(); });
   $("#plInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); go(); } });
 }
+// Zutatenliste zum Aufklappen (Rezept-Auswahl im Essensplan)
+function ingredientsHtml(rec){
+  const rows = recipeRows(rec);
+  if (!rows.length) return `<div class="pk-ing"><span class="meta">Keine Zutaten gespeichert</span></div>`;
+  return `<div class="pk-ing">${rows.map(r => { const c = ingredientCost(r.name, r.qty); return `
+    <div class="pk-z"><span class="ico" aria-hidden="true">${iconFor(r.name, r.cat || guessCat(r.name))}</span>
+      <span class="txt"><span class="name">${esc(r.name)}</span>${r.qty ? ` <span class="qty">${esc(r.qty)}</span>` : ""}
+        ${r.li ? `<span class="rz-tag">steht auf der Liste</span>` : r.vorrat ? `<span class="rz-tag" style="color:var(--mute)">Vorrat</span>` : ""}</span>
+      <span class="price">${c ? `${c.pr.est || c.share != null ? "ca. " : ""}${eur(c.cost)}` : ""}</span></div>`; }).join("")}</div>`;
+}
+// Ausplanen: Eintrag aus dem Plan nehmen und nur für dieses Rezept eingetragene Zutaten wieder von der Liste
+async function unplanRecipe(rec){
+  const entries = plan.filter(p => !p.done && p.recipeId === rec.id);
+  // Zutaten, die ein anderes eingeplantes Rezept auch braucht, bleiben stehen und wechseln den Vermerk
+  const others = plan.filter(p => !p.done && p.recipeId && p.recipeId !== rec.id).map(recFor).filter(Boolean);
+  const neededBy = i => others.find(o => (o.zutaten || []).some(z => !isPantry(z) && (fold(z.name) === fold(i.name) || sameThing(i.name, z.name))));
+  const keep = items.filter(i => !i.done && i.recipe === rec.title && neededBy(i));
+  const own = items.filter(i => !i.done && i.recipe === rec.title && !neededBy(i));
+  const shared = items.filter(i => !i.done && i.recipe && i.recipe !== rec.title && i.recipe.split(", ").includes(rec.title));
+  for (const p of entries) await safe(store.planRemove(p.id));
+  for (const i of own) await safe(store.remove(i.id));
+  for (const i of shared) await safe(store.update(i.id, {recipe: i.recipe.split(", ").filter(t => t !== rec.title).join(", ")}));
+  for (const i of keep) await safe(store.update(i.id, {recipe: neededBy(i).title}));
+  const back = {entries: entries.map(({id, ...d}) => d), own: own.map(({id, ...d}) => d), shared: [...shared, ...keep].map(i => ({id: i.id, recipe: i.recipe}))};
+  showToast(`${rec.title} ausgeplant${own.length ? `, ${own.length} ${own.length===1?"Zutat":"Zutaten"} von der Liste genommen` : ""}`, async () => {
+    for (const d of back.entries) await safe(store.planAdd(d));
+    for (const d of back.own) await safe(store.add(d));
+    for (const s of back.shared) await safe(store.update(s.id, {recipe: s.recipe}));
+  });
+}
+let pkOpen = new Set();
 function openPicker(){
   const list = [...recipes].sort((a,b) => (b.cooked||0) - (a.cooked||0) || a.title.localeCompare(b.title, "de"));
   const draw = () => {
     $("#stSheet").innerHTML = `<h3>Rezept einplanen</h3>
       ${list.length ? `<label class="toggle" style="margin:0 0 10px"><input type="checkbox" id="pkList" ${pkWithList ? "checked" : ""}> Fehlende Zutaten gleich auf die Einkaufsliste</label>
-      <div class="list">${list.map(r => { const on = plan.some(p => !p.done && p.recipeId === r.id), c = recipeCost(r); return `
-        <div class="st-row"><button class="st-open" data-pk="${esc(r.id)}" ${on ? "disabled" : ""}><span class="ico" aria-hidden="true">🍽️</span>
-          <span class="txt"><span class="name">${esc(r.title)}</span><span class="meta">${[c.n ? `ca. ${eur(c.sum)}` : "", r.cooked ? `${r.cooked}× gekocht` : ""].filter(Boolean).join(", ") || `${(r.zutaten||[]).length} Zutaten`}</span></span></button>
-          <span class="st-add${on ? " on" : ""}" aria-hidden="true">${on ? "✓" : "+"}</span></div>`; }).join("")}</div>`
+      <div class="list">${list.map(r => { const on = plan.some(p => !p.done && p.recipeId === r.id), c = recipeCost(r), open = pkOpen.has(r.id); return `
+        <div class="pk-item${open ? " open" : ""}"><div class="st-row"><button class="st-open" data-pk="${esc(r.id)}" aria-expanded="${open}"><span class="ico" aria-hidden="true">🍽️</span>
+          <span class="txt"><span class="name">${esc(r.title)}</span><span class="meta">${[c.n ? `ca. ${eur(c.sum)}` : "", `${(r.zutaten||[]).length} Zutaten`, r.cooked ? `${r.cooked}× gekocht` : ""].filter(Boolean).join(", ")}</span></span>
+          <span class="pk-chev" aria-hidden="true">${open ? "▴" : "▾"}</span></button>
+          <button class="st-add${on ? " on" : ""}" data-${on ? "pkdel" : "pkadd"}="${esc(r.id)}" aria-label="${esc(r.title)} ${on ? "ausplanen" : "einplanen"}">${on ? "✓" : "+"}</button></div>
+          ${open ? ingredientsHtml(r) : ""}</div>`; }).join("")}</div>`
       : `<div class="empty" style="padding:20px">Noch keine Rezepte. Im Tab „Rezepte“ könnt ihr welche einlesen.</div>`}
       <div class="actions"><button class="btn-main" data-close>Fertig</button></div>`;
     $("#pkList")?.addEventListener("change", e => { pkWithList = e.target.checked; });
   };
   draw(); openSheet("#stScrim");
   $("#stSheet").onclick = async e => {
-    const b = e.target.closest("[data-pk]"); if (!b || b.disabled) return;
-    const rec = recipes.find(r => r.id === b.dataset.pk); if (!rec) return;
-    await planRecipe(rec, pkWithList); draw();
+    const t = e.target.closest("[data-pk]");
+    if (t) { const id = t.dataset.pk; pkOpen.has(id) ? pkOpen.delete(id) : pkOpen.add(id); draw(); return; }
+    const a = e.target.closest("[data-pkadd]"), d = e.target.closest("[data-pkdel]");
+    const rec = recipes.find(r => r.id === (a || d)?.dataset[a ? "pkadd" : "pkdel"]); if (!rec) return;
+    if (a) await planRecipe(rec, pkWithList); else await unplanRecipe(rec);
+    draw();
   };
 }
 let pkWithList = true;
