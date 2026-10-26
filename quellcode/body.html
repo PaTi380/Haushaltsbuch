@@ -1,0 +1,207 @@
+<div id="intro" aria-hidden="true"><div class="bk"><div class="bk-cover"><div class="bk-frame"><div class="bk-orn">✦</div><div class="bk-t">Haushaltsbuch</div><div class="bk-rule"></div><div class="bk-n">Till &amp; Patrick</div><div class="bk-y">seit 2026</div></div></div></div></div>
+<script>(function(){var el=document.getElementById("intro");function go(){if(el.parentNode)el.remove();}el.onclick=go;setTimeout(go,2300);})();</script>
+<div class="wrap">
+<header>
+  <div><h1>Haushaltsbuch Till &amp; Patrick</h1><div class="sub"><span id="today"></span> · Alles an einem Ort · <span class="appv" id="appv"></span></div></div>
+  <div class="hdr-r"><div class="status" id="status"><span class="dot"></span><span>Verbinde …</span></div><button type="button" class="btn sec sm" id="app-close" title="App schließen">✕ Schließen</button></div>
+</header>
+<nav role="tablist" id="nav"></nav>
+<main>
+<div id="nodb" class="banner" hidden>Speichern ist in dieser Ansicht nicht verfügbar. Öffne die Seite direkt auf claude.ai, um Daten zu sehen und zu bearbeiten.</div>
+<div id="msg" class="banner" hidden></div>
+
+<!-- HEUTE -->
+<section role="tabpanel" id="p-heute">
+  <div class="card monthbar"><div class="monthnav"><button class="btn sec sm" data-mnav="-1" aria-label="Vormonat">←</button><strong class="mtitle"></strong><button class="btn sec sm" data-mnav="1" aria-label="Nächster Monat">→</button></div><span class="pill mstate"></span></div>
+  <div id="h-bk"></div>
+
+  <div class="card">
+    <h2>Schnell eintragen</h2>
+    <div class="quick">
+      <textarea id="q-text" rows="2" placeholder="z. B. „Essen 36,34“ · „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“ · „Till Tanken im Oktober 60 statt 115“"></textarea>
+      <div class="qbtns"><button class="btn" id="q-go">Übernehmen</button></div>
+    </div>
+    <div class="note qmsg" id="q-msg">Schreib oder diktier einfach, was sich geändert hat – z. B. „40 € Sonstiges im Oktober für Wassermelder“, „200 € vom Urlaubskonto abgehoben am 12.10. für Fähre“, „Patrick hat im Oktober 2.610 € Gehalt bekommen“, „Stromabrechnung Oktober 85 €“. Die App erkennt das meist selbst, nur im Zweifel fragt sie die KI. Du bestätigst immer vorher.</div>
+    <div id="q-prev"></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="head"><h2>Essen &amp; Sonstiges</h2><span class="muted" style="font-size:12px" id="b-sub"></span></div>
+      <div class="pots" id="b-pots"></div>
+      <form class="form" id="f-budget" style="margin-top:12px">
+        <label>Betrag (€)<input id="b-betrag" type="text" inputmode="decimal" required style="width:110px" placeholder="36,34"></label>
+        <label>Notiz<input id="b-notiz" placeholder="optional" style="width:130px"></label>
+        <label>Wer<select id="b-wer"><option value="">–</option><option>Till</option><option>Patrick</option></select></label>
+        <div style="display:flex;gap:6px"><button class="btn" data-topf="e" type="submit">− Essen</button><button class="btn sec" data-topf="s" type="button">− Sonstiges</button></div>
+      </form>
+      <div class="note">Ausgleichen: Betrag mit Minus eintragen (−2,89). Mit „Wer“ wird er auch bei dessen Girokonto abgezogen.</div><details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Einkäufe diesen Monat</summary><div id="b-list"></div></details>
+    </div>
+    <div class="card">
+      <h2>Überweisung Haushaltskonto → Girokonto</h2>
+      <div id="h-ueb"></div>
+    </div>
+  </div>
+
+  <div class="card"><div class="head"><h2>Kontostände am Monatsende</h2><span class="muted" style="font-size:12px">Prognose aus dem Plan</span></div><div class="perbox" id="h-konten"></div></div>
+  <div class="card fwnext" id="h-fw" hidden></div>
+</section>
+
+<!-- MONAT -->
+<section role="tabpanel" id="p-monat" hidden>
+  <div class="card monthbar"><div class="monthnav"><button class="btn sec sm" data-mnav="-1" aria-label="Vormonat">←</button><strong class="mtitle"></strong><button class="btn sec sm" data-mnav="1" aria-label="Nächster Monat">→</button></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill mstate"></span><button class="btn sec sm" id="m-close">Monat abschließen</button><div id="m-check" hidden></div></div></div>
+  <div class="seg" id="m-who" style="align-self:start"></div>
+  <div id="m-blocks"></div>
+  <div class="note">🔒 Feste Beträge stehen grau hinterlegt unten in jedem Bereich; oben stehen die Beträge, die sich von Monat zu Monat ändern. Zum Ändern aufs Schloss tippen, dann geht es auf (🔓) und du kannst eintragen; nochmal tippen verriegelt die Zeile wieder. Gestrichelt umrandete Beträge sind mit den Grundbeträgen verknüpft und ändern sich automatisch mit. Sobald du einen Betrag überschreibst, gilt dein Wert. „Monat abschließen“ friert alle Werte ein, so wie du es in der Excel am Monatsende machst.</div>
+</section>
+
+<!-- FEWO -->
+<section role="tabpanel" id="p-fewo" hidden>
+  <div class="card"><div class="head"><h2>Ferienwohnung</h2></div><div class="note" style="margin-top:0">Buchungen, Verträge, Rechnungen, Kalender, Preise und Auswertungen der Ferienwohnung laufen jetzt im <b>Verwaltungsprogramm</b>. Jede Buchung dort bucht ihren Anteil automatisch hier aufs Urlaubskonto.</div><div style="margin-top:10px"><a class="btn" href="fewo.html">Verwaltungsprogramm öffnen</a></div></div>
+  <div class="card" hidden>
+    <div class="head"><h2>Neue Buchung</h2></div>
+    <div class="quick"><textarea id="fw-text" rows="3" placeholder="Neue Buchung, z. B. „Airbnb, 13. bis 15. November, 2 Erwachsene, du erhältst 154,95 €“ – oder eine Änderung bzw. Urlaubskonto-Buchung"></textarea><div class="qbtns"><button type="button" class="btn" id="fw-readtext">Übernehmen</button></div></div>
+    <div class="note qmsg" id="fw-shotmsg" style="margin-top:6px">Neue Buchung: Die KI füllt die Felder unten aus, du prüfst und speicherst. Änderungen erkennt die App meist selbst, z. B. „Gäste vom 3.10. haben 20 € bar bezahlt“, „Buchung vom 14.11. storniert“, „150 € vom Urlaubskonto abgehoben für Ausflug“.</div><div id="fw-qprev"></div>
+    <form class="form" id="f-fw" style="margin-top:12px">
+      <label>Plattform<select id="fw-p"><option>Booking.com</option><option>Airbnb</option><option>Privat</option></select></label>
+      <label>Anreise<input type="date" id="fw-a" required></label>
+      <label>Abreise<input type="date" id="fw-ab" required></label>
+      <label>Erwachsene<input type="number" id="fw-erw" min="0" step="1" style="width:80px"></label><label>Kinder<input type="number" id="fw-ki" min="0" step="1" style="width:70px"></label>
+      <label id="fw-ges-w"><span id="fw-ges-l">Gesamtpreis (€)</span><input type="number" id="fw-ges" step="0.01" min="0"></label>
+      <label><span id="fw-bet-l">Betrag (€)</span><input type="number" id="fw-bet" step="0.01" min="0"></label>
+      <label>Stornofrist (Tage)<input id="fw-sto" type="number" min="0" step="1" style="width:80px" data-auto="1" value="5"></label>
+    </form>
+    <div class="g2" style="margin-top:12px"><div id="fw-prev"></div><div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-end"><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" form="f-fw" type="submit">Buchung speichern</button><button class="btn sec" type="button" id="fw-reset">Leeren</button></div><div class="note" id="fw-msg"></div></div></div>
+  </div>
+  <div class="grid" id="f-kpis" hidden></div>
+  <div class="card" hidden><div class="head"><h2>Buchungen</h2><select id="fw-yr" aria-label="Jahr"></select></div>
+    <div class="legend"><span><i style="background:var(--good)"></i>Stornofrist vorbei, Geld sicher</span><span><i style="background:var(--warn)"></i>noch stornierbar</span></div>
+    <div class="tw"><table id="fw-table"></table></div><div id="fw-more" style="margin-top:8px"></div>
+    <div class="note">Tippe auf eine Buchung für den Auszahlungs-Zettel: wie viel vom Geld Gästebeitrag ist, wie viel in den Spartopf (30 % + 5 €) und wie viel aufs Urlaubskonto geht.</div></div>
+  <div class="g2">
+    <div class="card"><div class="head"><h2>Urlaubskonto</h2><b class="num" id="u-stand"></b></div>
+      <form class="form" id="f-url"><label>Datum<input type="date" id="u-d" required></label><label>Art<select id="u-art"><option value="-1">Entnahme / Ausgabe (−)</option><option value="1">Einzahlung (+)</option></select></label><label>Betrag (€)<input id="u-b" type="text" inputmode="decimal" required style="width:120px" placeholder="643,95"></label><label>Bemerkung<input id="u-t" placeholder="z. B. Unterkunft London"></label><button class="btn">Eintragen</button></form>
+      <div class="tw" style="margin-top:10px;max-height:320px;overflow:auto"><table id="u-table"></table></div><h3>Verlauf</h3><div class="legend" style="margin:0 0 4px"><span><i style="background:var(--acc)"></i>Kontostand</span><span><i class="dash"></i>geplant (Buchungen und Ausgaben in der Zukunft)</span></div><div class="chart" id="c-url"></div></div>
+    <div class="card" hidden><h2>Gästebeitrag je Monat</h2><div class="note" style="margin-top:0">Für die Meldung an die Gemeinde. Nach Anreisemonat.</div><div class="tw"><table id="gb-table"></table></div></div>
+  </div>
+  <div class="g2" hidden><div class="card"><h2>Kontonetto pro Jahr</h2><div class="chart" id="c-fw"></div></div><div class="card"><h2>Was die Plattformen kosten</h2><div id="fw-pl"></div></div></div>
+  <details class="card" id="st-box" hidden><summary class="sumhead"><h2 style="margin:0">Steuer: Einnahmen je Plattform (DAC7)</h2><span class="muted" style="font-size:12px">antippen zum Öffnen</span></summary><div class="head" style="margin-top:10px"><span></span><select id="st-yr" aria-label="Jahr"></select></div>
+    <div class="tw"><table id="st-table"></table></div>
+    <div class="note"><b>Booking.com:</b> kommissionspflichtiger Betrag = Gesamtpreis minus 1,50 € Übernachtungssteuer je Person und Nacht. <b>Airbnb:</b> Preis für die Übernachtungen vor der Gastgeber-Servicegebühr; fehlt er, aus der Auszahlung zurückgerechnet („geschätzt“). <b>Privat:</b> Betrag vom Gast minus Gästebeitrag, wird nicht per DAC7 gemeldet. Zugeordnet nach Anreisejahr. Zum Abgleich mit den DAC7-Übersichten, die Booking.com und Airbnb im Januar schicken. Keine Steuerberatung.</div></details>
+</section>
+
+<!-- KREDITE -->
+<section role="tabpanel" id="p-kredite" hidden>
+  <div class="kgrp" id="k-kpis"></div>
+  <div class="card" id="k-was"><h2>Was bringt eine Sondertilgung?</h2>
+    <div class="note" style="margin-top:0">Nur zum Ausprobieren – es wird nichts gespeichert. Wenn ihr sie wirklich macht, unten beim Kredit mit Datum eintragen.</div>
+    <form class="form" id="f-kwas" onsubmit="return false"><label>Kredit<select id="kw-k"><option value="sparda">Sparda · Hauskredit</option><option value="ing">ING · Gemeinschaftskredit</option></select></label><label>Betrag (€)<input type="text" inputmode="decimal" id="kw-b" value="5.000" style="width:100px"></label><label>Wann<input type="date" id="kw-d"></label></form>
+    <div id="kw-out" style="margin-top:10px"></div>
+  </div>
+  <div class="card"><div class="head"><h2>Kredite im Verlauf</h2></div><div class="filters"><div class="seg" id="kc-ser"></div><div class="seg" id="kc-rng"></div></div><div class="chart" id="c-kred" style="margin-top:8px"></div><div class="leg" id="kc-leg"></div><div class="note" style="margin-top:4px">Stand jeweils am Jahresende. Bausparvertrag: Guthaben bis zur Zuteilung.</div></div>
+  <div class="g2">
+    <div class="card"><h2>Sparda-Darlehen</h2>
+      <form class="form" id="f-sp" onsubmit="return false">
+        <label>Restschuld laut Sparda (€)<input type="number" step="0.01" data-k="sparda.stand"></label>
+        <label>Stand vom<input type="date" data-k="sparda.standAm"></label>
+        <label>Sollzins %<input type="number" step="0.01" data-k="sparda.zins" style="width:80px"></label>
+        <label>Rate (€)<input type="number" step="0.01" data-k="sparda.rate" style="width:100px"></label>
+      </form>
+      <div class="note" id="sp-hint"></div>
+      <h3>Werte laut Sparda</h3><div id="sp-bank"></div>
+      <form class="form" id="f-spbank" style="margin-top:6px"><label>Stand vom<input type="date" id="spb-m" required></label><label>Restschuld (€)<input type="text" inputmode="decimal" id="spb-st" style="width:130px" placeholder="z. B. 320.500,00"></label><label>Rate (€, falls anders)<input type="text" inputmode="decimal" id="spb-r" style="width:110px"></label><button class="btn sec">Übernehmen</button></form>
+      <div class="note">Restschuld so eintragen, wie sie im Online-Banking oder auf dem Tilgungsplan steht, mit dem Datum dazu – z. B. den Stand von heute und zwei Werte aus dem Tilgungsplan. Eine Rate ist optional und gilt ab dann.</div>
+      <h3>Sondertilgungen</h3><div id="sp-sonder"></div>
+      <form class="form" id="f-spadd" style="margin-top:6px"><label>Datum<input type="date" id="sp-m" required></label><label>Betrag (€)<input type="number" id="sp-b" step="1" required style="width:110px"></label><button class="btn sec">Hinzufügen</button></form>
+      <div class="note">Mit dem Datum der Überweisung eintragen – die App ordnet sie wie den Kontostand richtig zur Rate am 30. ein. Aus dem Plan übernommen: eure Raten „Sondertilgung Haus“ (Till + Patrick), je Jahr im Dezember getilgt. Erlaubt sind bis 17.250 € pro Kalenderjahr.</div>
+      <h3>Szenario: Mutter übernimmt</h3>
+      <form class="form" id="f-mu" onsubmit="return false"><label><span><input type="checkbox" data-k="sparda.szenario.aktiv"> einrechnen</span></label><label>ab Monat<input type="month" data-k="sparda.szenario.an"></label><label>Betrag (€)<input type="number" step="1000" data-k="sparda.szenario.betrag" style="width:110px"></label><label>Rate an Mutter (€/Monat)<input type="number" step="50" data-k="sparda.szenario.rate" style="width:100px" placeholder="1000"></label></form>
+      <div id="mu-out" class="note"></div>
+    </div>
+    <div class="card"><h2>Bausparvertrag</h2>
+      <form class="form" id="f-bs" onsubmit="return false">
+        <label>Guthaben (€)<input type="number" step="0.01" data-k="bauspar.saldo"></label>
+        <label>Stand<input type="month" data-k="bauspar.stand"></label>
+        <label>Einzahlung/Monat (€)<input type="number" step="0.01" data-k="bauspar.monat" style="width:100px"></label>
+        <label>Zuteilung ab % der Summe<input type="number" step="1" data-k="bauspar.zuteilProz" style="width:80px"></label>
+      </form>
+      <div id="bs-out" style="margin-top:10px"></div>
+      <label style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:13px"><input type="checkbox" data-k="bauspar.alsSonder" form="f-bs"> Guthaben bei Zuteilung als Sondertilgung einrechnen</label>
+    </div>
+  </div>
+  <div class="card"><h2>ING-Gemeinschaftskredit</h2>
+    <form class="form" id="f-ing" onsubmit="return false">
+      <label>Betrag (€)<input type="number" step="100" data-k="ing.betrag"></label>
+      <label>Sollzins %<input type="number" step="0.01" data-k="ing.zins" style="width:80px"></label>
+      <label>Laufzeit (Monate)<input type="number" step="1" data-k="ing.laufzeit" style="width:80px"></label>
+      <label>erste Rate<input type="month" id="ing-start"></label>
+      <label>Ziel: abbezahlt bis<input type="month" data-k="ing.ziel"></label>
+    </form>
+    <h3>Sondertilgungen</h3><div id="ing-sonder"></div>
+    <form class="form" id="f-ingadd" style="margin-top:6px"><label>Monat<input type="month" id="ing-m" required></label><label>Betrag (€)<input type="number" id="ing-b" step="1" required style="width:110px"></label><button class="btn sec">Hinzufügen</button></form>
+    <div id="ing-out" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- STEUER -->
+<!-- VERMOEGEN -->
+<section role="tabpanel" id="p-vermoegen" hidden>
+  <div class="grid" id="w-kpis"></div>
+  <div class="card"><div class="head"><h2>ETF und Gold</h2><form class="form" id="f-gold" onsubmit="return false"><label>Goldpreis je Unze (€)<input id="gp" inputmode="decimal" style="width:110px"></label></form></div><div class="g2" id="w-dep"></div><div class="note">Den Goldpreis trägst du hier ein, oder per Schnelleingabe („Goldpreis 3.820“). Den echten ETF-Wert trägst du im Reiter Monat beim Kontoabgleich ein, Feld „ETF-Depot (Scalable)“.</div></div>
+  <div class="card"><div class="head"><h2>Vermögen im Verlauf</h2></div><div class="filters"><div class="seg" id="w-who"></div><div class="seg" id="w-range"></div><div class="seg" id="w-plan"></div><select id="w-year" class="yrsel"></select></div><div class="legend" id="w-leg" style="margin-top:10px"></div><div class="chart" id="c-w"></div><div class="note" id="w-note"></div></div>
+</section>
+
+<!-- DEMNAECHST -->
+<section role="tabpanel" id="p-bald" hidden>
+  <div class="card wi"><h2>Fragen &amp; Was wäre, wenn …?</h2><div class="note" style="margin-top:0">Frag zu eurem Plan oder spiel etwas durch, z. B. „Was wäre, wenn ich ab 2028 nur 2.400 € netto verdiene?“ Es wird nichts gespeichert.</div>
+    <div class="quick" style="margin-top:8px"><textarea id="wi-text" placeholder="Was wäre, wenn …"></textarea><div class="qbtns"><button class="btn" id="wi-go">Durchrechnen</button></div></div><div id="wi-msg" class="note"></div><div id="wi-out"></div></div>
+  <div class="card" id="bd-card"><h2>Wie entwickelt sich euer Geld?</h2><div class="note" style="margin-top:0">Kontostand am Monatsende laut Plan, dieselben Zahlen wie im Reiter Monat. Tippe die Knöpfe an, um Linien und Zeitraum zu wählen.</div><div class="filters" style="margin-top:8px"><div class="seg" id="bd-ser"></div><div class="seg" id="bd-val"></div><div class="seg" id="bd-rng"></div></div><div class="kpis" id="bd-kpi" style="margin-top:10px"></div><div id="c-ueb" class="chart"></div><div class="leg" id="bd-leg"></div><div class="tw" id="bd-kt" style="margin-top:8px"></div>
+    <h3 style="margin-top:14px">Was sich dauerhaft ändert</h3><div class="note" style="margin-top:0">Ab diesen Monaten legt jeder dauerhaft mehr oder weniger zurück als vorher. Einmalige Zahlungen stehen unten bei „Was demnächst auf euch zukommt“.</div><div id="bd-ph"></div></div>
+  <div class="card"><h2>Rücklagen im Haushaltskonto</h2><div class="note" style="margin-top:0">Jährliche und vierteljährliche Zahlungen werden jeden Monat anteilig angespart. So weit seid ihr bei der jeweils nächsten Zahlung.</div><div id="bd-rl" style="margin-top:8px"></div><div id="bd-pj"></div></div>
+  <div class="card"><h2>Was demnächst auf euch zukommt</h2><div class="note" style="margin-top:0">Die nächsten 12 Monate: vorgemerkte Änderungen, Posten die beginnen, enden oder sich ändern, größere einmalige Zahlungen, Gäste der nächsten 60 Tage, Urlaubsausgaben und Kredit-Termine.</div><div id="bd-list" style="margin-top:8px"></div></div>
+</section>
+
+<section role="tabpanel" id="p-strom" hidden>
+  <div class="card"><h2>Stromkonto</h2><div class="note" style="margin-top:0">Was ihr einzahlt, was der Strom kostet und was die Einspeisung bringt. Der Kontostand läuft wie in deinem Excel-Blatt Strom mit.</div>
+    <form class="form" id="f-sst" onsubmit="return false" style="margin:8px 0"><label>Kontostand vor Januar 2027 (€)<input id="s-start" inputmode="decimal" style="width:110px"></label></form>
+    <div class="filters" style="margin-top:6px"><div class="seg yrs" id="s-yr"></div><div class="seg" id="s-cr"></div></div>
+    <div id="s-kpi" class="kpis"></div><div id="c-skonto" class="chart"></div><div class="tw"><table id="s-table" class="stab"></table></div><div class="note">„Verbrauch echt“ aus der Abrechnung eintragen: rot = mehr als geplant, grün = weniger. Der Kontostand rechnet dann mit dem echten Wert. Graue Werte sind vom Vorjahr übernommen.</div></div>
+</section>
+
+<!-- EINSTELLUNGEN -->
+<section role="tabpanel" id="p-einst" hidden>
+  <div class="sect-h">Beträge</div>
+  <div class="card"><h2>Grundbeträge</h2><form class="form" id="f-gh" style="margin-bottom:10px"><label>Ändert sich<select id="gh-k"></select></label><label>ab Monat (leer = sofort)<input type="month" id="gh-ab"></label><label>neuer Betrag (€)<input id="gh-v" inputmode="decimal" required style="width:110px"></label><button class="btn sec sm">Weiter</button><span class="note" id="gh-msg" style="margin:0"></span></form><div class="note" style="margin-top:0">Betrag direkt in der Liste ändern oder oben mit „ab Monat“. Vor dem Speichern siehst du immer, was sich dadurch ändert. Gruppen antippen zum Aufklappen.</div><div id="g-list" lang="de"></div></div>
+  <div class="g2">
+    <div class="card"><h2>Budgets</h2><form class="form" id="f-bud" onsubmit="return false"><label>Essen je Monat (€)<input type="number" id="bu-e" style="width:100px"></label></form><div id="bu-s" style="margin-top:8px"></div>
+      <h3>Per Dauerauftrag vom Haushaltskonto</h3><div class="note" style="margin-top:0">Diese Posten zählen nicht zur Überweisung, weil sie automatisch rübergehen.</div><div id="bu-da"></div></div>
+    <div class="card"><h2>FeWo-Rechenregeln</h2><form class="form" id="f-rules" onsubmit="return false">
+    <label>Gästebeitrag € je Erw./Nacht<input type="number" step="0.01" data-k="gb"></label>
+    <label>Booking Provision %<input type="number" step="0.1" data-k="kom"></label>
+    <label>Booking Servicegebühr %<input type="number" step="0.1" data-k="serv"></label>
+    <label>Booking Übernachtungssteuer €<input type="number" step="0.01" data-k="steuer"></label>
+    <label>Airbnb Gebühr neu %<input type="number" step="0.1" data-k="airNeu"></label>
+    <label>Airbnb Gebühr alt %<input type="number" step="0.1" data-k="airAlt"></label>
+    <label>MwSt. auf Airbnb-Gebühr %<input type="number" step="0.1" data-k="mwst"></label>
+    <label>Spartopf %<input type="number" step="1" data-k="urlProz"></label>
+    <label>Spartopf € fest<input type="number" step="0.5" data-k="urlFix"></label>
+  </form></div>
+  </div>
+  <div class="sect-h">App <span class="appv" id="appv2" style="text-transform:none;letter-spacing:0"></span></div>
+  <div id="app-sect">
+  <div class="card"><div class="head"><h2>Sicherung</h2></div>
+    <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn" id="bk-save">Sicherung speichern</button><label class="btn sec" style="cursor:pointer">Wiederherstellen …<input type="file" id="bk-file" accept=".json,application/json" hidden></label><span class="note" id="bk-msg" style="margin:0"></span></div><div id="bk-conf"></div>
+    <h3>Automatische Sicherungen</h3><div class="note" style="margin-top:0">Jedes Mal, wenn ein Monat komplett abgeschlossen wird (alle drei Blöcke), legt die App eine Sicherung in der Datenbank ab und behält die letzten 12. Sie lassen sich hier als Datei herunterladen und wie oben wiederherstellen.</div><div id="bk-auto" style="margin-top:6px"></div></div>
+  <div class="card"><div class="head"><h2>Excel herunterladen</h2></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn" id="x-exp">Excel erstellen</button><span class="note" id="x-msg" style="margin:0">Erzeugt deine Finanzierungspläne mit allem aus der App: Monatsblöcke, Grundbeträge, Ferienwohnung, Urlaubskonto, Strom. Kommt als ZIP, darin die .xlsm mit deinen Makros.</span></div></div>
+  </div>
+  <div class="card" id="hl-card"><div class="head"><h2>❓ Hilfe</h2></div><div class="hl-body"></div></div>
+</section>
+</main>
+<div id="closed" hidden><div class="cl-c"><div class="cl-t">Haushaltsbuch</div><div class="cl-s">geschlossen</div><button type="button" class="btn" id="app-reopen">Wieder öffnen</button><div class="cl-n">Du kannst das Fenster jetzt wegwischen oder den Tab schließen.</div></div></div>
+</div>
+<div id="tip" hidden></div>
+<button type="button" id="undo" class="undo" hidden>↶ Rückgängig</button>
+
+<div id="imp" class="imp" hidden></div>

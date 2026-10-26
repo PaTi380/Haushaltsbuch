@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Haushaltsbuch – Anleitung</title>
+<style>
+:root{--ink:#1d2320;--mute:#5e6b64;--acc:#1f6f5f;--gold:#9c7a34;--bg:#faf9f5;--card:#fff;--line:#e3e0d6;--warn:#b26b00;--ok:#2e7d4f;--till:#2a78d6;--pat:#eb6834}
+@media (prefers-color-scheme:dark){:root{--ink:#e9e6dd;--mute:#a4ada7;--acc:#6cc4ae;--gold:#d9bd74;--bg:#141816;--card:#1c211e;--line:#2e3531;--warn:#e0a24a;--ok:#6fd39a}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:800px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:28px;margin:0 0 4px}h2{font-size:21px;margin:34px 0 8px;padding-top:10px;border-top:2px solid var(--line)}h3{font-size:17px;margin:18px 0 4px}
+.sub{color:var(--mute);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:12px 0}
+ol,ul{padding-left:22px;margin:6px 0}li{margin:4px 0}
+code{background:color-mix(in srgb,var(--acc) 12%,transparent);padding:1px 6px;border-radius:5px;font-size:14px}
+pre{background:color-mix(in srgb,var(--acc) 8%,var(--card));border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;white-space:pre-wrap}
+.hint{border-left:3px solid var(--gold);padding:6px 12px;margin:10px 0;background:color-mix(in srgb,var(--gold) 8%,transparent);border-radius:0 8px 8px 0;font-size:15px}
+.warn{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+nav.toc a{display:block;color:var(--acc);text-decoration:none;padding:2px 0}
+table{border-collapse:collapse;width:100%;font-size:15px}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.step{display:flex;gap:12px;align-items:flex-start;margin:10px 0}.n{flex:none;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;font-size:14px}
+</style></head><body><main>
+<h1>Haushaltsbuch Till &amp; Patrick</h1>
+<p class="sub">Komplettpaket Version 2.5 vom 26.10.2026 · Bedienung, Sicherung, Updates und wie Claude jederzeit weiterhelfen kann.</p>
+
+<nav class="toc card"><b>Inhalt</b>
+<a href="#paket">1. Was in diesem Paket steckt</a>
+<a href="#monat">2. Der Monat Schritt für Schritt</a>
+<a href="#reiter">3. Die Reiter im Überblick</a>
+<a href="#einst">4. Beträge ändern, neue Posten, etwas beenden</a>
+<a href="#sicher">5. Sicherung und Wiederherstellen</a>
+<a href="#update">6. Eine neue Version einspielen</a>
+<a href="#claude">7. Mit Claude weiterarbeiten (auch in einem neuen Chat)</a>
+<a href="#konten">8. Eure Konten und Zugänge</a>
+<a href="#hilfe">9. Wenn etwas nicht geht</a>
+<a href="#neu">10. Anhang: alles komplett neu einrichten</a>
+</nav>
+
+<h2 id="paket">1. Was in diesem Paket steckt</h2>
+<table>
+<tr><th>Ordner / Datei</th><th>Wofür</th></tr>
+<tr><td><code>LIES-MICH-ZUERST.html</code></td><td>Diese Anleitung.</td></tr>
+<tr><td><code>CLAUDE.md</code></td><td>Das komplette technische Wissen über die App, geschrieben für Claude. Damit kann Claude in jedem neuen Chat sofort weitermachen.</td></tr>
+<tr><td><code>1_App-fuer-GitHub/</code></td><td>Die fertige App, genau die 5 Dateien, die bei GitHub liegen: <code>index.html</code>, <code>config.js</code>, <code>vorlage.js</code> (Excel-Vorlage mit Makros), <code>manifest.json</code>, <code>icon.svg</code>.</td></tr>
+<tr><td><code>5_Verwaltung/fewo.html</code></td><td>Das Verwaltungsprogramm für die Ferienwohnung (eigene Seite, gleiche Datenbank). Liegt im selben GitHub-Repository als fewo.html.</td></tr>
+<tr><td><code>2_Firebase/firestore-regeln.txt</code></td><td>Die Zugriffsregeln der Datenbank (wer lesen und schreiben darf).</td></tr>
+<tr><td><code>3_Quellcode/</code></td><td>Die Bausteine der App. Nur für Claude bzw. zum Weiterentwickeln. <code>build.sh</code> baut daraus die <code>index.html</code> und eine Testversion.</td></tr>
+<tr><td><code>4_Sicherungen/</code></td><td>Hier eure Sicherungsdateien ablegen. Enthält den Startstand vom 26.09.2026.</td></tr>
+</table>
+<div class="hint">Bewahrt das ZIP an einem sicheren Ort auf, z. B. in eurer Cloud <b>und</b> auf einem USB-Stick. Legt die monatlichen Sicherungen mit in den Ordner <code>4_Sicherungen</code>.</div>
+
+<h2 id="monat">2. Der Monat Schritt für Schritt</h2>
+<div class="step"><span class="n">1</span><div><b>Planen</b> (Reiter <b>Monat</b>, am Monatsanfang oder schon im Vormonat): Till, Patrick und Haushaltskonto durchgehen. Oben steht gelb „✏️ Noch in Planung“. Einmalige Ausgaben mit „+ Zeile“ ergänzen. Patricks Gehalt schwankt: oben im Feld <b>„echtes Gehalt diesen Monat“</b> eintragen, sobald es da ist.</div></div>
+<div class="step"><span class="n">2</span><div><b>Überweisen und festschreiben:</b> In der <b>Übersicht</b> steht, was vom Haushaltskonto aufs Girokonto geht (Aufschlüsselung ist aufgeklappt). Beim Giroausgleich jeder Person auf <b>📌 Festschreiben</b> tippen. Dann wird der Kasten grün „📌 Plan festgeschrieben“ und die Monatsleiste zeigt „📌 festgeschrieben“.</div></div>
+<div class="step"><span class="n">3</span><div><b>Im Laufe des Monats:</b> Einkäufe bei <b>Essen &amp; Sonstiges</b> abziehen oder einfach in <b>Schnell eintragen</b> schreiben („Essen 36,34“, „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“). Unten im Monat seht ihr die <b>Tendenz</b>: „300 € mehr/weniger ausgegeben als geplant“.</div></div>
+<div class="step"><span class="n">4</span><div><b>Monatsende abgleichen:</b> Im Monat rechts unten die <b>echten Kontostände</b> (Girokonto, Tagesgeld, ETF-Depotwert) eintragen. Die App bucht die Differenz als „Abgleich Kontostand“, und die Tendenz wird zum <b>Endergebnis</b>.</div></div>
+<div class="step"><span class="n">5</span><div><b>Abschließen:</b> Oben <b>„Monat abschließen“</b> (zweimal tippen). Alle Beträge werden fest, auch Goldpreis und eigene Posten; spätere Änderungen in den Einstellungen verändern diesen Monat nicht mehr. Aufheben geht mit demselben Knopf.</div></div>
+<div class="step"><span class="n">6</span><div><b>Sichern:</b> Einstellungen → <b>Sicherung speichern</b> und <b>Excel erstellen</b>. Beide Dateien in <code>4_Sicherungen</code> ablegen.</div></div>
+
+<h2 id="reiter">3. Die Reiter im Überblick</h2>
+<table>
+<tr><td><b>Übersicht</b></td><td>Schnell eintragen, Budgets Essen/Sonstiges, Überweisung Haushaltskonto → Girokonto, Kontostände am Monatsende (ETF/Gold im goldenen Kasten), nächste Gutschrift der Ferienwohnung mit Aufteilung (Urlaubskonto, Gästebeitrag, Spartopf).</td></tr>
+<tr><td><b>Monat</b></td><td>Der komplette Plan je Person und Haushaltskonto. 🔒 = fester Betrag (zum Ändern aufschließen), ⚙️ = kommt aus den Einstellungen, <b>P</b> = aus der Pauschale bezahlt (Pauschale schrumpft). Monate ab 2033 sind „fortgeschrieben“ (Kopie des Vorjahresmonats), bis ihr dort etwas ändert.</td></tr>
+<tr><td><b>Ferienwohnung</b></td><td>Buchung einfügen (Text aus der App kopieren oder tippen), die KI füllt die Felder, ihr prüft und speichert. Liste, Urlaubskonto, Gästebeitrag je Monat.</td></tr>
+<tr><td><b>Kredite</b></td><td>Karten Sparda (blau), ING (orange), Bausparvertrag (gelb); Diagramm mit Filter je Kredit und Zeitraum; Sondertilgungen, Szenario Ablösung.</td></tr>
+<tr><td><b>Vermögen</b></td><td>ETF und Gold, Verlauf mit Rückblick/Zukunft oder einzelnem Jahr.</td></tr>
+<tr><td><b>Ausblick</b></td><td>Fragen &amp; Was wäre wenn, Kontoverlauf bis 2040 (Linien und Zeitraum wählbar), was sich dauerhaft ändert, Rücklagen, was demnächst ansteht.</td></tr>
+<tr><td><b>Strom</b></td><td>Stromkonto je Jahr: Einzahlung, Verbrauch geplant, <b>Verbrauch echt</b> (rot = mehr, grün = weniger), Vergütung, Kontostand.</td></tr>
+<tr><td><b>Einstellungen</b></td><td>Oben die Beträge (Spalten Till / Patrick / Gemeinsam), Budgets, FeWo-Regeln; unten KI-Zugang, Sicherung, Excel.</td></tr>
+</table>
+
+<h2 id="einst">4. Beträge ändern, neue Posten, etwas beenden</h2>
+<ul>
+<li><b>Betrag ändern:</b> Einstellungen → Betrag im Feld ändern. Es erscheint „Was passiert, wenn du das änderst?“ mit der Wirkung; dort wählt ihr „ab sofort“ oder „erst ab Monat …“. Die Monate davor bleiben beim alten Betrag.</li>
+<li><b>Goldpreis:</b> goldener Kasten unter „Gemeinsam“. Er wird auch automatisch täglich aktualisiert. Ein neuer Wert gilt überall außer in abgeschlossenen Monaten.</li>
+<li><b>Neuer Posten:</b> ganz unten „+ Neuer Posten“: Wer, Bezeichnung, Betrag, monatlich/jährlich, Ausgabe/Eingang, „geht an“ (Geld von Patrick an Till), ab/bis. Er steht dann unter „Eigene Posten“ und erscheint automatisch im Monat (⚙️).</li>
+<li><b>Etwas endet</b> (z. B. ein Kredit ist abbezahlt): rechts neben dem Betrag <b>⋯</b> → „endet nach“ Monat eintragen. Danach steht er mit 0 € drin.</li>
+<li><b>Entfernen:</b> <b>⋯</b> → „Entfernen“ (zweimal tippen). Gilt für alle offenen Monate; abgeschlossene bleiben unverändert.</li>
+<li><b>Neuer Bescheid für Wasser oder Grundsteuer:</b> Einstellungen → Spalte Gemeinsam → <b>📄 Bescheide → + Neuer Bescheid</b>. Jahr, Rate im Februar und Rate für Mai/August/November eintragen (steht im Bescheid unter „fällig am …“). Die App zeigt vorher, wie viel ihr im Vorjahr angespart habt, was zu zahlen ist und ob Till und Patrick im Februar je etwas nachzahlen oder zurückbekommen. Nach „Übernehmen“ stehen die Raten in allen Monaten, der Ausgleich im Februar und das Ansparen fürs nächste Jahr ist angepasst (der Januar wird verrechnet). Geht auch per Schnell eintragen: „Wasserbescheid 2027: Februar 297 €, danach 280 €“. <b>Neuer Beitrag für eine Versicherung, Abfall oder ADAC:</b> genauso über <b>+ Neuer Bescheid</b> – Posten wählen, neuen Jahresbetrag und Fälligkeitsmonat eintragen. Reicht das Angesparte nicht (oder ist etwas übrig), zahlen Till und Patrick im Fälligkeitsmonat je die Hälfte nach (bzw. weniger); danach wird der neue Betrag angespart.</li>
+<li><b>Nur einen Monat anders:</b> im Reiter Monat die Zeile aufschließen (🔒) und ändern.</li>
+</ul>
+
+<h2 id="sicher">5. Sicherung und Wiederherstellen</h2>
+<p>Alle Daten liegen in eurer Firebase-Datenbank und sind auf jedem Gerät gleich. Die Sicherungsdatei ist eure Kopie für den Notfall.</p>
+<ul>
+<li><b>Speichern:</b> Einstellungen → <b>Sicherung speichern</b> → Datei <code>Haushaltsbuch-Sicherung-JJJJ-MM-TT.json</code>. Mindestens einmal im Monat und <b>vor jedem Update</b>.</li>
+<li><b>Wiederherstellen:</b> Einstellungen → <b>Wiederherstellen …</b> → Datei wählen → bestätigen. Ersetzt den kompletten Datenstand.</li>
+<li>Der KI-Schlüssel steht absichtlich nicht in der Sicherung; nach einem Neuanfang einfach neu eintragen.</li>
+<li><b>Excel erstellen</b> liefert eure Finanzierungspläne als .xlsm mit Makros, falls ihr einmal ohne die App auskommen müsst.</li>
+</ul>
+
+<h2 id="update">6. Eine neue Version einspielen</h2>
+<ol>
+<li>In der App <b>Sicherung speichern</b>.</li>
+<li><a href="https://github.com">github.com</a> öffnen, anmelden (Konto <b>pati380</b>), euer Repository öffnen.</li>
+<li><b>Add file → Upload files</b> → nur die neue <code>index.html</code> hineinziehen → <b>Commit changes</b>.</li>
+<li>Etwa 1 Minute warten, App neu laden (am Handy ggf. App schließen und neu öffnen).</li>
+</ol>
+<div class="hint warn"><b>config.js nie ersetzen</b> – darin stehen die Zugangsdaten zu eurer Datenbank. Nur wenn ihr ein komplett neues Firebase-Projekt anlegt, braucht ihr eine neue.</div>
+<p>Manche Versionen enthalten eine <b>einmalige Umstellung</b> (z. B. einen fehlenden Monat ergänzen). Die läuft beim ersten Öffnen automatisch und nur ein einziges Mal.</p>
+
+<h2 id="claude">7. Mit Claude weiterarbeiten (auch in einem neuen Chat)</h2>
+<p>Claude kennt die App nicht von selbst. Mit diesem Paket ist er aber in einer Minute auf dem Stand:</p>
+<ol>
+<li>Neuen Chat mit Claude öffnen (am besten Claude im Desktop-Programm/Cowork, dort kann er Dateien bauen und testen).</li>
+<li><b>Dieses ZIP</b> und eure <b>neueste Sicherungsdatei</b> anhängen.</li>
+<li>Diesen Text hineinkopieren und nach dem Doppelpunkt euren Wunsch schreiben:</li>
+</ol>
+<pre>Das ist unser Haushaltsbuch (GitHub Pages + Firebase). Bitte entpacke das ZIP und lies zuerst CLAUDE.md komplett. Die Quellen liegen in 3_Quellcode, gebaut wird mit build.sh. Die Sicherungsdatei ist unser aktueller Datenstand (für Tests). Ändere bitte Folgendes und gib mir am Ende nur die neue index.html zum Hochladen und ein aktualisiertes ZIP:
+…</pre>
+<div class="hint">Nach größeren Änderungen immer das neue ZIP von Claude aufheben – so bleibt <code>CLAUDE.md</code> aktuell.</div>
+
+<h2 id="konten">8. Eure Konten und Zugänge</h2>
+<table>
+<tr><th>Dienst</th><th>Was</th><th>Wo</th></tr>
+<tr><td>GitHub</td><td>Hier liegt die App (Konto <b>pati380</b>, GitHub Pages).</td><td><a href="https://github.com">github.com</a> → Repository → Settings → Pages zeigt die Adresse.</td></tr>
+<tr><td>Firebase</td><td>Datenbank + Google-Anmeldung, Projekt <b>haushaltsbuch-b4f70</b>.</td><td><a href="https://console.firebase.google.com/project/haushaltsbuch-b4f70">console.firebase.google.com</a> (mit Tills Google-Konto)</td></tr>
+<tr><td>Google AI Studio</td><td>Schlüssel für die KI (Gemini).</td><td><a href="https://aistudio.google.com">aistudio.google.com</a> → Get API key</td></tr>
+<tr><td>App</td><td>Anmeldung mit Google (Till oder Patrick).</td><td><code>https://pati380.github.io/…</code> (eure Adresse; am Handy „Zum Startbildschirm hinzufügen“)</td></tr>
+</table>
+<div class="hint">Die erlaubten Google-Adressen (Till und Patrick) stehen in den Firestore-Regeln (Firebase → Firestore → Regeln, aktueller Stand in <code>2_Firebase</code>). Wer dort nicht steht, kann sich zwar anmelden, sieht aber keine Daten.</div>
+<div class="hint"><b>Home Assistant:</b> Die App legt die Belegung der Ferienwohnung im Dokument <code>public/belegung</code> ab – nur Anreise, Abreise, Erwachsene und Kinder, ohne Namen und Beträge, von vorgestern bis gut ein Jahr voraus. Nur dieses eine Dokument ist ohne Anmeldung lesbar (siehe Regeln), damit Home Assistant es abrufen kann. Es wird wenige Sekunden nach jeder Buchungsänderung aktualisiert, sobald jemand die App offen hat.</div>
+
+<h2 id="hilfe">9. Wenn etwas nicht geht</h2>
+<table>
+<tr><td><b>„auth/unauthorized-domain“</b> beim Anmelden</td><td>Firebase → Authentication → Einstellungen → Autorisierte Domains → <code>pati380.github.io</code> muss drinstehen.</td></tr>
+<tr><td><b>App ist leer / Zugriff verweigert</b></td><td>Mit der richtigen Google-Adresse angemeldet? Stimmen die Firestore-Regeln? Falls die Daten wirklich weg sind: Wiederherstellen aus der letzten Sicherung.</td></tr>
+<tr><td><b>KI antwortet nicht</b></td><td>Einstellungen → KI-Zugang → Testen. Ggf. neuen Schlüssel bei AI Studio erstellen und eintragen. Ohne KI geht alles weiterhin von Hand.</td></tr>
+<tr><td><b>Neue Version wird nicht angezeigt</b></td><td>1–2 Minuten warten, Seite neu laden bzw. App am Handy ganz schließen.</td></tr>
+<tr><td><b>Etwas falsch geändert</b></td><td>Unten rechts „↶ Rückgängig“ (kurz nach der Änderung) oder aus einer Sicherung wiederherstellen.</td></tr>
+</table>
+
+<h2 id="neu">10. Anhang: alles komplett neu einrichten</h2>
+<p>Nur nötig, wenn GitHub oder Firebase verloren gehen. Dauer etwa 30 Minuten, am besten am PC.</p>
+<ol>
+<li><b>Firebase-Projekt</b> anlegen (<a href="https://console.firebase.google.com">console.firebase.google.com</a>) → Web-App hinzufügen → die angezeigten Werte (<code>apiKey</code>, <code>authDomain</code>, <code>projectId</code>, …) in <code>1_App-fuer-GitHub/config.js</code> eintragen. Beim bestehenden Projekt sind sie schon drin.</li>
+<li><b>Authentication</b> → Anmeldemethode <b>Google</b> aktivieren.</li>
+<li><b>Firestore</b> → Datenbank erstellen (europe-west3 Frankfurt, Produktionsmodus) → Reiter <b>Regeln</b> → Inhalt aus <code>2_Firebase/firestore-regeln.txt</code> einfügen (Patricks Adresse und die Freigabe für <code>public/belegung</code> sind schon enthalten) → Veröffentlichen.</li>
+<li><b>GitHub</b>: Repository anlegen (Public) → die 5 Dateien aus <code>1_App-fuer-GitHub</code> hochladen → Settings → Pages → Branch <code>main</code>, <code>/ (root)</code> → Save.</li>
+<li>Firebase → Authentication → Einstellungen → <b>Autorisierte Domains</b> → <code>BENUTZERNAME.github.io</code> hinzufügen.</li>
+<li>App öffnen, anmelden → Einstellungen → <b>Wiederherstellen</b> mit der neuesten Sicherung.</li>
+<li>KI-Zugang: Schlüssel von AI Studio eintragen → Testen.</li>
+</ol>
+</main></body></html>

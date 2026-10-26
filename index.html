@@ -396,6 +396,8 @@ body.is-closed main,body.is-closed header{visibility:hidden}
 
 /* Tabelle breiter als der Bildschirm: Schatten rechts als Hinweis zum Wischen */
 .tw.tw-x{box-shadow:inset -18px 0 14px -12px rgba(0,0,0,.28)}
+
+.chk{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:13px}.chk ul{margin:6px 0 0;padding-left:0;list-style:none}.chk li{padding:3px 0;border-top:1px dashed var(--line)}.chk li.warn{color:var(--warn)}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
@@ -452,7 +454,7 @@ body{margin:0;padding:0 16px}
 
 <!-- MONAT -->
 <section role="tabpanel" id="p-monat" hidden>
-  <div class="card monthbar"><div class="monthnav"><button class="btn sec sm" data-mnav="-1" aria-label="Vormonat">←</button><strong class="mtitle"></strong><button class="btn sec sm" data-mnav="1" aria-label="Nächster Monat">→</button></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill mstate"></span><button class="btn sec sm" id="m-close">Monat abschließen</button></div></div>
+  <div class="card monthbar"><div class="monthnav"><button class="btn sec sm" data-mnav="-1" aria-label="Vormonat">←</button><strong class="mtitle"></strong><button class="btn sec sm" data-mnav="1" aria-label="Nächster Monat">→</button></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill mstate"></span><button class="btn sec sm" id="m-close">Monat abschließen</button><div id="m-check" hidden></div></div></div>
   <div class="seg" id="m-who" style="align-self:start"></div>
   <div id="m-blocks"></div>
   <div class="note">🔒 Feste Beträge stehen grau hinterlegt unten in jedem Bereich; oben stehen die Beträge, die sich von Monat zu Monat ändern. Zum Ändern aufs Schloss tippen, dann geht es auf (🔓) und du kannst eintragen; nochmal tippen verriegelt die Zeile wieder. Gestrichelt umrandete Beträge sind mit den Grundbeträgen verknüpft und ändern sich automatisch mit. Sobald du einen Betrag überschreibst, gilt dein Wert. „Monat abschließen“ friert alle Werte ein, so wie du es in der Excel am Monatsende machst.</div>
@@ -481,7 +483,7 @@ body{margin:0;padding:0 16px}
     <div class="legend"><span><i style="background:var(--good)"></i>Stornofrist vorbei, Geld sicher</span><span><i style="background:var(--warn)"></i>noch stornierbar</span></div>
     <div class="tw"><table id="fw-table"></table></div><div id="fw-more" style="margin-top:8px"></div>
     <div class="note">Tippe auf eine Buchung für den Auszahlungs-Zettel: wie viel vom Geld Gästebeitrag ist, wie viel in den Spartopf (30 % + 5 €) und wie viel aufs Urlaubskonto geht.</div></div>
-  <div>
+  <div class="g2">
     <div class="card"><div class="head"><h2>Urlaubskonto</h2><b class="num" id="u-stand"></b></div>
       <form class="form" id="f-url"><label>Datum<input type="date" id="u-d" required></label><label>Art<select id="u-art"><option value="-1">Entnahme / Ausgabe (−)</option><option value="1">Einzahlung (+)</option></select></label><label>Betrag (€)<input id="u-b" type="text" inputmode="decimal" required style="width:120px" placeholder="643,95"></label><label>Bemerkung<input id="u-t" placeholder="z. B. Unterkunft London"></label><button class="btn">Eintragen</button></form>
       <div class="tw" style="margin-top:10px;max-height:320px;overflow:auto"><table id="u-table"></table></div><h3>Verlauf</h3><div class="legend" style="margin:0 0 4px"><span><i style="background:var(--acc)"></i>Kontostand</span><span><i class="dash"></i>geplant (Buchungen und Ausgaben in der Zukunft)</span></div><div class="chart" id="c-url"></div></div>
@@ -594,7 +596,8 @@ body{margin:0;padding:0 16px}
   <div id="app-sect">
   <div class="card"><div class="head"><h2>Sicherung</h2></div>
     <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn" id="bk-save">Sicherung speichern</button><label class="btn sec" style="cursor:pointer">Wiederherstellen …<input type="file" id="bk-file" accept=".json,application/json" hidden></label><span class="note" id="bk-msg" style="margin:0"></span></div><div id="bk-conf"></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn" id="bk-save">Sicherung speichern</button><label class="btn sec" style="cursor:pointer">Wiederherstellen …<input type="file" id="bk-file" accept=".json,application/json" hidden></label><span class="note" id="bk-msg" style="margin:0"></span></div><div id="bk-conf"></div>
+    <h3>Automatische Sicherungen</h3><div class="note" style="margin-top:0">Jedes Mal, wenn ein Monat komplett abgeschlossen wird (alle drei Blöcke), legt die App eine Sicherung in der Datenbank ab und behält die letzten 12. Sie lassen sich hier als Datei herunterladen und wie oben wiederherstellen.</div><div id="bk-auto" style="margin-top:6px"></div></div>
   <div class="card"><div class="head"><h2>Excel herunterladen</h2></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn" id="x-exp">Excel erstellen</button><span class="note" id="x-msg" style="margin:0">Erzeugt deine Finanzierungspläne mit allem aus der App: Monatsblöcke, Grundbeträge, Ferienwohnung, Urlaubskonto, Strom. Kommt als ZIP, darin die .xlsm mit deinen Makros.</span></div></div>
   </div>
@@ -633,7 +636,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
-const APPV={nr:'2.4',datum:'19.10.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
+const APPV={nr:'2.5',datum:'26.10.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
 const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
@@ -877,7 +880,7 @@ function rHeute(){
   rBkHint();
 }
 
-function bkAlt(){const am=S.sich?.am?S.sich.am.slice(0,10):null;if(!am)return 999;return Math.round((Date.parse(TODAY)-Date.parse(am))/864e5);}
+function bkAlt(){let am=S.sich?.am?S.sich.am.slice(0,10):null;const au=(S.sichAuto||[]).map(x=>(x.am||'').slice(0,10)).sort().at(-1);if(au&&(!am||au>am))am=au;if(!am)return 999;return Math.round((Date.parse(TODAY)-Date.parse(am))/864e5);}
 function rBkHint(){const el=$('#h-bk');if(!el)return;const d=bkAlt();if(d<30){el.innerHTML='';return;}
   el.innerHTML=`<div class="bkhint">💾 <div><b>${d>=999?'Noch keine Sicherung gespeichert':'Letzte Sicherung vor '+d+' Tagen'}</b><small>Einmal im Monat sichern, dann bleibt nichts verloren.</small></div><button type="button" class="btn sm" data-bknow="1">Jetzt sichern</button></div>`;}
 document.addEventListener('click',e=>{if(e.target.closest('[data-bknow]'))$('#bk-save').click();});
@@ -908,7 +911,7 @@ document.getElementById('h-fw')?.addEventListener('click',e=>{const t=e.target.c
 /* ---------- Monat ---------- */
 let mWho='TILL';
 $('#m-who').innerHTML=SH.map(s=>`<button type="button" data-w="${s}">${SHN[s]}</button>`).join('');
-$('#m-who').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;mWho=b.dataset.w;render();};
+$('#m-who').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;mWho=b.dataset.w;const bt=$('#m-close');if(bt){bt.dataset.armed='';bt.classList.remove('danger');}const ck=$('#m-check');if(ck)ck.hidden=true;render();};
 const FEST_P=/^(giroausgleich|haus, sonst|pauschale|ioniq|sparen für auto|autosparen|etf$|versicherung|gemeinschaftskredit|strom anteil|rückgabe|rate sonde|kfz|anhänger|startkapital|svlfg|rest gehalt|debeka)/i;
 const ABGL='Abgleich Kontostand';
 function isFest(e,sh,g){if(e._c)return true;if(e.fest!=null)return !!e.fest;if((e.l||'')===ABGL)return false;if(e.f)return true;
@@ -981,17 +984,29 @@ $('#m-blocks').addEventListener('click',e=>{const pt=e.target.closest('[data-pau
   const lk=e.target.closest('[data-lock]');if(lk){const k=lk.dataset.lock;UNL.has(k)?UNL.delete(k):UNL.add(k);rMonat();if(UNL.has(k))setTimeout(()=>$(`#m-blocks [data-lock="${k}"]`)?.closest('.er')?.querySelector('.amt')?.focus(),30);return;}
   const d=e.target.closest('[data-del]');if(d){const r=d.closest('.er');if(!d.dataset.armed){d.dataset.armed=1;d.textContent='✓';d.style.color='var(--bad)';setTimeout(()=>{d.dataset.armed='';d.textContent='×';d.style.color='';},2500);return;}
     savePlan(month,x=>{const blk=x[mWho];const e0=blk[r.dataset.g][+r.dataset.i];if(e0&&e0.lk){Object.keys(blk).forEach(g=>{if(Array.isArray(blk[g]))blk[g]=blk[g].filter(e=>e.lk!==e0.lk);});}else blk[r.dataset.g].splice(+r.dataset.i,1);});}});
+/* Checkliste vor dem Monatsabschluss: zeigt, was noch offen ist – abschließen geht trotzdem */
+function closeCheck(sh){const P=S.plan[month]||{};const blk=P[sh]||{};const c=CALC[month]?.[sh];const L=[];const ok=(t)=>L.push(['ok',t]),warn=(t)=>L.push(['warn',t]);
+  if(sh==='HAUS'){const has=Math.abs(abglVal(blk,'haus'))>0.004||(blk.G||[]).concat(blk.I||[]).some(e=>e.l===ABGL);has?ok('Haushaltskonto mit dem echten Kontostand abgeglichen'):warn('Haushaltskonto noch nicht mit dem echten Kontostand abgeglichen (unten „Monatsende“)');
+    const B=S.budget[month]||{e:[],s:[]};const ue=(B.e||[]).reduce((a,x)=>a+x.b,0),us=(B.s||[]).reduce((a,x)=>a+x.b,0);const re=essenBudget(month)-ue,rs=sonstBudget(month)-us;
+    re<-0.5?warn(`Essen um ${eur(-re)} überzogen – ausgleichen (Betrag mit Minus) oder so lassen`):ok(`Essen: ${eur(re)} übrig`);rs<-0.5?warn(`Sonstiges um ${eur(-rs)} überzogen – ausgleichen oder so lassen`):ok(`Sonstiges: ${eur(rs)} übrig`);
+    if(typeof fwList==='function'){const U=S.urlaub.e||[];const miss=fwList().filter(x=>x.ud&&x.ud.startsWith(month)&&!U.some(u=>u.fid===x.id));miss.length?warn(`${miss.length} Ferienwohnungs-Gutschrift${miss.length>1?'en':''} im Monat ohne Urlaubskonto-Eintrag (${miss.map(x=>dDE(x.ud).slice(0,5)).join(', ')})`):ok('Ferienwohnung: alle Gutschriften des Monats auf dem Urlaubskonto');}}
+  else{['giro','tg'].forEach(k=>{const has=ABG[k].some(g=>(blk[g]||[]).some(e=>e.l===ABGL));const nm=k==='giro'?'Girokonto':'Tagesgeld';has?ok(`${nm} mit dem echten Kontostand abgeglichen`):warn(`${nm} noch nicht mit dem echten Kontostand abgeglichen (unten „Monatsende“) – ohne Abgleich startet der nächste Monat mit dem Planwert`);});
+    const f=fixInfo(sh,blk);f?.fixed?ok('Giroausgleich festgeschrieben'):warn('Giroausgleich nicht festgeschrieben – beim Abschluss wird der aktuelle Wert eingefroren');
+    const g=(blk.C||[]).filter(e=>e.l&&(e.v==null||e.v==='')&&!e.f&&!e._c);if(g.length)warn(`${g.length} Zeile${g.length>1?'n':''} ohne Betrag: ${g.map(e=>e.l).slice(0,3).join(', ')}`);
+    if(blk.gehIst==null&&month<=CUR)warn('Echtes Gehalt nicht eingetragen – es gilt das geplante');}
+  const d=bkAlt();d>14?warn(d>=999?'Noch nie gesichert – nach dem Abschluss unter Einstellungen → Sicherung speichern (die automatische Sicherung in der Datenbank kommt mit diesem Abschluss dazu)':`Letzte Sicherung vor ${d} Tagen – nach dem Abschluss sichern`):ok('Sicherung ist aktuell');
+  const w=L.filter(x=>x[0]==='warn').length;return `<div class="chk"><b>${w?w+' Punkt'+(w>1?'e':'')+' offen':'Alles erledigt'}</b> – abschließen geht trotzdem; die Punkte lassen sich auch danach noch ändern (Abschluss aufheben).<ul>${L.map(([k,t])=>`<li class="${k}">${k==='ok'?'✅':'⚠️'} ${t}</li>`).join('')}</ul></div>`;}
 $('#m-close').onclick=()=>{const P=S.plan[month];if(!P)return;const sh=mWho;
   const stripCm=b=>{if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g]=b[g].filter(e=>!e.cm);});};
   if(bzu(P,sh)){savePlan(month,d=>{if(d.zu){const am=d.zuAm;SH.forEach(x=>{if(x!==sh&&d[x]){d[x].zu=true;d[x].zuAm=d[x].zuAm||am;}});if(d.gold&&d.TILL&&sh!=='TILL')d.TILL.gold=d.TILL.gold||d.gold;delete d.zu;delete d.zuAm;delete d.gold;}
     const b=d[sh];if(b){delete b.zu;delete b.zuAm;delete b.gold;stripCm(b);}});return;}
-  const bt=$('#m-close');if(!bt.dataset.armed){bt.dataset.armed='1';bt.textContent=`${BLN[sh]} wirklich abschließen? Nochmal tippen`;bt.classList.add('danger');setTimeout(()=>{bt.dataset.armed='';bt.classList.remove('danger');renderMonthBar();},4000);return;}
-  bt.dataset.armed='';bt.classList.remove('danger');
+  const bt=$('#m-close');if(bt.dataset.armed!==sh){bt.dataset.armed=sh;bt.textContent=`${BLN[sh]} wirklich abschließen? Nochmal tippen`;bt.classList.add('danger');const ck=$('#m-check');ck.innerHTML=closeCheck(sh);ck.hidden=false;clearTimeout(bt._t);bt._t=setTimeout(()=>{bt.dataset.armed='';bt.classList.remove('danger');ck.hidden=true;renderMonthBar();},15000);return;}
+  bt.dataset.armed='';bt.classList.remove('danger');$('#m-check').hidden=true;
   const CST=[];useYm(month);{const b=P[sh];if(b)Object.keys(b).forEach(g=>{if(Array.isArray(b[g]))b[g].filter(e=>e._c).forEach(e=>CST.push([g,{l:e.l,v:r2(entryVal(e,b,sh)),fest:true,cm:1}]));});}
   savePlan(month,d=>{const b=d[sh]=d[sh]||{};CST.forEach(([g,e])=>{(b[g]=b[g]||[]).push(e);});
     Object.keys(b).forEach(g=>{if(!Array.isArray(b[g]))return;b[g].forEach(e=>{if(e.f){e.v=r2(isPausch(e)?pauschBase(e,b,sh):entryVal(e,b,sh));if(e.f==='=GIROAUSGLEICH')e.fix=TODAY;delete e.f;}});});
     b.zu=true;b.zuAm=TODAY;if(sh==='TILL')b.gold=gn('goldpreis');
-    if(SH.every(x=>d[x]?.zu)){d.zu=true;d.zuAm=TODAY;d.gold=d.TILL?.gold||gn('goldpreis');}});
+    if(SH.every(x=>d[x]?.zu)){d.zu=true;d.zuAm=TODAY;d.gold=d.TILL?.gold||gn('goldpreis');setTimeout(()=>autoBackup(month),1500);}});
   flash('ok',`${BLN[sh]} für ${ymName(month)} abgeschlossen`);};
 
 /* ---------- Schnelleingabe ---------- */
@@ -1204,7 +1219,7 @@ function fwD(b){const R=FR();const p=normPlat(b.p||b.pRaw);const n=nightsOf(b.a,
   else brutto=netto;
   const gb=b.stoBez&&!b.gbM?0:(+b.gb||0);const bar=+b.bar||0;const ein=netto+bar;const barM=b.barUrlaub===false?'nein':b.barUrlaub==='voll'?'voll':'teilen';const barU=barM!=='nein';const basis=barM==='teilen'?ein:netto;const spar=b.spO!=null&&b.spO!==''?+b.spO:r2(basis*R.urlProz+R.urlFix);const urlaub=b.uO!=null&&b.uO!==''?+b.uO:r2(basis-spar-gb+(barM==='voll'?bar:0));const ud=p==='Booking.com'?dAdd(b.ab,2):p==='Airbnb'?dAdd(b.a,2):b.a;
   const sto=(b.sto===''||b.sto==null)?STORNO[p]:+b.sto;const frist=dAdd(b.a,-(sto||0));
-  return {...b,p,n,nOcc:b.stoBez?0:n,netto,bar,ein,barU,barM,spar,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,sicher:TODAY>=frist,dac7:p==='Booking.com'?(+b.H||null):p==='Airbnb'?brutto:null};}
+  return {...b,p,n,nOcc:b.stoBez?0:n,netto,bar,ein,barU,barM,spar,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,nonref:sto===0,sicher:sto===0||TODAY>=frist,dac7:p==='Booking.com'?(+b.H||null):p==='Airbnb'?brutto:null};}
 function fwListAll(){return Object.entries(S.fewo).filter(([k])=>/^\d{4}$/.test(k)).flatMap(([,v])=>v||[]).filter(b=>b&&b.a).map(fwD).sort((a,b)=>a.a.localeCompare(b.a));}
 function fwList(){return fwListAll().filter(b=>!b.storniert);}
 function fwAlt(){return (S.fewo.alt||[]).map(x=>({...x,p:normPlat(x.p)}));}
@@ -1241,7 +1256,7 @@ function zettel(b,edit){const R=FR();const ein=b.ein??b.netto;const alt=!!b.ab&&
   <div class="row"><span>davon Spartopf (${Math.round(R.urlProz*100)} % + ${eur(R.urlFix,0)})</span>${V('spar',b.spar,false,b.spO!=null)}</div>
   <div class="row"><span><b>aufs Urlaubskonto</b> am ${dDE(b.ud)}</span>${V('urlaub',b.urlaub,true,b.uO!=null)}</div>
   ${hint}
-  <div class="row"><span class="muted">Stornofrist ${b.sto} Tage: ${b.sicher?'<span class="ok">vorbei, Geld sicher</span>':'stornierbar bis '+dDE(b.frist)}</span><span></span></div>
+  <div class="row"><span class="muted">${b.nonref?'Nicht kostenlos stornierbar (0 Tage): <span class="ok">Geld sicher</span>':`Stornofrist ${b.sto} Tage: ${b.sicher?'<span class="ok">vorbei, Geld sicher</span>':'kostenlos stornierbar bis '+dDE(b.frist)}`}</span><span></span></div>
   ${ed?'<div class="note" style="margin:2px 0 0">Beträge antippen, um sie von Hand zu ändern (✎ = von Hand). Feld leeren = wieder automatisch.</div>':''}
   ${edit&&alt&&!b.storniert?'<div class="note" style="margin:2px 0 0">🔒 Abreise liegt mehr als 2 Wochen zurück – diese Buchung ist abgeschlossen.</div>':''}
   ${b.notiz?`<div class="note">📝 ${esc(b.notiz)}</div>`:''}
@@ -1560,7 +1575,7 @@ function grundHTML(){const used=new Set();const own=i=>i.g==='Till'?'TILL':i.g==
       if(l.length===1&&(l[0].l.replace(/\s*\(.*\)/,'').length<30||t===l[0].l))return `<div class="gsingle${l[0].k==='goldpreis'?' ggold':''}">${row(l[0])}${l[0].k==='goldpreis'?`<div class="note" style="margin:2px 0 0">${goldAm()?'Stand '+dDE(goldAm())+' · ':''}gilt überall außer in abgeschlossenen Monaten</div>`:''}</div>`;
       const m=l.reduce((a,i)=>a+gMon(i),0);
       return `<details class="ggrp" data-gg="${key}" ${GOPEN.has(key)?'open':''}><summary><span>${esc(t)}</span>${m?`<b class="num">${eur(m)}<small class="muted"> / Monat</small></b>`:''}</summary>${l.map(row).join('')}</details>`;}).join('')+(o==='GEM'?bsHTML()+(()=>{const g=G.find(([t])=>t==='__gold');return g?`<div class="gsingle ggold">${row(g[1][0])}<div class="note" style="margin:2px 0 0">${goldAm()?'Stand '+dDE(goldAm())+(liveGold()?' (automatisch)':' (von Hand)')+' · ':''}wird täglich automatisch aktualisiert · gilt überall außer in abgeschlossenen Monaten</div></div>`:'';})():'')+`</div>`;}).join('')+`</div>`+gAddHTML();}
-function rEinst(){
+function rEinst(){try{rBkAuto();}catch(_){}
   const groups={};S.grund.items.forEach(i=>{(groups[i.g]??=[]).push(i);});
   if($('#gh-k').options.length!==S.grund.items.filter(i=>i.fmt!=='date').length)$('#gh-k').innerHTML=S.grund.items.filter(i=>i.fmt!=='date').map(i=>`<option value="${i.k}">${esc(i.g)}: ${esc(i.l)}</option>`).join('');
   const gl=$('#g-list');if(!gl.contains(document.activeElement))gl.innerHTML=grundHTML();
@@ -1892,6 +1907,18 @@ $('#bk-conf').addEventListener('click',async e=>{if(e.target.id==='bk-no'){bkPen
   // vorher automatisch den aktuellen Stand merken (Rückgängig)
   for(const p of paths){try{msg.textContent=`Stelle wieder her … ${ok+1}/${paths.length}`;await save(p,d.docs[p]);ok++;}catch(_){}}
   $('#bk-conf').innerHTML='';msg.innerHTML=`<b class="pos">Fertig: ${ok} von ${paths.length} Einträgen wiederhergestellt.</b>`;});
+
+/* ---------- Automatische Sicherung in der Datenbank (beim kompletten Monatsabschluss) ---------- */
+async function autoBackup(ym){if(!db)return;try{const d=bkData();const n=Object.keys(d.docs).length;if(!n)return;const id=ym||TODAY.slice(0,7);
+    await db.doc('sicherung/'+id).set({...d,monat:id});
+    const idx=[...(S.sichAuto||[])].filter(x=>x.id!==id);idx.push({id,am:d.am,n});idx.sort((a,b)=>a.id.localeCompare(b.id));
+    while(idx.length>12){const old=idx.shift();try{await db.doc('sicherung/'+old.id).delete();}catch(_){}}
+    S.sichAuto=idx;await save('config/sicherungen',{l:idx});flash('ok','Automatische Sicherung abgelegt');render();}catch(e){console.error(e);}}
+function rBkAuto(){const el=$('#bk-auto');if(!el)return;const L=[...(S.sichAuto||[])].reverse();
+  el.innerHTML=L.length?L.map(x=>`<div class="row"><span>${ymName(x.id)} <small class="muted">abgelegt ${new Date(x.am).toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'})} · ${x.n} Einträge</small></span><span><button type="button" class="btn sec sm" data-bkauto="${x.id}">Herunterladen</button></span></div>`).join(''):'<div class="muted">Noch keine – kommt mit dem ersten kompletten Monatsabschluss.</div>';}
+$('#bk-auto').addEventListener('click',async e=>{const b=e.target.closest('[data-bkauto]');if(!b)return;const msg=$('#bk-msg');if(!dlFn){msg.textContent='Herunterladen ist in dieser Ansicht nicht verfügbar.';return;}b.disabled=true;
+  try{const s=await db.doc('sicherung/'+b.dataset.bkauto).get();const d=s.data();if(!d)throw new Error('nicht gefunden');delete d.monat;const fn=`Haushaltsbuch-Sicherung-${b.dataset.bkauto}-auto.json`;await dlFn.save({filename:fn,data:new Blob([JSON.stringify(d)],{type:'application/json'})});msg.innerHTML=`<b class="pos">Gespeichert: ${esc(fn)}</b>`;}
+  catch(err){msg.textContent='Das hat nicht geklappt: '+(err?.message||'');}b.disabled=false;});
 /* ---------- Excel-Export ---------- */
 function loadScript(src,test){return new Promise((res,rej)=>{if(test())return res();const s=document.createElement('script');s.src=src;s.onload=()=>test()?res():rej(new Error('load'));s.onerror=()=>rej(new Error('offline'));document.head.appendChild(s);});}
 const xesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -2033,12 +2060,14 @@ const HILFE=[
 - spart ab Februar für das nächste Jahr den Gesamtbetrag des Bescheids an. Der Januar (noch alter Bescheid, meist schon abgeschlossen) wird verrechnet, damit bis Dezember genau der Gesamtbetrag zusammenkommt; ab Januar des Folgejahres Gesamtbetrag ÷ 12.
 Wasser und Grundsteuer werden immer im Vorjahr angespart (Januar–Dezember für die Raten des Folgejahres); der Balken im Ausblick („Wasser 2027“) wächst bis Dezember auf 100 %. Geht auch per Schnell eintragen: „Wasserbescheid 2027: Februar 297 €, danach 280 €“. Falsch eingetragen: Bescheid in der Liste mit × löschen und neu eintragen.`],
 ['Neuer Beitrag Versicherung, Abfall, ADAC',`Einstellungen → Gemeinsam → „+ Neuer Bescheid“ → Posten (Wohngebäude-, Hausrat-, Haftpflichtversicherung, Abfallgebühr, ADAC) → neuer Jahresbetrag und Fälligkeitsmonat (vorausgefüllt) → Übernehmen. Die Zahlung im Fälligkeitsmonat wird angepasst. Reicht das in den 12 Monaten davor Angesparte nicht (oder ist etwas übrig), zahlen Till und Patrick im Fälligkeitsmonat je die Hälfte nach (bzw. weniger). Danach wird der neue Betrag ÷ 12 angespart. Diese Posten werden jeweils bis zur nächsten Zahlung angespart. Per Schnell eintragen: „Wohngebäudeversicherung kostet ab April 2027 2.000 €“.`],
+['Monatsabschluss-Check',`Beim ersten Tippen auf „… abschließen“ zeigt die App eine Checkliste: Kontostände abgeglichen? Giroausgleich festgeschrieben? Echtes Gehalt drin? Essen/Sonstiges überzogen? Ferienwohnungs-Gutschrift ohne Urlaubskonto-Eintrag? Sicherung aktuell? Abschließen geht trotzdem (zweites Tippen) – die Punkte lassen sich auch danach noch erledigen (Abschluss aufheben).`],
+['Automatische Sicherung',`Sobald ein Monat komplett abgeschlossen ist (Tills Giro, Patricks Giro, Haushaltskonto), legt die App eine Sicherung in der Datenbank ab und behält die letzten 12. Unter Einstellungen → Sicherung → „Automatische Sicherungen“ lässt sich jede als Datei herunterladen und wie gewohnt wiederherstellen. Die Datei-Sicherung bleibt zusätzlich sinnvoll (falls die Datenbank selbst betroffen ist).`],
 ['Was bringt eine Sondertilgung?',`Reiter Kredite, oben: Kredit (Sparda oder ING), Betrag und Datum eingeben – sofort steht da, wie viel Zinsen das bis zum Ende spart, wann der Kredit fertig ist und (Sparda) was am Ende der Zinsbindung 03/2053 übrig bleibt. Es wird nichts gespeichert. Die App warnt, wenn das Jahreslimit von 17.250 € überschritten würde. Auch per Textfeld: „Was bringt eine Sondertilgung von 5.000 € bei der Sparda?“`],
 ['Sparda: Werte laut Bank',`Reiter Kredite → Sparda-Darlehen → „Werte laut Sparda“: Datum und Restschuld wie im Online-Banking oder Tilgungsplan eintragen (die Rate wird am 30. abgebucht – ein Stand vom 11.10. gilt also nach der September-Rate) (z. B. heute und zwei spätere Werte), optional eine geänderte Rate (gilt ab diesem Monat). Bis heute übernimmt der Rechner den Wert genau, bei künftigen Werten die Abweichung zur eigenen Rechnung – geplante Sondertilgungen zählen weiter. Daneben steht, wie weit die App-Rechnung danebenlag. Geht auch per Textfeld: „Sparda Restschuld Dezember 2027 laut Tilgungsplan 306.000“.`],
 ['Storniert, aber Gast zahlt trotzdem',`Konnten Gäste nicht mehr kostenlos stornieren, kommt das Geld trotzdem. Ferienwohnung → Buchung antippen → „Storniert, Gast zahlt trotzdem“ (zweimal tippen). Die Buchung zählt dann weiter bei Auszahlung, Spartopf, Urlaubskonto, Steuer und Excel, aber ohne Übernachtung: kein Gästebeitrag, keine belegten Nächte, nicht in der Belegung für Home Assistant. Zahlt die Plattform nur einen Teil aus, die Auszahlung im Zettel antippen und ändern. „Rückgängig“ macht es wieder zur normalen Buchung. Per Textfeld: „Buchung vom 14.11. storniert, Gast zahlt trotzdem“. Für eine kostenlose Stornierung (kein Geld) gibt es weiter „Storniert (kostenlos)“.`],
 ['Schnell eintragen (KI)',`Beide Textfelder (Übersicht und Ferienwohnung) erkennen viele Befehle OHNE KI (spart Daten, geht sofort): Essen/Sonstiges-Einkäufe und -Ausgleich, Urlaubskonto abheben/einzahlen („200 € vom Urlaubskonto abgehoben am 12.10. für Fähre“), Tagesgeld-Entnahmen, Gehalt eines Monats oder dauerhaft („ab Februar 2027“), Strom (Abrechnung, Einspeisevergütung, Stromkonto), Sondertilgung, Sparda-Restschuld, Wasser-/Grundsteuerbescheid, Jahresbeiträge, Ausgaben vom Girokonto („Patrick 45 € Restaurant bezahlt für Essen gehen“) und Änderungen an Buchungen („Gäste vom 3.10. haben 20 € bar bezahlt“, „Buchung vom 14.11. storniert“). Mehrere Befehle mit Semikolon oder neuer Zeile trennen. „ich/mein“ = wer angemeldet ist. Nur was die App nicht versteht, geht an die KI. Eine neue Buchung in der Übersicht wird automatisch an den Reiter Ferienwohnung weitergereicht. In der Übersicht oben einfach schreiben, was sich geändert hat, z. B. „Essen 36,34“, „Patrick nimmt 20 € vom Tagesgeld für ein Geschenk“, „Till Tanken im Oktober 60 statt 115“, „Patrick hat im Oktober 2.610 € bekommen“, „Goldpreis 3.820“, „ING-Rate ab November 2030 auf 0“. Die KI schlägt die Einträge vor, du bestätigst. Ohne KI geht alles auch von Hand.`],
 ['Essen & Sonstiges',`Budget Essen = Grundbetrag Essen, Sonstiges = „sonstiges: freie Verwendung“ minus 100 € fürs Kredit-Sparen bis April 2027. Einkauf: Betrag eintragen → „− Essen“ oder „− Sonstiges“. Ausgleichen: Betrag mit Minus (−2,89); mit „Wer“ wird er auch bei dessen Girokonto abgezogen.`],
-['Ferienwohnung',`Die Ferienwohnung hat ein eigenes Verwaltungsprogramm (Seite fewo.html, Knopf im Reiter Urlaubskonto): Buchungen von Booking.com, Airbnb und privat, Verträge, Rechnungen, Kalender, Preise und Auswertungen inkl. Steuer und Gästebeitrag. Jede Buchung dort trägt ihren Anteil automatisch aufs Urlaubskonto ein (Auszahlung minus Gästebeitrag minus Spartopf 30 % + 5 €). Im Haushaltsbuch bleibt das Urlaubskonto mit Einzahlungen und Entnahmen. Die FeWo-Rechenregeln (Einstellungen) gelten für beide.`],
+['Ferienwohnung',`Buchung einfügen (Text aus der Booking-/Airbnb-App kopieren) → Übernehmen → Felder prüfen → speichern. Tippen auf eine Buchung öffnet den Auszahlungs-Zettel: Brutto, Gebühren, Auszahlung, Gästebeitrag (nur Erwachsene × Nächte), Spartopf (30 % + 5 €), aufs Urlaubskonto. Beträge antippen = von Hand ändern (✎), Feld leeren = wieder automatisch. Bargeld vor Ort: „wie Auszahlung aufteilen“, „komplett aufs Urlaubskonto“ oder „nicht aufs Urlaubskonto“. Buchungen, deren Abreise mehr als 2 Wochen zurückliegt, sind nur noch lesbar. Die Übersicht zeigt die nächste Gutschrift mit Aufteilung.`],
 ['Kredite',`Karten Sparda (blau), ING (orange), Bausparvertrag (gelb). Diagramm: Linien an/aus, Zeitraum. Sondertilgungen bei Sparda/ING hinzufügen; „Rate Sondertilgung Haus“ aus den Monatsplänen wird automatisch als Sondertilgung gerechnet. Die ING-Rate endet automatisch nach der letzten Rate (in fortgeschriebenen Jahren); vorher auf 0 setzen: Grundbetrag „Gemeinschaftskredit ING Rate“ → „erst ab“.`],
 ['Ausblick, Vermögen, Strom',`Ausblick: Fragen & Was wäre wenn (KI rechnet durch, speichert nichts), Kontoverlauf bis 2040 (Linien, Werte, Zeitraum wählbar), dauerhafte Änderungen, Rücklagen-Balken, was demnächst ansteht. Vermögen: ETF und Gold, Verlauf mit Rückblick/Zukunft oder einzelnem Jahr. Strom: je Jahr Einzahlung, Verbrauch geplant, Verbrauch echt (rot = mehr, grün = weniger), Vergütung, Kontostand; graue Werte sind vom Vorjahr übernommen.`],
 ['Goldpreis',`Wird täglich automatisch beim Öffnen der App aktualisiert (Stand steht unter dem Feld). Von Hand ändern geht auch; gilt überall außer in abgeschlossenen Monaten.`],
@@ -2080,7 +2109,7 @@ function showTab(t){tab=t;$$('#nav button').forEach(b=>b.setAttribute('aria-sele
 $('#nav').onclick=e=>{const t=e.target.closest('[data-t]')?.dataset.t;if(!t)return;showTab(t);try{history.replaceState(null,'','#'+t)}catch(_){ }render();};
 const h0=(location.hash||'').slice(1);showTab(TABS.some(([k])=>k===h0)?h0:'heute');
 const R={heute:rHeute,monat:rMonat,fewo:rFewo,kredite:rKredite,vermoegen:rVerm,bald:rBald,strom:rStrom,einst:rEinst};
-let raf;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{try{calcAll();R[tab]();if(tab!=='bald')try{rBald();}catch(_){}}catch(err){console.error(err);}try{$$('.tw').forEach(t=>t.classList.toggle('tw-x',t.scrollWidth>t.clientWidth+4&&t.scrollLeft<4));}catch(_){}});}
+let raf;function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{try{calcAll();R[tab]();if(tab!=='bald')try{rBald();}catch(_){}}catch(err){console.error(err);showErr(err);}try{$$('.tw').forEach(t=>t.classList.toggle('tw-x',t.scrollWidth>t.clientWidth+4&&t.scrollLeft<4));}catch(_){}});}
 document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('tw'))t.classList.toggle('tw-x',t.scrollWidth>t.clientWidth+4&&t.scrollLeft<4);},true);
 let rt,lastW=innerWidth;addEventListener('resize',()=>{if(Math.abs(innerWidth-lastW)<40)return;/* Handy-Tastatur ändert nur die Höhe */lastW=innerWidth;const a=document.activeElement;if(a&&a.matches('input,textarea,select'))return;clearTimeout(rt);rt=setTimeout(render,150);});
 {const t=`Version ${APPV.nr} vom ${APPV.datum}`;$('#appv').textContent=t;$('#appv2').textContent='· '+t;}
@@ -2100,18 +2129,23 @@ render();
   const later=()=>{if(editing()){clearTimeout(later.t);later.t=setTimeout(later,700);}else{render();clearTimeout(later.m);later.m=setTimeout(migrate,1500);}};
   const cfg=(p,f)=>db.doc('config/'+p).onSnapshot(s=>{const d=s.data();remember('config/'+p,d);if(d)f(d);later();flash('ok','Synchronisiert');},onErr);
   cfg('grund',d=>S.grund=d);cfg('archiv',d=>S.archiv=d);cfg('urlaub',d=>S.urlaub=d);cfg('strom',d=>S.strom=d);cfg('kredit',d=>S.kredit=d);
-  cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);cfg('sicherung',d=>S.sich=d);
+  cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);cfg('sicherungen',d=>S.sichAuto=d.l||[]);cfg('sicherung',d=>S.sich=d);
   db.collection('plan').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('plan/'+d.id,m[d.id]);});S.plan=m;if(!window.__mset&&m[CUR]&&CUR<PLAN0){month=CUR;}window.__mset=1;later();},onErr);
   db.collection('budget').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('budget/'+d.id,m[d.id]);});S.budget=m;later();},onErr);
   db.collection('fewo').onSnapshot(q=>{const f={};q.docs.forEach(d=>{const x=d.data();remember('fewo/'+d.id,x);f[d.id]=(x?.b)||[];});S.fewo=f;later();clearTimeout(fwPublish.t);fwPublish.t=setTimeout(fwPublish,3000);},onErr);
 })();
 $('#app-close').onclick=()=>{document.activeElement?.blur();try{window.close();}catch(_){}setTimeout(()=>{$('#closed').hidden=false;document.body.classList.add('is-closed');},250);};
 $('#app-reopen').onclick=()=>{$('#closed').hidden=true;document.body.classList.remove('is-closed');};
-window.__goto=ym=>{month=ym;render();};window.__dbg=()=>({ING_END,CALC});
+window.__goto=ym=>{month=ym;render();};window.__dbg=()=>({ING_END,CALC,fwList,fwListAll,showErr,render});
 /* Monatsfelder: Browser ohne Monats-Auswahl zeigen ein Textfeld – dort „08.2026“, „August 2026“ o. ä. erlauben */
 $$('input[type=month]').forEach(i=>{if(i.type!=='month'){i.placeholder=i.placeholder||'MM.JJJJ';i.style.minWidth='110px';}});
 document.addEventListener('change',e=>{const i=e.target;if(!(i instanceof HTMLInputElement)||i.getAttribute('type')!=='month'||i.type==='month')return;
   if(i.value==='')return;const ym=normYm(i.value);if(!ym){e.stopImmediatePropagation();i.style.outline='2px solid var(--neg,#c33)';i.title='Bitte als Monat eingeben, z. B. 08.2026';return;}i.style.outline='';i.title='';i.value=ym;},true);
+
+/* Sichtbarer Hinweis statt stummem Hängen, wenn beim Aufbau einer Ansicht etwas schiefgeht */
+function showErr(err){let el=$('#errbar');if(!el){el=document.createElement('div');el.id='errbar';el.className='note neg';el.style.cssText='position:sticky;top:0;z-index:50;margin:8px 0';document.querySelector('main,#app,body').prepend(el);}
+  const t=(err&&(err.message||String(err)))||'unbekannt';el.innerHTML=`⚠️ <b>Diese Ansicht konnte nicht ganz aufgebaut werden.</b> Die Daten sind nicht betroffen. Meldung: <code>${esc(t.slice(0,160))}</code> <button type="button" class="btn sec sm" onclick="location.reload()">Neu laden</button> <button type="button" class="btn sec sm" onclick="this.parentNode.remove()">Ausblenden</button>`;}
+window.addEventListener('error',e=>{if(e?.error)showErr(e.error);});
 })();
 document.addEventListener('input',e=>{const t=e.target;if(t.tagName!=='TEXTAREA')return;t.classList.add('grow');t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,window.innerHeight*0.5)+'px';});
 
