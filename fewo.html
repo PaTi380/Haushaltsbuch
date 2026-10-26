@@ -377,8 +377,8 @@ function fwD(b){const R=FR();const TODAY=todayISO();const p=normPlat(b.p||b.pRaw
   else brutto=netto;
   const gb=b.stoBez&&!b.gbM?0:(+b.gb||0);const bar=+b.bar||0;const ein=netto+bar;const barM=b.barUrlaub===false?"nein":b.barUrlaub==="voll"?"voll":"teilen";const basis=barM==="teilen"?ein:netto;
   const spar=b.spO!=null&&b.spO!==""?+b.spO:r2(basis*R.urlProz+R.urlFix);const urlaub=b.uO!=null&&b.uO!==""?+b.uO:r2(basis-spar-gb+(barM==="voll"?bar:0));const ud=p==="Booking.com"?addDays(b.ab,2):p==="Airbnb"?addDays(b.a,2):b.a;
-  const sto=(b.sto===""||b.sto==null)?STORNO[p]:+b.sto;const frist=addDays(b.a,-(sto||0));
-  return {...b,p,n,nOcc:b.stoBez?0:n,netto,bar,ein,barM,spar,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,sicher:TODAY>=frist,dac7:p==="Booking.com"?(+b.H||null):p==="Airbnb"?brutto:null};}
+  const sto=(b.sto===""||b.sto==null)?STORNO[p]:+b.sto;const frist=addDays(b.a,-(sto||0));const nichtStorno=sto===0;
+  return {...b,p,n,nOcc:b.stoBez?0:n,netto,bar,ein,barM,spar,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,sicher:nichtStorno||TODAY>=frist,nichtStorno,dac7:p==="Booking.com"?(+b.H||null):p==="Airbnb"?brutto:null};}
 const HB_KEYS=["id","p","pRaw","a","ab","erw","ki","sto","gb","H","I","J","K","src","gesamt","created","bar","notiz","barUrlaub","storniert","stoBez","stornoAm","bm","gbM","spO","uO"];
 const strip=b=>{const o={};HB_KEYS.forEach(k=>{if(b[k]!==undefined&&b[k]!==null&&b[k]!=="")o[k]=b[k];});return o;};
 function coresAll(){ return Object.entries(S.fw).filter(([k])=>/^\d{4}$/.test(k)).flatMap(([,v])=>(v&&v.b)||[]).filter(b=>b&&b.a); }
@@ -1244,6 +1244,7 @@ function stPill(b){ const d=hbD(b);
   if(b.status==="storniert") return `<span class="pill">Storniert</span>`;
   if(b.status==="storniert_bezahlt") return `<span class="pill warn">Storniert · bezahlt</span>`;
   if(!isPlat(b) && OFFEN.includes(b.status)){ const s=STATUS[b.status]; return `<span class="pill ${s[1]}">${s[0]}</span>`; }
+  if(d && d.nichtStorno) return `<span class="pill ok">Sicher · nicht stornierbar</span>`;
   if(d && d.sicher) return `<span class="pill ok">Sicher</span>`;
   return d ? `<span class="pill warn">Stornierbar bis ${fD(d.frist).slice(0,6)}</span>` : `<span class="pill">Daten offen</span>`; }
 function filteredBookings(){ const f=S.ui.bFilter||"kommend", T=todayISO();
@@ -1275,7 +1276,7 @@ function zettel(b){ const d=hbD(b); if(!d) return `<p class="hint">Sobald Daten 
    <span class="k">davon Gästebeitrag (an Gemeinde)</span><span class="neg">− ${money(d.gb)}</span>
    <span class="k">davon Spartopf (${fmtNum(R.urlProz*100).replace(",00","")} % + ${money(R.urlFix)})</span><span class="neg">− ${money(d.spar)}</span>
    <span class="k tot">aufs Urlaubskonto am ${fD(d.ud)}</span><span class="tot">${money(d.urlaub)}</span>
-   <span class="k">Stornofrist ${d.sto} Tage</span><span>${d.sicher?"vorbei, Geld sicher":"bis "+fD(d.frist)}</span>
+   <span class="k">${d.nichtStorno?"Nicht kostenlos stornierbar":`Stornofrist ${d.sto} Tage`}</span><span>${d.nichtStorno?"Geld sicher":d.sicher?"vorbei, Geld sicher":"bis "+fD(d.frist)}</span>
   </div>${offen?`<p class="hint" style="margin:8px 0 0">Noch nicht im Haushaltsbuch: Erst mit Status „Bestätigt“ zählt die Buchung für Urlaubskonto, Belegung und Auswertung.</p>`:""}${b.hbNotiz?`<p class="hint" style="margin:8px 0 0">Notiz aus dem Haushaltsbuch: ${esc(b.hbNotiz)}</p>`:""}</div>`; }
 function editorBooking(b){
   const direct = !isPlat(b);

@@ -1203,8 +1203,8 @@ function fwD(b){const R=FR();const p=normPlat(b.p||b.pRaw);const n=nightsOf(b.a,
   else if(p==='Airbnb'){if(+b.I>netto+0.5){brutto=+b.I;}else{const e=airEstimate(netto);brutto=e.gesamt;est=true;modell=e.modell;}if(!modell&&brutto)modell=(brutto-netto)/brutto>0.1?'neu':'alt';}
   else brutto=netto;
   const gb=b.stoBez&&!b.gbM?0:(+b.gb||0);const bar=+b.bar||0;const ein=netto+bar;const barM=b.barUrlaub===false?'nein':b.barUrlaub==='voll'?'voll':'teilen';const barU=barM!=='nein';const basis=barM==='teilen'?ein:netto;const spar=b.spO!=null&&b.spO!==''?+b.spO:r2(basis*R.urlProz+R.urlFix);const urlaub=b.uO!=null&&b.uO!==''?+b.uO:r2(basis-spar-gb+(barM==='voll'?bar:0));const ud=p==='Booking.com'?dAdd(b.ab,2):p==='Airbnb'?dAdd(b.a,2):b.a;
-  const sto=(b.sto===''||b.sto==null)?STORNO[p]:+b.sto;const frist=dAdd(b.a,-(sto||0));
-  return {...b,p,n,nOcc:b.stoBez?0:n,netto,bar,ein,barU,barM,spar,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,sicher:TODAY>=frist,dac7:p==='Booking.com'?(+b.H||null):p==='Airbnb'?brutto:null};}
+  const sto=(b.sto===''||b.sto==null)?STORNO[p]:+b.sto;const frist=dAdd(b.a,-(sto||0));const nichtStorno=sto===0;
+  return {...b,p,n,nOcc:b.stoBez?0:n,netto,bar,ein,barU,barM,spar,brutto:brutto!=null?r2(brutto):null,geb:brutto!=null?r2(brutto-netto):null,est,modell,gb,urlaub,ud,sto,frist,sicher:nichtStorno||TODAY>=frist,nichtStorno,dac7:p==='Booking.com'?(+b.H||null):p==='Airbnb'?brutto:null};}
 function fwListAll(){return Object.entries(S.fewo).filter(([k])=>/^\d{4}$/.test(k)).flatMap(([,v])=>v||[]).filter(b=>b&&b.a).map(fwD).sort((a,b)=>a.a.localeCompare(b.a));}
 function fwList(){return fwListAll().filter(b=>!b.storniert);}
 function fwAlt(){return (S.fewo.alt||[]).map(x=>({...x,p:normPlat(x.p)}));}
@@ -1241,7 +1241,7 @@ function zettel(b,edit){const R=FR();const ein=b.ein??b.netto;const alt=!!b.ab&&
   <div class="row"><span>davon Spartopf (${Math.round(R.urlProz*100)} % + ${eur(R.urlFix,0)})</span>${V('spar',b.spar,false,b.spO!=null)}</div>
   <div class="row"><span><b>aufs Urlaubskonto</b> am ${dDE(b.ud)}</span>${V('urlaub',b.urlaub,true,b.uO!=null)}</div>
   ${hint}
-  <div class="row"><span class="muted">Stornofrist ${b.sto} Tage: ${b.sicher?'<span class="ok">vorbei, Geld sicher</span>':'stornierbar bis '+dDE(b.frist)}</span><span></span></div>
+  <div class="row"><span class="muted">${b.nichtStorno?'Nicht kostenlos stornierbar: <span class="ok">Geld sicher</span>':`Stornofrist ${b.sto} Tage: ${b.sicher?'<span class="ok">vorbei, Geld sicher</span>':'stornierbar bis '+dDE(b.frist)}`}</span><span></span></div>
   ${ed?'<div class="note" style="margin:2px 0 0">Beträge antippen, um sie von Hand zu ändern (✎ = von Hand). Feld leeren = wieder automatisch.</div>':''}
   ${edit&&alt&&!b.storniert?'<div class="note" style="margin:2px 0 0">🔒 Abreise liegt mehr als 2 Wochen zurück – diese Buchung ist abgeschlossen.</div>':''}
   ${b.notiz?`<div class="note">📝 ${esc(b.notiz)}</div>`:''}
