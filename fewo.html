@@ -165,7 +165,9 @@ table.yr tr.sumrow td{font-weight:700;border-top:2px solid var(--line)}
 .cd.empty{background:transparent;border-color:transparent;cursor:default}
 .cd.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .cd.sel{background:var(--accent-soft)}
-.cd .dn{font-size:12px;font-weight:700;color:var(--muted)}
+.cd .dn{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd.hol{background:var(--warn-soft)} .cd .hol-t{font-weight:500;font-size:10.5px;color:var(--warn)}
+@media (max-width:560px){.cd .hol-t{display:none}}
 .cd .bk{display:block;color:#fff;font-size:11px;line-height:1.5;padding:0 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 -5px}
 .cd .bk.start{margin-left:0;border-top-left-radius:8px;border-bottom-left-radius:8px}
 .cd .bk.tent{background:repeating-linear-gradient(45deg,#2f8a5a,#2f8a5a 4px,#6fb58d 4px,#6fb58d 8px)!important}
@@ -391,7 +393,7 @@ function applyRates(){ const R=FR(); Object.entries(RATE_MAP).forEach(([k,[h,f]]
 function ratesFromSettings(){ const st=S.settings, R=FR(); const o={}; Object.entries(RATE_MAP).forEach(([k,[h,f]])=>{ o[h]=num(st[k])/f; }); o.airNeu = num(st.abService)/100/(1+R.mwst); return o; }
 
 /* ================= Buchungen: Haushaltsbuch-Datensatz + Verwaltungsdaten ================= */
-const CORE_SIG = ["channel","anreise","abreise","erw","kinder","status","preis","preisModus","hund","hundGeb","hundAnz","extras","saunaTage","gbFrei","gTyp","auszahlung","kommPfl","stoTage","spO","uO","barUrlaub"];
+const CORE_SIG = ["channel","anreise","abreise","erw","kinder","status","preis","erhalten","preisModus","hund","hundGeb","hundAnz","extras","saunaTage","gbFrei","gTyp","auszahlung","kommPfl","stoTage","spO","uO","barUrlaub"];
 const coreSig = v => JSON.stringify(CORE_SIG.map(k=>v[k]));
 const isPlat = v => v.channel==="booking" || v.channel==="airbnb";
 const OFFEN = ["anfrage","vertrag"];
@@ -427,7 +429,7 @@ function coreFromView(v, prev){
   const onSite = r2(c.extras.filter(e=>e.vorOrt).reduce((a,e)=>a+e.betrag,0) + (c.platform ? c.gbExtras.reduce((a,e)=>a+e.betrag,0) : 0));
   const ges = r2(c.unterkunft + c.hund + c.extras.filter(e=>!e.vorOrt).reduce((a,e)=>a+e.betrag,0));
   let bar = 0;
-  if(p==="Privat"){ o.H=0; o.I=0; o.J=r2(c.total + saunaRev); delete o.gesamt; bar = 0; }
+  if(p==="Privat"){ o.H=0; o.I=0; o.J = v.status==="storniert_bezahlt" ? c.erhalten : r2(c.total + saunaRev); delete o.gesamt; bar = 0; }
   else if(p==="Booking.com"){ o.gesamt=ges; o.H = num(v.kommPfl)>0 ? r2(num(v.kommPfl)) : r2(ges - R.steuer*erw*n); o.J = num(v.auszahlung)>0 ? r2(num(v.auszahlung)) : r2(ges - R.kom*o.H - R.serv*ges); o.I=0; bar = onSite + saunaRev; }
   else { o.I=ges; o.J = num(v.auszahlung)>0 ? r2(num(v.auszahlung)) : r2(ges*(1-R.airNeu*(1+R.mwst))); o.H=0; delete o.gesamt; bar = onSite + saunaRev; }
   if(bar>0) o.bar=r2(bar); else delete o.bar;
@@ -446,7 +448,7 @@ function rebuildBookings(){
 }
 
 /* ================= Schreiben ================= */
-const lastW = {}, lastExt = {};
+const lastW = {}, lastExt = {}, lastNote = {};
 async function w(path, data){ const j=JSON.stringify(clean(data)); if(lastW[path]===j) return; lastW[path]=j; try{ await store.set(path, data); }catch(e){ delete lastW[path]; showErr(e); throw e; } }
 let saveT, syncing=false, again=false;
 function save(){ saveUi(); clearTimeout(saveT); saveT=setTimeout(syncAll, 700); }
@@ -461,7 +463,8 @@ async function syncAll(){
     const changed = Object.keys(rates).filter(k=>Math.abs((cur[k]??FWD[k]) - rates[k]) > 1e-9);
     if(changed.length){ const add={}; changed.forEach(k=>add[k]=rates[k]); S.einst = deepMerge(S.einst, {fewo:add}); await store.merge("config/einstellungen", {fewo:add}); }
     await w(COLV+"/garagen", {g:S.garages});
-    await w(COLV+"/kalender", {n:S.notes});
+    for(const n of S.notes){ const j=JSON.stringify(n); if(lastNote[n.id]===j) continue; lastNote[n.id]=j; await store.setField(COLV+"/kalender", ["m", n.id], n).catch(x=>{ delete lastNote[n.id]; showErr(x); throw x; }); }
+    for(const id of Object.keys(lastNote)){ if(!S.notes.some(n=>n.id===id)){ delete lastNote[id]; await store.setField(COLV+"/kalender", ["m", id], undefined).catch(x=>showErr(x)); } }
     await w(COLV+"/rechnungen", {r:S.invoices, next:S.nextInvoiceNo});
     for(const v of S.bookings){ if(v._draft || !(v._touched || S.ext[v.id])) continue; const e=extOf(v); const j=JSON.stringify(e); S.ext[v.id]=e; if(lastExt[v.id]===j) continue; lastExt[v.id]=j;
       await store.setField(COLV+"/buchungen", ["m", v.id], e).catch(x=>{ delete lastExt[v.id]; showErr(x); throw x; }); }
@@ -517,7 +520,7 @@ async function deleteBooking(v){
   delete S.ext[v.id]; delete lastExt[v.id]; S.bookings = S.bookings.filter(x=>x.id!==v.id); await store.setField(COLV+"/buchungen", ["m", v.id], undefined).catch(e=>showErr(e)); return true;
 }
 /* Rechnungsnummern über eine Transaktion vergeben, damit nie zwei Geräte dieselbe Nummer nehmen */
-function numbered(fn){ return store.transact(COLV+"/rechnungen", cur=>{ const next=Math.max(num(cur&&cur.next)||0, num(S.nextInvoiceNo)||1); const used=fn(next); S.nextInvoiceNo=next+used; const data={r:clean(S.invoices), next:S.nextInvoiceNo}; lastW[COLV+"/rechnungen"]=JSON.stringify(data); return {data, result:next}; }); }
+function numbered(fn){ return store.transact(COLV+"/rechnungen", cur=>{ if(cur && Array.isArray(cur.r)){ S.invoices = mergeById(cur.r, S.invoices); } const next=Math.max(num(cur&&cur.next)||0, num(S.nextInvoiceNo)||1); const used=fn(next); S.nextInvoiceNo=next+used; const data={r:clean(S.invoices), next:S.nextInvoiceNo}; lastW[COLV+"/rechnungen"]=JSON.stringify(data); return {data, result:next}; }); }
 
 /* ================= KI (gleicher Zugang wie im Haushaltsbuch: privat/ki) ================= */
 async function kiAsk(prompt){
@@ -559,7 +562,7 @@ function demoSeed(){
   Object.entries(yrs).forEach(([k,v])=>d["fewo/"+k]={b:v});
   const b=newBooking(); Object.assign(b,{id:"v-demo3", gName:"Lena Hoffmann (Beispiel)", gStrasse:"Lindenallee 12", gPlz:"50968", gOrt:"Köln", gLand:"Deutschland", gEmail:"lena.hoffmann@example.org", anreise:addDays(todayISO(),40), abreise:addDays(todayISO(),43), erw:2, preis:"230", status:"vertrag", beispiel:true});
   d[COLV+"/buchungen"]={m:{[b.id]:b}};
-  d[COLV+"/kalender"]={n:[{id:"n1", d:addDays(todayISO(),12), bis:addDays(todayISO(),14), art:"eigennutzung", t:"Besuch Familie (Beispiel)"}]};
+  d[COLV+"/kalender"]={m:{n1:{id:"n1", d:addDays(todayISO(),12), bis:addDays(todayISO(),14), art:"eigennutzung", t:"Besuch Familie (Beispiel)"}}};
   store.seed(d);
 }
 function boot(){
@@ -574,7 +577,8 @@ function boot(){
   store.listenDoc(COLV+"/buchungen", d=>{ S.ext=(d&&d.m)||{}; Object.entries(S.ext).forEach(([k,v])=>lastExt[k]=JSON.stringify(v)); if(S.loaded.ready) rebuildBookings(); done("vbu"); }, onErr);
   store.listenDoc(COLV+"/rechnungen", d=>{ if(d){ lastW[COLV+"/rechnungen"]=JSON.stringify(clean(d)); S.invoices=d.r||[]; S.nextInvoiceNo=d.next||S.nextInvoiceNo; } done("vre"); }, onErr);
   store.listenDoc(COLV+"/garagen", d=>{ if(d){ lastW[COLV+"/garagen"]=JSON.stringify(clean(d)); S.garages=d.g||[]; } done("vga"); }, onErr);
-  store.listenDoc(COLV+"/kalender", d=>{ if(d){ lastW[COLV+"/kalender"]=JSON.stringify(clean(d)); S.notes=d.n||[]; } done("vka"); }, onErr);
+  store.listenDoc(COLV+"/kalender", d=>{ if(d){ let list = d.m ? Object.values(d.m) : (d.n||[]); if(!d.m && d.n && d.n.length){ /* alte Form einmalig umziehen */ const m={}; d.n.forEach(n=>{ n.id=n.id||uid(); m[n.id]=n; }); store.set(COLV+"/kalender", {m}).catch(()=>{}); list=Object.values(m); }
+      list=list.filter(n=>n&&n.id); list.sort((x,y)=>(x.d||"").localeCompare(y.d||"")); Object.keys(lastNote).forEach(k=>delete lastNote[k]); list.forEach(n=>lastNote[n.id]=JSON.stringify(n)); S.notes=list; } done("vka"); }, onErr);
 }
 function gate(on, msg){ const g=$("#gate"); if(!on){ g.hidden=true; return; } g.hidden=false;
   g.innerHTML=`<div class="gatebox"><div class="brand"><i aria-hidden="true"></i><b>Vulkaneifeloase</b></div><p>Ferienwohnung · Verwaltung</p>${msg?`<p class="hint">${esc(msg)}</p>`:""}<button class="btn primary" id="loginBtn">Mit Google anmelden</button><p class="hint">Gleiche Anmeldung wie im Haushaltsbuch.</p></div>`;
@@ -607,11 +611,14 @@ function calc(b){
   const anzP = num(st.anzahlProzent);
   const anzahl = anzP > 0 ? r2(total*anzP/100) : 0;
   const anzFrist = addDays(b.vertragDatum || todayISO(), num(st.anzahlTage));
-  const freiBis = addDays(b.anreise, -num(st.stornoTage));
-  const staffelBis = staffelOk() ? addDays(b.anreise, -num(st.stornoStaffelTage)) : "";
+  const stoT = (b.stoTage!=="" && b.stoTage!=null) ? Math.max(0, num(b.stoTage)) : num(st.stornoTage);
+  const nichtStorno = stoT===0;
+  const freiBis = addDays(b.anreise, -stoT);
+  const staffelBis = (!nichtStorno && staffelOk() && num(st.stornoStaffelTage) < stoT) ? addDays(b.anreise, -num(st.stornoStaffelTage)) : "";
   const stornoMax = r2(basis * num(st.stornoProzent)/100);
+  const erhalten = b.status==="storniert_bezahlt" ? (num(b.erhalten)>0 ? r2(num(b.erhalten)) : stornoMax) : 0;
   const staffelMax = r2(basis * num(st.stornoStaffelProzent)/100);
-  return { n, unterkunft, hund, extras, gbExtras, extrasSum, gbPers, gbBase, gb, basis, total, platform, zahlFrist, anzahl, anzFrist, freiBis, staffelBis, stornoMax, staffelMax, perNight: n? r2(unterkunft/n):0 };
+  return { n, unterkunft, hund, extras, gbExtras, extrasSum, gbPers, gbBase, gb, basis, total, platform, stoT, nichtStorno, erhalten, zahlFrist, anzahl, anzFrist, freiBis, staffelBis, stornoMax, staffelMax, perNight: n? r2(unterkunft/n):0 };
 }
 function gbFreiAnz(b){ return Math.min(num(b.erw), b.gbFrei===undefined||b.gbFrei==="" ? (b.gTyp==="firma"?num(b.erw):0) : num(b.gbFrei)); }
 function staffelOk(){ const st=S.settings; return !!st.stornoStaffel && num(st.stornoStaffelTage) > 0 && num(st.stornoStaffelTage) < num(st.stornoTage); }
@@ -646,7 +653,7 @@ function checksBooking(b){
   const nc = noteClash(b); if(nc.length) W("Im Kalender eingetragen: " + nc.map(n=>`${(NOTE_ART[n.art]||[""])[0]} ${fD(n.d)}${n.bis?"–"+fD(n.bis):""}`).join(", "));
   if(b.channel!=="direkt") W("Bei Booking.com- und Airbnb-Buchungen gelten deren Preis- und Stornobedingungen. Diese Vereinbarung darf ihnen nicht widersprechen; nutze sie dort höchstens für Hausregeln.");
   if(b.anreise && c.zahlFrist < todayISO()) W(`Die Zahlungsfrist (${fD(c.zahlFrist)}) liegt in der Vergangenheit. Setze eine eigene Frist oder vereinbare Barzahlung.`);
-  if(b.anreise && c.freiBis < todayISO()) W(`Die kostenfreie Stornofrist (${fD(c.freiBis)}) ist schon vorbei. Für kurzfristige Buchungen ist das zulässig, sollte dem Gast aber bewusst sein.`);
+  if(b.anreise && !c.nichtStorno && c.freiBis < todayISO()) W(`Die kostenfreie Stornofrist (${fD(c.freiBis)}) ist schon vorbei. Für kurzfristige Buchungen ist das zulässig, sollte dem Gast aber bewusst sein.`);
   if(c.zahlFrist && c.freiBis && c.zahlFrist > b.anreise) E("Die Zahlungsfrist liegt nach der Anreise.");
   if(!st.checkoutBis) I("In den Einstellungen ist keine Abreisezeit hinterlegt. Mit fester Uhrzeit ist eine verspätete Räumung klar geregelt.");
   if(!st.inklusive) I("In den Einstellungen ist nicht festgelegt, was im Preis enthalten ist (Endreinigung, Wäsche, Nebenkosten). Das beugt Streit vor.");
@@ -759,14 +766,16 @@ function docVertrag(b){
   h += H(T("Stornierung, Nichtanreise und vorzeitige Abreise","Cancellation, no-show and early departure", "Annulering, niet-verschijnen en vroegtijdig vertrek"));
   const lis = [];
   lis.push(T("Eine Stornierung ist in Textform (z. B. per E-Mail) zu erklären. Maßgeblich ist der Zugang beim Gastgeber.","Cancellations must be made in text form (e.g. by email) and take effect when received by the host.", "Een annulering moet in tekstvorm (bijv. per e-mail) worden verklaard. Bepalend is de ontvangst door de gastheer."));
-  lis.push(T(`Stornierungen, die bis zum ${D(c.freiBis)}, 23:59 Uhr, eingehen, sind kostenfrei; bereits gezahlte Beträge werden vollständig erstattet.`,`Cancellations received by 23:59 on ${D(c.freiBis)} are free of charge; any amounts already paid will be refunded in full.`, `Annuleringen die uiterlijk op ${D(c.freiBis)} om 23:59 uur binnenkomen, zijn kosteloos; reeds betaalde bedragen worden volledig terugbetaald.`));
+  if(c.nichtStorno) lis.push(T("Eine kostenfreie Stornierung ist bei dieser Buchung nicht möglich (nicht stornierbare Rate).","Free cancellation is not possible for this booking (non-refundable rate).","Kosteloos annuleren is bij deze boeking niet mogelijk (niet-restitueerbaar tarief)."));
+  else lis.push(T(`Stornierungen, die bis zum ${D(c.freiBis)}, 23:59 Uhr, eingehen, sind kostenfrei; bereits gezahlte Beträge werden vollständig erstattet.`,`Cancellations received by 23:59 on ${D(c.freiBis)} are free of charge; any amounts already paid will be refunded in full.`, `Annuleringen die uiterlijk op ${D(c.freiBis)} om 23:59 uur binnenkomen, zijn kosteloos; reeds betaalde bedragen worden volledig terugbetaald.`));
   let ab = addDays(c.freiBis,1);
-  if(staffelOk()){
+  if(c.staffelBis){
     const bis = c.staffelBis;
     lis.push(T(`Bei Stornierung vom ${D(ab)} bis zum ${D(bis)}: ${st.stornoStaffelProzent} % des vereinbarten Preises für Unterkunft und Zusatzleistungen ohne Gästebeitrag (Höchstbetrag ${M(c.staffelMax)}).`,`For cancellations from ${D(ab)} to ${D(bis)}: ${st.stornoStaffelProzent}% of the agreed price for accommodation and additional services, excluding the local guest contribution (maximum ${M(c.staffelMax)}).`, `Bij annulering van ${D(ab)} tot en met ${D(bis)}: ${st.stornoStaffelProzent}% van de overeengekomen prijs voor accommodatie en extra diensten, zonder toeristenbijdrage (maximaal ${M(c.staffelMax)}).`));
     ab = addDays(bis,1);
   }
-  lis.push(T(`Ab dem ${D(ab)} sowie bei Nichtanreise werden ${st.stornoProzent} % des vereinbarten Preises für Unterkunft und Zusatzleistungen berechnet, jedoch ohne den Gästebeitrag. Berechnungsgrundlage: ${M(c.basis)}; Höchstbetrag: ${M(c.stornoMax)}.`,
+  if(c.nichtStorno) lis.push(T(`Bei Stornierung oder Nichtanreise werden ${st.stornoProzent} % des vereinbarten Preises für Unterkunft und Zusatzleistungen berechnet, jedoch ohne den Gästebeitrag. Berechnungsgrundlage: ${M(c.basis)}; Höchstbetrag: ${M(c.stornoMax)}.`,`In case of cancellation or no-show, ${st.stornoProzent}% of the agreed price for accommodation and additional services is charged, excluding the local guest contribution. Basis: ${M(c.basis)}; maximum charge: ${M(c.stornoMax)}.`,`Bij annulering of niet-verschijnen wordt ${st.stornoProzent}% van de overeengekomen prijs voor accommodatie en extra diensten in rekening gebracht, zonder toeristenbijdrage. Grondslag: ${M(c.basis)}; maximumbedrag: ${M(c.stornoMax)}.`));
+  else lis.push(T(`Ab dem ${D(ab)} sowie bei Nichtanreise werden ${st.stornoProzent} % des vereinbarten Preises für Unterkunft und Zusatzleistungen berechnet, jedoch ohne den Gästebeitrag. Berechnungsgrundlage: ${M(c.basis)}; Höchstbetrag: ${M(c.stornoMax)}.`,
     `From ${D(ab)} onward, or in case of no-show, ${st.stornoProzent}% of the agreed price for accommodation and additional services is charged, excluding the local guest contribution. Basis: ${M(c.basis)}; maximum charge: ${M(c.stornoMax)}.`, `Vanaf ${D(ab)} en bij niet-verschijnen wordt ${st.stornoProzent}% van de overeengekomen prijs voor accommodatie en extra diensten in rekening gebracht, zonder toeristenbijdrage. Grondslag: ${M(c.basis)}; maximumbedrag: ${M(c.stornoMax)}.`));
   lis.push(T("Dem Gast bleibt ausdrücklich der Nachweis vorbehalten, dass dem Gastgeber kein oder ein wesentlich geringerer Schaden als die Pauschale entstanden ist. Ersparte Aufwendungen und Einnahmen aus einer anderweitigen Vermietung für denselben Zeitraum werden angerechnet. Für nicht in Anspruch genommene Übernachtungen wird kein Gästebeitrag berechnet; bereits dafür gezahlte Beträge werden erstattet.",
     "The guest expressly retains the right to prove that the host has suffered no loss or a loss substantially lower than the flat-rate amount. Saved expenses and income from re-letting the apartment for the same period will be credited. No local guest contribution is charged for nights not used; amounts already paid for them will be refunded.", "De gast behoudt uitdrukkelijk het recht aan te tonen dat de gastheer geen of een aanzienlijk lagere schade heeft geleden dan het forfaitaire bedrag. Bespaarde kosten en inkomsten uit een andere verhuur voor dezelfde periode worden verrekend. Voor niet gebruikte nachten wordt geen toeristenbijdrage berekend; daarvoor reeds betaalde bedragen worden terugbetaald."));
@@ -972,8 +981,8 @@ function mails(b){
    ? `${T("Betreff","Subject", "Onderwerp")}: ${T("Ihre Buchungsvereinbarung","Your booking agreement", "Uw boekingsovereenkomst")} – ${st.objName}, ${fD(b.anreise,L)}–${fD(b.abreise,L)}\n\n${anr}\n\n${T(`vielen Dank für Ihre Anfrage. Anbei erhalten Sie die Buchungsvereinbarung für Ihren Aufenthalt vom ${D(b.anreise)} bis ${D(b.abreise)} (${c.n} Nächte, Gesamtbetrag ${M(c.total)}).\n\nBitte lesen Sie die Vereinbarung vollständig, unterschreiben Sie sie und senden Sie sie innerhalb von ${st.angebotTage} Tagen als PDF oder Scan an diese E-Mail-Adresse zurück. Ihre Buchung wird verbindlich, sobald wir sie anschließend per E-Mail bestätigen. Bitte überweisen Sie erst nach unserer Bestätigung.`,
      `Thank you for your enquiry. Please find attached the booking agreement for your stay from ${D(b.anreise)} to ${D(b.abreise)} (${c.n} nights, total ${M(c.total)}).\n\nPlease read the agreement in full, sign it and return it to this email address as a PDF or scan within ${st.angebotTage} days. Your booking becomes binding once we confirm it by email. Please make the payment only after our confirmation.`, `Hartelijk dank voor uw aanvraag. In de bijlage vindt u de boekingsovereenkomst voor uw verblijf van ${D(b.anreise)} tot ${D(b.abreise)} (${c.n} nachten, totaalbedrag ${M(c.total)}).\n\nWilt u de overeenkomst volledig lezen, ondertekenen en binnen ${st.angebotTage} dagen als pdf of scan naar dit e-mailadres terugsturen? Uw boeking wordt bindend zodra wij deze daarna per e-mail bevestigen. Gelieve pas na onze bevestiging te betalen.`)}\n\n${sign}`
    : `${T("Betreff","Subject", "Onderwerp")}: ${T("Ihre Buchungsvereinbarung","Your booking agreement", "Uw boekingsovereenkomst")} – ${st.objName}\n\n${anr}\n\n${T(`anbei die von uns unterschriebene Buchungsvereinbarung für Ihren Aufenthalt vom ${D(b.anreise)} bis ${D(b.abreise)}. Bitte unterschreiben Sie sie und senden Sie sie uns zurück.`,`Please find attached the booking agreement signed by us for your stay from ${D(b.anreise)} to ${D(b.abreise)}. Please sign it and send it back to us.`, `In de bijlage vindt u de door ons ondertekende boekingsovereenkomst voor uw verblijf van ${D(b.anreise)} tot ${D(b.abreise)}. Wilt u deze ondertekenen en aan ons terugsturen?`)}\n\n${sign}`;
-  const accept = `${T("Betreff","Subject", "Onderwerp")}: ${T("Buchungsbestätigung","Booking confirmation", "Boekingsbevestiging")} – ${st.objName}, ${fD(b.anreise,L)}–${fD(b.abreise,L)}\n\n${anr}\n\n${T(`vielen Dank für die unterschriebene Buchungsvereinbarung. Hiermit nehmen wir Ihr Buchungsangebot an. Ihre Buchung vom ${D(b.anreise)} bis ${D(b.abreise)} für ${num(b.erw)+num(b.kinder)} Personen ist damit verbindlich bestätigt.\n\nBitte überweisen Sie ${c.anzahl>0?`die Anzahlung von ${M(c.anzahl)} bis ${D(c.anzFrist)} und den Restbetrag von ${M(r2(c.total-c.anzahl))} bis ${D(c.zahlFrist)}`:`den Gesamtbetrag von ${M(c.total)} bis ${D(c.zahlFrist)}`} auf folgendes Konto:\n${st.kontoinhaber} · IBAN ${st.iban} · BIC ${st.bic} · ${st.bank}\nVerwendungszweck: Buchung ${fD(b.anreise,L)}–${fD(b.abreise,L)} ${b.gTyp==="firma"?b.gFirma:b.gName}\n\nBitte denken Sie an den Online-Check-in spätestens einen Tag vor der Anreise:\n${st.checkinLink}\n\nKostenfrei stornieren können Sie bis zum ${D(c.freiBis)}.\n\nWir freuen uns auf Sie!`,
-    `Thank you for returning the signed booking agreement. We hereby accept your booking offer. Your booking from ${D(b.anreise)} to ${D(b.abreise)} for ${num(b.erw)+num(b.kinder)} guests is now confirmed and binding.\n\nPlease transfer ${c.anzahl>0?`the deposit of ${M(c.anzahl)} by ${D(c.anzFrist)} and the balance of ${M(r2(c.total-c.anzahl))} by ${D(c.zahlFrist)}`:`the total amount of ${M(c.total)} by ${D(c.zahlFrist)}`} to:\n${st.kontoinhaber} · IBAN ${st.iban} · BIC ${st.bic} · ${st.bank}\nReference: Booking ${fD(b.anreise,L)}–${fD(b.abreise,L)} ${b.gTyp==="firma"?b.gFirma:b.gName}\n\nPlease remember to complete the online check-in no later than one day before arrival:\n${st.checkinLink}\n\nFree cancellation is possible until ${D(c.freiBis)}.\n\nWe look forward to welcoming you!`, `Hartelijk dank voor de ondertekende boekingsovereenkomst. Hierbij aanvaarden wij uw boekingsaanbod. Uw boeking van ${D(b.anreise)} tot ${D(b.abreise)} voor ${num(b.erw)+num(b.kinder)} personen is daarmee bindend bevestigd.\n\nWilt u ${c.anzahl>0?`de aanbetaling van ${M(c.anzahl)} uiterlijk ${D(c.anzFrist)} en het restbedrag van ${M(r2(c.total-c.anzahl))} uiterlijk ${D(c.zahlFrist)}`:`het totaalbedrag van ${M(c.total)} uiterlijk ${D(c.zahlFrist)}`} overmaken naar:\n${st.kontoinhaber} · IBAN ${st.iban} · BIC ${st.bic} · ${st.bank}\nOmschrijving: Boeking ${fD(b.anreise,L)}–${fD(b.abreise,L)} ${b.gTyp==="firma"?b.gFirma:b.gName}\n\nDenkt u eraan de online check-in uiterlijk één dag vóór aankomst af te ronden:\n${st.checkinLink}\n\nKosteloos annuleren is mogelijk tot ${D(c.freiBis)}.\n\nWij verheugen ons op uw komst!`)}\n\n${sign}`;
+  const accept = `${T("Betreff","Subject", "Onderwerp")}: ${T("Buchungsbestätigung","Booking confirmation", "Boekingsbevestiging")} – ${st.objName}, ${fD(b.anreise,L)}–${fD(b.abreise,L)}\n\n${anr}\n\n${T(`vielen Dank für die unterschriebene Buchungsvereinbarung. Hiermit nehmen wir Ihr Buchungsangebot an. Ihre Buchung vom ${D(b.anreise)} bis ${D(b.abreise)} für ${num(b.erw)+num(b.kinder)} Personen ist damit verbindlich bestätigt.\n\nBitte überweisen Sie ${c.anzahl>0?`die Anzahlung von ${M(c.anzahl)} bis ${D(c.anzFrist)} und den Restbetrag von ${M(r2(c.total-c.anzahl))} bis ${D(c.zahlFrist)}`:`den Gesamtbetrag von ${M(c.total)} bis ${D(c.zahlFrist)}`} auf folgendes Konto:\n${st.kontoinhaber} · IBAN ${st.iban} · BIC ${st.bic} · ${st.bank}\nVerwendungszweck: Buchung ${fD(b.anreise,L)}–${fD(b.abreise,L)} ${b.gTyp==="firma"?b.gFirma:b.gName}\n\nBitte denken Sie an den Online-Check-in spätestens einen Tag vor der Anreise:\n${st.checkinLink}${c.nichtStorno?"":`\n\nKostenfrei stornieren können Sie bis zum ${D(c.freiBis)}.`}\n\nWir freuen uns auf Sie!`,
+    `Thank you for returning the signed booking agreement. We hereby accept your booking offer. Your booking from ${D(b.anreise)} to ${D(b.abreise)} for ${num(b.erw)+num(b.kinder)} guests is now confirmed and binding.\n\nPlease transfer ${c.anzahl>0?`the deposit of ${M(c.anzahl)} by ${D(c.anzFrist)} and the balance of ${M(r2(c.total-c.anzahl))} by ${D(c.zahlFrist)}`:`the total amount of ${M(c.total)} by ${D(c.zahlFrist)}`} to:\n${st.kontoinhaber} · IBAN ${st.iban} · BIC ${st.bic} · ${st.bank}\nReference: Booking ${fD(b.anreise,L)}–${fD(b.abreise,L)} ${b.gTyp==="firma"?b.gFirma:b.gName}\n\nPlease remember to complete the online check-in no later than one day before arrival:\n${st.checkinLink}${c.nichtStorno?"":`\n\nFree cancellation is possible until ${D(c.freiBis)}.`}\n\nWe look forward to welcoming you!`, `Hartelijk dank voor de ondertekende boekingsovereenkomst. Hierbij aanvaarden wij uw boekingsaanbod. Uw boeking van ${D(b.anreise)} tot ${D(b.abreise)} voor ${num(b.erw)+num(b.kinder)} personen is daarmee bindend bevestigd.\n\nWilt u ${c.anzahl>0?`de aanbetaling van ${M(c.anzahl)} uiterlijk ${D(c.anzFrist)} en het restbedrag van ${M(r2(c.total-c.anzahl))} uiterlijk ${D(c.zahlFrist)}`:`het totaalbedrag van ${M(c.total)} uiterlijk ${D(c.zahlFrist)}`} overmaken naar:\n${st.kontoinhaber} · IBAN ${st.iban} · BIC ${st.bic} · ${st.bank}\nOmschrijving: Boeking ${fD(b.anreise,L)}–${fD(b.abreise,L)} ${b.gTyp==="firma"?b.gFirma:b.gName}\n\nDenkt u eraan de online check-in uiterlijk één dag vóór aankomst af te ronden:\n${st.checkinLink}${c.nichtStorno?"":`\n\nKosteloos annuleren is mogelijk tot ${D(c.freiBis)}.`}\n\nWij verheugen ons op uw komst!`)}\n\n${sign}`;
   const remind = `${T("Betreff","Subject", "Onderwerp")}: ${T("Zahlungserinnerung","Payment reminder", "Betalingsherinnering")} – ${st.objName}, ${fD(b.anreise,L)}–${fD(b.abreise,L)}\n\n${anr}\n\n${T(`für Ihre Buchung vom ${D(b.anreise)} bis ${D(b.abreise)} ist bei uns bis heute keine Zahlung über ${M(c.total)} eingegangen (fällig am ${D(c.zahlFrist)}). Bitte überweisen Sie den Betrag bis spätestens ${D(addDays(todayISO(),7))}. Geht die Zahlung bis dahin nicht ein, behalten wir uns vor, gemäß Nr. 2 der Buchungsvereinbarung vom Vertrag zurückzutreten und eine Entschädigung nach Nr. 4 zu verlangen.`,
     `We have not yet received payment of ${M(c.total)} for your booking from ${D(b.anreise)} to ${D(b.abreise)} (due on ${D(c.zahlFrist)}). Please transfer the amount by ${D(addDays(todayISO(),7))} at the latest. If payment is not received by then, we reserve the right to withdraw from the agreement in accordance with section 2 of the booking agreement and to claim compensation under section 4.`, `Voor uw boeking van ${D(b.anreise)} tot ${D(b.abreise)} hebben wij tot op heden geen betaling van ${M(c.total)} ontvangen (verschuldigd op ${D(c.zahlFrist)}). Wilt u het bedrag uiterlijk ${D(addDays(todayISO(),7))} overmaken? Ontvangen wij de betaling niet binnen deze termijn, dan behouden wij ons het recht voor de overeenkomst volgens punt 2 van de boekingsovereenkomst te ontbinden en een vergoeding volgens punt 4 te verlangen.`)}\n${st.kontoinhaber} · IBAN ${st.iban} · BIC ${st.bic}\n\n${sign}`;
   return [[T("1 · Vertrag an den Gast senden","1 · Send agreement to guest", "1 · Overeenkomst naar de gast sturen"),send],[T("2 · Annahme und Buchungsbestätigung","2 · Acceptance and confirmation", "2 · Aanvaarding en bevestiging"),accept],[T("Zahlungserinnerung mit Nachfrist","Payment reminder with deadline", "Betalingsherinnering met termijn"),remind]];
@@ -1265,7 +1274,7 @@ function viewBookings(v){
 }
 function listBookings(){ const l=filteredBookings(); if(!l.length) return `<div class="empty">Keine Buchungen in dieser Auswahl.</div>`;
   return l.map(b=>{ const d=hbD(b); return `<button class="item${b.status==="storniert"?" off":""}" data-act="selB" data-id="${b.id}" aria-selected="${b.id===S.ui.selB}">
-    <span class="t"><i class="dot ch-${b.channel}"></i>${esc(bookingLabel(b))}</span>${stPill(b)}
+    <span class="t"><i class="dot ch-${b.channel}"></i>${esc(bookingLabel(b))}</span>${b.status!=="storniert"&&overlaps(b).length?`<span class="pill err">Überschneidung</span>`:stPill(b)}
     <span class="s">${b.anreise?fD(b.anreise).slice(0,6)+"–"+fD(b.abreise):"Datum offen"} · ${d?d.n:0} N. · ${num(b.erw)+num(b.kinder)} P.${d?` · Konto ${money(d.netto+d.bar)} · Urlaub ${money(d.urlaub)}`:""}</span></button>`; }).join(""); }
 function zettel(b){ const d=hbD(b); if(!d) return `<p class="hint">Sobald Daten und Preis eingetragen sind, siehst du hier, wie sich das Geld aufteilt.</p>`; const R=FR();
   const plat=isPlat(b); const offen = !plat && OFFEN.includes(b.status);
@@ -1284,8 +1293,12 @@ function editorBooking(b){
   const tabs = [["uebersicht","Übersicht"],["daten","Buchungsdaten"], ...(direct?[["vertrag","Buchungsvereinbarung"],["kaution","Kaution / Haftung"],["mails","E-Mails"]]:[])];
   const sub = tabs.some(t=>t[0]===sub0) ? sub0 : "uebersicht";
   let body = "";
-  if(sub==="uebersicht") body = `<div class="cards2"><div><h3>Geld und Urlaubskonto</h3>${zettel(b)}</div><div><h3>Was euch bleibt</h3><div id="bEcon">${econBox(b)}</div></div></div>
+  const warnOv = (()=>{ if(b.status==="storniert") return ""; const c0=calc(b); if(b.anreise && b.abreise && c0.n<=0) return `<div class="check err" style="margin-bottom:12px"><b>Fehler</b><span>Die Abreise liegt nicht nach der Anreise. Diese Buchung wird so nicht ins Haushaltsbuch übernommen.</span></div>`;
+    const ov=overlaps(b), nc=noteClash(b); if(!ov.length && !nc.length) return "";
+    return `<div class="check err" style="margin-bottom:12px"><b>Achtung</b><span>${ov.length?`Überschneidung mit ${ov.map(o=>`${esc(bookingLabel(o))} (${fD(o.anreise)}–${fD(o.abreise)}, ${esc(CH_LABEL(o))})`).join(", ")}. Bitte sofort klären, sonst droht eine Doppelbelegung.`:""}${nc.length?` Im Kalender eingetragen: ${nc.map(n=>`${(NOTE_ART[n.art]||[""])[0]} ${fD(n.d)}${n.bis?"–"+fD(n.bis):""}`).join(", ")}.`:""}</span></div>`; })();
+  if(sub==="uebersicht") body = warnOv + `<div class="cards2"><div><h3>Geld und Urlaubskonto</h3>${zettel(b)}</div><div><h3>Was euch bleibt</h3><div id="bEcon">${econBox(b)}</div></div></div>
      ${b._draft?"":sperrBox(b)}
+     ${!b._draft&&!isPlat(b)&&b.kautionArt==="kaution"&&num(b.kautionBetrag)>0?`<div class="check ${b.kautionZurueck?"ok":"info"}" style="margin-top:14px"><b>Kaution</b><span>${money(b.kautionBetrag)} ${b.kautionZahlung==="bar"?"bar bei Anreise":"per Überweisung"}. <label class="chk" style="display:inline-flex;margin-left:8px"><input type="checkbox" data-kz="1" ${b.kautionZurueck?"checked":""}> zurückgezahlt</label></span></div>`:""}
      ${b._draft?"":`<div class="toolbar" style="margin-top:16px">${b.status==="storniert"||b.status==="storniert_bezahlt"?`<button class="btn" data-act="reakt">Wieder aktivieren</button>`:`<button class="btn" data-act="stornoFrei">Storniert (kostenlos)</button><button class="btn" data-act="stornoBez">Storniert, Gast zahlt trotzdem</button>`}</div>`}`;
   else if(sub==="daten") body = formBooking(b);
   else if(sub==="vertrag") body = checksHtml(checksBooking(b)) + docToolbar("vertrag", b.lang) + `<div class="sheetwrap"><div class="sheet doc" id="docOut">${docVertrag(b)}</div></div>`;
@@ -1330,6 +1343,7 @@ function formBooking(b){
     ${plat?"":F("Preisangabe","preisModus",b.preisModus,{type:"select",options:[["gesamt","Gesamtpreis Unterkunft"],["nacht","Preis pro Nacht"]]})}
     ${F(plat?(b.channel==="booking"?"Gesamtpreis der Buchung (€)":"Vom Gast bezahlt, Übernachtungen (€)"):(b.preisModus==="nacht"?"Preis pro Nacht (€)":"Unterkunft gesamt (€)"),"preis",b.preis,{dec:true})}
     ${plat?F(b.channel==="booking"?"Auszahlung / Netto (€)":"Du erhältst (€)","auszahlung",b.auszahlung,{dec:true,hint:"leer = mit Gebührensätzen berechnet"}):F("Eigene Zahlungsfrist","zahlFrist",b.zahlFrist,{type:"date",hint:`leer = ${st.zahlTage} Tage vor Anreise`})}
+    ${!plat&&b.status==="storniert_bezahlt"?F("Vom Gast tatsächlich erhalten (€)","erhalten",b.erhalten,{dec:true,hint:`leer = Stornopauschale ${money(calc(b).stornoMax)} (${st.stornoProzent} %)`}):""}
     ${b.channel==="booking"?F("Kommissionspflichtiger Betrag (€)","kommPfl",b.kommPfl,{dec:true,hint:"leer = Gesamtpreis − 1,50 € je Erw./Nacht"}):""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px 22px;margin:12px 0">
@@ -1367,7 +1381,7 @@ function sumBooking(b){ const c=calc(b);
   <span class="k">Gästebeitrag (${c.gbPers} × ${c.n} × ${money(S.settings.gbSatz)})</span><span>${money(c.gb)}</span>
   <span class="tot">Gesamtbetrag</span><span class="tot">${money(c.total)}</span>
   <span class="k">Zahlungsfrist</span><span>${fD(c.zahlFrist)}</span>
-  <span class="k">Kostenfrei stornierbar bis</span><span>${fD(c.freiBis)}</span>
+  <span class="k">Kostenfrei stornierbar bis</span><span>${c.nichtStorno?"nicht stornierbar":fD(c.freiBis)}</span>
   <span class="k">Stornopauschale danach (${S.settings.stornoProzent} %)</span><span>max. ${money(c.stornoMax)}</span>
   ${num(b.saunaTage)?`<span class="k">Sauna ${b.saunaTage} Tage (nachträglich)</span><span>${money(saunaPrice(num(b.saunaTage)))}</span>`:""}`;
 }
@@ -1396,6 +1410,15 @@ function viewUebersicht(v){
   const todo = []; S.bookings.filter(b=>!b._draft && !isPlat(b) && OFFEN.includes(b.status)).forEach(b=>todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>${esc(bookingLabel(b))}</b> ${b.status==="anfrage"?"Anfrage: Vertrag senden":"Vertrag versendet: auf Unterschrift warten, dann bestätigen"} · ${fD(b.anreise)}</button>`));
   S.bookings.filter(b=>!b._draft && b.core && b.status!=="storniert" && b.anreise>=T && b.anreise<=addDays(T,2)).forEach(b=>todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>Anreise ${fD(b.anreise)}</b> ${esc(bookingLabel(b))}: Online-Check-in und Gästemeldung prüfen</button>`));
   S.bookings.forEach(b=>{ const sp=sperrBedarf(b); if(sp && sp.offen.length) todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>${sp.art==="sperren"?"Kalender sperren":"Kalender freigeben"}</b> ${fD(b.anreise)}–${fD(b.abreise)} bei ${sp.offen.map(k=>PLAT_NAME[k]).join(" und ")} (${esc(bookingLabel(b))})</button>`); });
+  S.bookings.filter(b=>!b._draft && b.status!=="storniert").forEach(b=>{ const ov=overlaps(b); if(ov.length && ov.some(o=>o.id>b.id)) todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>Doppelbelegung!</b> ${esc(bookingLabel(b))} ${fD(b.anreise)}–${fD(b.abreise)} überschneidet sich mit ${esc(bookingLabel(ov[0]))}</button>`); });
+  S.bookings.filter(b=>!b._draft && !isPlat(b)).forEach(b=>{ const c=calc(b); if(!b.anreise||c.n<=0) return;
+    if(b.status==="vertrag" && addDays(b.vertragDatum||b.created||T, num(S.settings.angebotTage)) < T) todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>Rücksendefrist abgelaufen</b> ${esc(bookingLabel(b))}: Vertrag seit ${fD(b.vertragDatum||b.created)} nicht zurück, nachfragen oder Anfrage schließen</button>`);
+    if(b.status==="bestaetigt" && c.zahlFrist <= addDays(T,3)) todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>${c.zahlFrist<T?"Zahlung überfällig":"Zahlung fällig"}</b> ${esc(bookingLabel(b))}: ${money(c.total)} bis ${fD(c.zahlFrist)}${c.zahlFrist<T?" – Zahlungserinnerung unter „E-Mails“":""}. Wenn bezahlt: Status auf „Bezahlt“</button>`);
+    if(b.kautionArt==="kaution" && num(b.kautionBetrag)>0 && !b.kautionZurueck && ["bezahlt","abgeschlossen","bestaetigt"].includes(b.status) && b.abreise<T) todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>Kaution zurückzahlen</b> ${esc(bookingLabel(b))}: ${money(b.kautionBetrag)} bis ${fD(addDays(b.abreise,14))} (Schäden geprüft?)</button>`);
+    if(b.gTyp==="firma" && ["bezahlt","abgeschlossen","bestaetigt"].includes(b.status) && b.abreise<=T && !S.invoices.some(i=>i.bookingId===b.id)) todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>Rechnung für Firma</b> ${esc(bookingLabel(b))}: Aufenthalt beendet, noch keine Rechnung erstellt</button>`);
+  });
+  S.bookings.filter(b=>!b._draft && b.core && b.status!=="storniert" && b.status!=="storniert_bezahlt" && b.abreise===T).forEach(b=>todo.push(`<button class="todo" data-act="goB" data-id="${b.id}"><b>Abreise heute</b> ${esc(bookingLabel(b))}: Wohnung prüfen${!isPlat(b)||b.saunaOpt?", genutzte Saunatage eintragen":""}</button>`));
+  { const q=Math.floor(new Date().getMonth()/3); const qs=`${y}-${String(q*3+1).padStart(2,"0")}-01`; const qe=addDays(`${y}-${String(q*3+3).padStart(2,"0")}-01`,32).slice(0,7)+"-01"; const d=new Date(); if(d.getMonth()%3===0 && d.getDate()<=10){ const pq=addDays(qs,-1).slice(0,7); todo.push(`<button class="todo" data-act="goTab" data-id="uebersicht"><b>Quartal abgeschlossen</b> Gästebeitrag für das Quartal bis ${pq.slice(0,4)}-${pq.slice(5)} mit dem Abführungsbescheid der Gemeinde abgleichen (Tabelle unten)</button>`); } }
   S.invoices.filter(i=>i.status==="entwurf").forEach(i=>todo.push(`<button class="todo" data-act="goI" data-id="${i.id}"><b>Rechnungsentwurf</b> ${esc((i.empf||{}).firma||(i.empf||{}).name||"")} festschreiben</button>`));
   const ys=Object.keys(by).sort(); const mx=Math.max(1,...ys.map(k=>by[k].b));
   const grp={}; L.filter(x=>x.b.anreise>=`${py}-01-01` && x.d.brutto>0 && x.d.p!=="Privat").forEach(({d})=>{ const k=d.p==="Airbnb"?`Airbnb (${d.modell==="neu"?"neues":"altes"} Modell)`:d.p; const o=grp[k]??={c:0,n:0,g:0,f:0,net:0,p:d.p}; o.c++; o.n+=d.nOcc; o.g+=d.brutto; o.f+=d.geb; o.net+=d.netto; });
@@ -1408,6 +1431,7 @@ function viewUebersicht(v){
    <div class="kpis"><div class="kpi"><span>Kontonetto ${y} bis heute</span><b>${money(td(y))}</b><small>Vorjahr gleicher Zeitraum ${money(td(py))}</small></div>
      <div class="kpi"><span>Gebucht ${y} gesamt</span><b>${money(cy.b)}</b><small>${cy.n} Nächte · ${cy.c} Buchungen</small></div>
      <div class="kpi"><span>Noch stornierbar</span><b>${offen.length}</b><small>${offen.length?money(offen.reduce((a,x)=>a+x.d.netto,0))+" Kontonetto":"alles sicher"}</small></div>
+     <div class="kpi"><span>Nächste 90 Tage</span><b>${(()=>{ const e=addDays(T,90); const nights=S.bookings.filter(b=>!b._draft&&b.core&&b.status!=="storniert"&&b.status!=="storniert_bezahlt"&&b.anreise&&b.abreise).reduce((a,b)=>a+Math.max(0,nightsBetween(b.anreise<T?T:b.anreise, b.abreise>e?e:b.abreise)),0); return `${Math.round(nights/90*100)} %`; })()}</b><small>belegt · ${S.bookings.filter(b=>!b._draft&&b.core&&b.status!=="storniert"&&b.anreise>=T&&b.anreise<addDays(T,90)).length} Anreisen</small></div>
      <div class="kpi"><span>Urlaubskonto</span><b>${money((S.urlaub.e||[]).filter(x=>x.d<=T).reduce((a,x)=>a+(+x.b||0), +S.urlaub.start||0))}</b><small>Stand heute, wird im Haushaltsbuch geführt</small></div></div>
    <div class="cards2">
     <div class="panel"><h3>Nächste Gäste</h3>${next.length?`<div class="list">${next.map(b=>{const d=hbD(b);return `<button class="item" data-act="goB" data-id="${b.id}"><span class="t"><i class="dot ch-${b.channel}"></i>${esc(bookingLabel(b))}</span>${stPill(b)}<span class="s">${fD(b.anreise).slice(0,6)}–${fD(b.abreise)} · ${num(b.erw)+num(b.kinder)} P. · ${esc(CH_LABEL(b))}${d?" · "+money(d.netto):""}</span></button>`;}).join("")}</div>`:`<p class="empty">Keine kommenden Buchungen.</p>`}</div>
@@ -1437,6 +1461,8 @@ function steuerTable(y, L){
   <p class="hint">Werbungskosten Booking.com (Provision + Zahlungsgebühr) ${esc(y)}: <b>${money(wk)}</b>. Airbnb-Gebühren nicht angeben (eure Hilfestellung). Tourismusbeitrag: der im Jahr tatsächlich gezahlte Betrag laut Bescheid. Keine Steuerberatung.</p>`; }
 
 /* ---------- Kalender ---------- */
+function easter(y){ const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1; return `${y}-${String(mo).padStart(2,"0")}-${String(da).padStart(2,"0")}`; }
+const holCache={}; function holidays(y){ if(holCache[y]) return holCache[y]; const e=easter(y), H={}; H[`${y}-01-01`]="Neujahr"; H[addDays(e,-2)]="Karfreitag"; H[addDays(e,1)]="Ostermontag"; H[`${y}-05-01`]="Tag der Arbeit"; H[addDays(e,39)]="Christi Himmelfahrt"; H[addDays(e,50)]="Pfingstmontag"; H[addDays(e,60)]="Fronleichnam"; H[`${y}-10-03`]="Tag der Dt. Einheit"; H[`${y}-11-01`]="Allerheiligen"; H[`${y}-12-25`]="1. Weihnachtstag"; H[`${y}-12-26`]="2. Weihnachtstag"; H[`${y}-04-27`]=(H[`${y}-04-27`]?H[`${y}-04-27`]+" · ":"")+"Koningsdag (NL)"; return holCache[y]=H; }
 const NOTE_ART = {notiz:["Notiz","n"], erinnerung:["Erinnerung","r"], eigennutzung:["Eigennutzung","e"], wartung:["Wartung/Reinigung","w"], blockiert:["Blockiert","b"]};
 function notesOn(d){ return S.notes.filter(n=>n.d<=d && (n.bis||n.d)>=d); }
 function viewKalender(v){
@@ -1445,8 +1471,8 @@ function viewKalender(v){
   const cells=[]; for(let i=0;i<startOff;i++) cells.push(null); for(let d=1; d<=days; d++) cells.push(`${ym}-${String(d).padStart(2,"0")}`); while(cells.length%7) cells.push(null);
   const B = S.bookings.filter(b=>!b._draft && b.status!=="storniert" && b.anreise && b.abreise);
   const cell = d => { if(!d) return `<div class="cd empty"></div>`;
-    const occ=B.filter(b=>b.anreise<=d && b.abreise>d), dep=B.filter(b=>b.abreise===d), ns=notesOn(d);
-    return `<button class="cd${d===T?" today":""}${d===sel?" sel":""}${occ.length?" occ":""}" data-act="calDay" data-d="${d}"><span class="dn">${+d.slice(8)}</span>
+    const occ=B.filter(b=>b.anreise<=d && b.abreise>d), dep=B.filter(b=>b.abreise===d), ns=notesOn(d); const hol=holidays(+d.slice(0,4))[d];
+    return `<button class="cd${d===T?" today":""}${d===sel?" sel":""}${occ.length?" occ":""}${hol?" hol":""}" data-act="calDay" data-d="${d}" title="${esc(hol||"")}"><span class="dn">${+d.slice(8)}${hol?` <span class="hol-t">${esc(hol)}</span>`:""}</span>
       ${occ.map(b=>`<span class="bk ch-${b.channel}${b.anreise===d?" start":""}${!isPlat(b)&&OFFEN.includes(b.status)?" tent":""}">${b.anreise===d?esc(bookingLabel(b)).slice(0,18):"&nbsp;"}</span>`).join("")}
       ${dep.length&&!occ.length?`<span class="dep">Abreise</span>`:""}
       ${ns.map(n=>`<span class="nt nt-${(NOTE_ART[n.art]||NOTE_ART.notiz)[1]}">${esc(n.t||"").slice(0,16)}</span>`).join("")}</button>`; };
@@ -1456,8 +1482,8 @@ function viewKalender(v){
     <div class="toolbar"><button class="btn" data-act="calNav" data-v="-1" aria-label="Vormonat">←</button><h2 style="min-width:150px;text-align:center">${MON_DE[m-1]} ${y}</h2><button class="btn" data-act="calNav" data-v="1" aria-label="Nächster Monat">→</button><button class="btn" data-act="calNav" data-v="0">Heute</button><span class="sp"></span>
       <span class="legend" style="margin:0"><span><i class="ch-booking"></i>Booking</span><span><i class="ch-airbnb"></i>Airbnb</span><span><i class="ch-direkt"></i>Direkt</span><span><i class="ch-tent"></i>Anfrage</span></span></div>
     <div class="cal"><div class="wd">Mo</div><div class="wd">Di</div><div class="wd">Mi</div><div class="wd">Do</div><div class="wd">Fr</div><div class="wd">Sa</div><div class="wd">So</div>${cells.map(cell).join("")}</div>
-    <p class="hint">Belegt sind die Nächte von Anreise bis zum Tag vor der Abreise. Eigennutzung und Blockiert werden bei neuen Buchungen als Überschneidung gemeldet.</p></div>
-   <div class="panel"><h3>${fD(sel,"de",true)}</h3>
+    <p class="hint">Gelb hinterlegt: Feiertage in Rheinland-Pfalz und der niederländische Koningsdag, zur Preisplanung. Belegt sind die Nächte von Anreise bis zum Tag vor der Abreise. Eigennutzung und Blockiert werden bei neuen Buchungen als Überschneidung gemeldet.</p></div>
+   <div class="panel"><h3>${fD(sel,"de",true)}${holidays(+sel.slice(0,4))[sel]?` <span class="pill warn">${esc(holidays(+sel.slice(0,4))[sel])}</span>`:""}</h3>
     ${selB.length?`<div class="list" style="margin-bottom:12px">${selB.map(b=>`<button class="item" data-act="goB" data-id="${b.id}"><span class="t"><i class="dot ch-${b.channel}"></i>${esc(bookingLabel(b))}</span>${stPill(b)}<span class="s">${b.anreise===sel?"Anreise heute":b.abreise===sel?"Abreise heute":"Gäste im Haus"} · ${fD(b.anreise).slice(0,6)}–${fD(b.abreise)}</span></button>`).join("")}</div>`:`<p class="hint">Keine Gäste.</p>`}
     ${selN.map(n=>`<div class="noteitem nt-${(NOTE_ART[n.art]||NOTE_ART.notiz)[1]}"><div><b>${(NOTE_ART[n.art]||NOTE_ART.notiz)[0]}</b>${n.bis&&n.bis!==n.d?` · ${fD(n.d).slice(0,6)}–${fD(n.bis)}`:""}<div>${esc(n.t).replace(/\n/g,"<br>")}</div></div><span class="sp"></span><button class="btn" data-act="noteEdit" data-id="${n.id}">Bearbeiten</button><button class="btn danger" data-act="noteDel" data-id="${n.id}">Löschen</button></div>`).join("")}
     <form id="noteForm" onsubmit="return false" class="noteform"><h3>${edit?"Eintrag bearbeiten":"Neuer Eintrag"}</h3><div class="grid">
@@ -1475,12 +1501,14 @@ function invFromBooking(b){
   const c=calc(b), L=b.lang||"de", T=(d,e,n)=>L==="en"?e:L==="nl"?(n??e):d, st=S.settings;
   const pers = num(b.erw)+num(b.kinder);
   const pos = [];
-  pos.push({menge:1, text:T(`${c.n} Übernachtungen in der Ferienwohnung „${st.objName}“ für ${pers} Personen vom ${fD(b.anreise,L)} bis ${fD(b.abreise,L)}`,`${c.n} nights in the holiday apartment “${st.objName}” for ${pers} guests from ${fD(b.anreise,L)} to ${fD(b.abreise,L)}`, `${c.n} overnachtingen in vakantiewoning “${st.objName}” voor ${pers} personen van ${fD(b.anreise,L)} tot ${fD(b.abreise,L)}`), preis:r2(c.unterkunft - (c.platform?c.gbBase:0)), art:"leistung", ust:st.ustSatz});
-  if(c.hund) pos.push({menge:1, text:T("Einmalige Gebühr für Hund","One-time dog fee", "Eenmalige toeslag voor hond"), preis:c.hund, art:"leistung", ust:st.ustSatz});
-  c.extras.forEach(e=>pos.push({menge:1, text:e.text, preis:e.betrag, art:"leistung", ust:st.ustSatzSauna}));
-  if(num(b.saunaTage)) pos.push({menge:1, text:T(`Saunanutzung, ${b.saunaTage} Tag(e)`,`Sauna use, ${b.saunaTage} day(s)`, `Saunagebruik, ${b.saunaTage} dag(en)`), preis:saunaPrice(num(b.saunaTage)), art:"leistung", ust:st.ustSatzSauna});
-  if(c.gbBase) pos.push({menge:1, text:T(`Gästebeitrag: ${c.gbPers} Personen × ${c.n} Nächte × ${fmtNum(st.gbSatz,L)} €`,`Local guest contribution: ${c.gbPers} persons × ${c.n} nights × EUR ${fmtNum(st.gbSatz,L)}`, `Toeristenbijdrage: ${c.gbPers} personen × ${c.n} nachten × EUR ${fmtNum(st.gbSatz,L)}`), preis:c.gbBase, art:"gb", ust:0});
-  c.gbExtras.forEach(e=>pos.push({menge:1, text:e.text, preis:e.betrag, art:"gb", ust:0}));
+  if(!isPlat(b) && b.status==="storniert_bezahlt"){ pos.push({menge:1, text:T(`Stornopauschale (${st.stornoProzent} %) für die stornierte Buchung vom ${fD(b.anreise,L)} bis ${fD(b.abreise,L)}, ${c.n} Nächte`,`Cancellation charge (${st.stornoProzent}%) for the cancelled booking from ${fD(b.anreise,L)} to ${fD(b.abreise,L)}, ${c.n} nights`,`Annuleringskosten (${st.stornoProzent}%) voor de geannuleerde boeking van ${fD(b.anreise,L)} tot ${fD(b.abreise,L)}, ${c.n} nachten`), preis:c.erhalten, art:"leistung", ust:st.ustSatz}); }
+  else pos.push({menge:1, text:T(`${c.n} Übernachtungen in der Ferienwohnung „${st.objName}“ für ${pers} Personen vom ${fD(b.anreise,L)} bis ${fD(b.abreise,L)}`,`${c.n} nights in the holiday apartment “${st.objName}” for ${pers} guests from ${fD(b.anreise,L)} to ${fD(b.abreise,L)}`, `${c.n} overnachtingen in vakantiewoning “${st.objName}” voor ${pers} personen van ${fD(b.anreise,L)} tot ${fD(b.abreise,L)}`), preis:r2(c.unterkunft - (c.platform?c.gbBase:0)), art:"leistung", ust:st.ustSatz});
+  const stoPausch = !isPlat(b) && b.status==="storniert_bezahlt";
+  if(c.hund && !stoPausch) pos.push({menge:1, text:T("Einmalige Gebühr für Hund","One-time dog fee", "Eenmalige toeslag voor hond"), preis:c.hund, art:"leistung", ust:st.ustSatz});
+  if(!stoPausch) c.extras.forEach(e=>pos.push({menge:1, text:e.text, preis:e.betrag, art:"leistung", ust:st.ustSatzSauna}));
+  if(num(b.saunaTage) && !stoPausch) pos.push({menge:1, text:T(`Saunanutzung, ${b.saunaTage} Tag(e)`,`Sauna use, ${b.saunaTage} day(s)`, `Saunagebruik, ${b.saunaTage} dag(en)`), preis:saunaPrice(num(b.saunaTage)), art:"leistung", ust:st.ustSatzSauna});
+  if(c.gbBase && !stoPausch) pos.push({menge:1, text:T(`Gästebeitrag: ${c.gbPers} Personen × ${c.n} Nächte × ${fmtNum(st.gbSatz,L)} €`,`Local guest contribution: ${c.gbPers} persons × ${c.n} nights × EUR ${fmtNum(st.gbSatz,L)}`, `Toeristenbijdrage: ${c.gbPers} personen × ${c.n} nachten × EUR ${fmtNum(st.gbSatz,L)}`), preis:c.gbBase, art:"gb", ust:0});
+  if(!stoPausch) c.gbExtras.forEach(e=>pos.push({menge:1, text:e.text, preis:e.betrag, art:"gb", ust:0}));
   const firma=b.gTyp==="firma";
   let empf = {firma:"", name:b.gName, zusatz:"", strasse:b.gStrasse, plz:b.gPlz, ort:b.gOrt, land:b.gLand};
   if(firma){ const parts = String(b.gFirmaAdr||"").split(",").map(s=>s.trim()); const m=/^(\d{4,5})\s+(.+)$/.exec(parts[1]||"");
@@ -1658,6 +1686,9 @@ function viewData(v){
    <p class="hint">Eine Sicherung enthält Verwaltung (Einstellungen, Gästedaten, Rechnungen, Garage, Kalender) und zur Ansicht auch Buchungen und Urlaubskonto. Beim Einspielen wird nur der Verwaltungsteil übernommen; Buchungen und Urlaubskonto im Haushaltsbuch bleiben unberührt. Auch Sicherungen der früheren Einzeldatei lassen sich einspielen.</p>
    <div class="toolbar">${IN_FRAME?"":`<button class="btn primary" data-act="exportJson">Sicherung herunterladen</button>`}
    <label class="btn" for="impFile">Sicherung einspielen<input id="impFile" type="file" accept=".json,application/json" hidden></label></div></div>
+  <div class="panel"><h3>Datenschutz: alte Gästedaten löschen</h3>
+   <p class="hint">Entfernt Anschrift, Geburtsdatum, E-Mail, Telefon und Mitreisende bei Buchungen, deren Abreise länger als 12 Monate zurückliegt. Name und Beträge bleiben erhalten; festgeschriebene Rechnungen bleiben unverändert (Aufbewahrungspflicht). Das entspricht der Zusage im Vertrag, die Daten nach den gesetzlichen Fristen zu löschen.</p>
+   <button class="btn" data-act="purge">Gästedaten älter als 12 Monate löschen</button> <span class="hint" id="purgeInfo">${(()=>{ const n=S.bookings.filter(b=>purgeable(b)).length; return n?`${n} Buchung${n>1?"en":""} betroffen.`:"Derzeit nichts zu löschen."; })()}</span></div>
   <div class="panel"><h3>Sicherung als Text</h3>
    <textarea class="io" id="ioText">${esc(JSON.stringify(backupData(), null, 1))}</textarea>
    <div class="toolbar" style="margin-top:8px"><button class="btn" data-act="copyJson">Kopieren</button><button class="btn" data-act="importText">Eingefügten Text übernehmen</button></div></div>
@@ -1671,6 +1702,7 @@ const STRUCT = new Set(["gTyp","preisModus","hund","kautionArt","steuerModus","s
 document.addEventListener("input", onField); document.addEventListener("change", onField);
 function onField(ev){
   const el = ev.target;
+  if(el.dataset.kz && ev.type==="change"){ const b=curB(); if(!b) return; b.kautionZurueck=el.checked; b._touched=true; save(); deferRender(); return; }
   if(el.dataset.sp && ev.type==="change"){ const b=curB(); if(!b) return; b.sperre=Object.assign({}, b.sperre||{}, {[el.dataset.sp]:el.checked}); b._touched=true; save(); deferRender(); return; }
   if(el.id==="bFilter" && ev.type==="change"){ S.ui.bFilter=el.value; saveUi(); deferRender(); return; }
   if(el.id==="stYear" && ev.type==="change"){ S.ui.stYear=el.value; saveUi(); deferRender(); return; }
@@ -1727,12 +1759,14 @@ document.addEventListener("click", async ev=>{
     case "selB": S.ui.selB=t.dataset.id; ru(); break;
     case "goB": S.ui.selB=t.dataset.id; S.ui.tab="buchungen"; S.ui.subB="uebersicht"; ru(); window.scrollTo(0,0); break;
     case "goI": S.ui.selI=t.dataset.id; S.ui.tab="rechnungen"; ru(); window.scrollTo(0,0); break;
+    case "goTab": S.ui.tab=t.dataset.id; ru(); break;
     case "subB": S.ui.subB=t.dataset.v; ru(); break;
     case "saveDraft": { if(!b) break; const c=calc(b);
       if(!b.anreise||!b.abreise||c.n<=0){ toast("Bitte An- und Abreise eintragen"); S.ui.subB="daten"; ru(); break; }
       if(isPlat(b) && !num(b.preis) && !num(b.auszahlung)){ toast("Bitte Preis oder Auszahlung eintragen"); S.ui.subB="daten"; ru(); break; }
       const dup = S.bookings.find(x=>!x._draft && x.id!==b.id && x.status!=="storniert" && x.anreise===b.anreise && x.abreise===b.abreise && x.channel===b.channel);
       if(dup && !arm(t,"Gibt es schon – trotzdem speichern?")) break;
+      if(!dup && overlaps(b).length && !arm(t,"Überschneidung – trotzdem speichern?")) break;
       delete b._draft; delete b._kiHint; b._touched=true; b._dirty=true; S.ui.subB="uebersicht"; rr(); toast(!isPlat(b)&&!OFFEN.includes(b.status)?"Gespeichert – jetzt bei Booking und Airbnb sperren":isPlat(b)?"Gespeichert – Urlaubskonto aktualisiert":"Gespeichert"); break; }
     case "dropDraft": S.bookings=S.bookings.filter(x=>x!==b); S.ui.selB=null; ru(); break;
     case "dupB": { const nb=newDraft(extOf(b)); Object.assign(nb,{ anreise:"", abreise:"", status:"anfrage", zahlFrist:"", saunaTage:0, vertragDatum:todayISO(), stoTage:"", spO:"", uO:"", auszahlung:"", kommPfl:"", extras:[] }); delete nb.beispiel; ru(); toast("Gast übernommen – Daten eintragen"); break; }
@@ -1800,9 +1834,12 @@ document.addEventListener("click", async ev=>{
     case "copyJson": copy($("#ioText").value); break;
     case "importText": importData($("#ioText").value); break;
     case "logout": store.logout(); break;
+    case "purge": if(arm(t,"Wirklich unwiderruflich löschen?")){ let n=0; S.bookings.forEach(b=>{ if(purgeable(b)){ PURGE_KEYS.forEach(k=>b[k]=""); b.datenGeloescht=todayISO(); b._touched=true; n++; } }); rr(); toast(`Gästedaten von ${n} Buchungen gelöscht`); } break;
   }
 });
 document.addEventListener("change", ev=>{ if(ev.target.id==="impFile" && ev.target.files[0]){ const r=new FileReader(); r.onload=()=>importData(r.result); r.readAsText(ev.target.files[0]); ev.target.value=""; } });
+const PURGE_KEYS=["gStrasse","gPlz","gOrt","gLand","gGeb","gEmail","gTel","begleit"];
+function purgeable(b){ return !b._draft && b.abreise && b.abreise < addDays(todayISO(),-365) && PURGE_KEYS.some(k=>b[k]); }
 function backupData(){ return { art:"vulkaneifeloase-sicherung", stand:new Date().toISOString(), verwaltung:{ settings:S.settings, ext:S.ext, invoices:S.invoices, nextInvoiceNo:S.nextInvoiceNo, garages:S.garages, notes:S.notes }, haushaltsbuch:{ fewo:S.fw, urlaub:S.urlaub, fewoRegeln:(S.einst&&S.einst.fewo)||{} } }; }
 function importData(txt){ try{ const d=JSON.parse(txt); let v=null;
   if(d && d.verwaltung) v=d.verwaltung;
