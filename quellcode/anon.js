@@ -73,7 +73,7 @@ function anonParsePdf(pages){
   const SKIP=/kontostand|saldo|zwischensumme|^summe|übertrag auf|übertrag von|uebertrag auf|uebertrag von|gesamtumsätze|summe der/i;
   const cnt={};const key=t=>t.replace(/\d/g,'#');pages.forEach(ls=>new Set(ls.map(l=>key(l.t))).forEach(k=>cnt[k]=(cnt[k]||0)+1));
   const repeated=t=>pages.length>1&&cnt[key(t)]>=Math.max(2,Math.ceil(pages.length*0.6));
-  const rows=[];let old=null,neu=null,colS=null,colH=null,unsure=0;
+  const rows=[];let old=null,neu=null,colS=null,colH=null,unsure=0,nMinus=0;
   for(const lines of pages){let cur=null,lastY=null,cont=0;
     for(const l of lines){const t=l.t.trim();
       const hs=l.c.find(c=>/^(soll|belastung(en)?|ausgang|abgang|lastschriften|ausgänge)$/i.test(c.s)),hh=l.c.find(c=>/^(haben|gutschrift(en)?|eingang|zugang|eingänge)$/i.test(c.s));
@@ -81,17 +81,19 @@ function anonParsePdf(pages){
       if(/kontostand|saldo/i.test(t)){const a=anonAmt(l);if(a){const v=a.v*(a.sign||1);if(/neu|end|schluss|aktuell/i.test(t))neu=v;else if(/alt|anfang|bisher|vorher|start|letzt/i.test(t)&&old==null)old=v;}cur=null;continue;}
       const dm=t.match(DRE),a=dm&&!SKIP.test(t)?anonAmt(l):null;
       if(dm&&a){const d=toD(dm[1],dm[2],dm[3]);if(!d){cur=null;continue;}
-        let sg=a.sign;if(!sg&&colS!=null&&colH!=null)sg=Math.abs(a.x-colS)<Math.abs(a.x-colH)?-1:1;
+        let sg=a.sign;if(sg<0)nMinus++;if(!sg&&colS!=null&&colH!=null)sg=Math.abs(a.x-colS)<Math.abs(a.x-colH)?-1:1;
         let desc=a.head.replace(/^\s*(\d{1,2}\.\d{1,2}\.(\d{2,4})?\s*){1,2}/,'').trim();
-        if(!sg){unsure++;sg=/gutschrift|gehalt|lohn|eingang|zahlungseingang|erstattung|rückzahlung|zins.*haben/i.test(desc)?1:-1;}
-        cur={d,b:Math.round(a.v*sg*100)/100,raw:desc};rows.push(cur);lastY=l.y;cont=0;continue;}
+        const open=!sg;if(!sg)sg=/gutschrift|gehalt|lohn|eingang|zahlungseingang|erstattung|rückzahlung|zins.*haben/i.test(desc)?1:-1;
+        cur={d,b:Math.round(a.v*sg*100)/100,raw:desc,_o:open?a.v:0};rows.push(cur);lastY=l.y;cont=0;continue;}
       if(!cur)continue;
       if(SKIP.test(t)||/^seite\s*\d|^blatt\s*\d/i.test(t)||repeated(t)||cont>=6||(lastY!=null&&lastY-l.y>Math.max(l.h,9)*2.6)){cur=null;continue;}
       cur.raw+=' | '+t.replace(DRE,'').trim();cont++;lastY=l.y;}}
+  /* Ohne Vorzeichen: Stehen im Auszug Abbuchungen mit Minus (z. B. ING), sind Beträge ohne Vorzeichen Eingänge */
+  rows.forEach(r=>{if(!r._o)return;if(nMinus>0&&colS==null)r.b=Math.round(r._o*100)/100;else unsure++;delete r._o;});
   if(!rows.length)throw new Error('Im PDF wurden keine Buchungen gefunden. Klappt es mit dem CSV-Export der Bank?');
   rows.sort((a,b)=>a.d.localeCompare(b.d));const sum=rows.reduce((s,r)=>s+r.b,0);
   const check=old!=null&&neu!=null?{old,neu,ok:Math.abs(old+sum-neu)<0.01,diff:Math.round((neu-old-sum)*100)/100}:null;
-  return {rows,check,unsure,noYear,end:anonEnd(pages[0].map(l=>l.t).join(' '))};}
+  return {rows,check,unsure,noYear,end:anonEnd(pages[0].map(l=>l.t).join(' ')),pages:check&&check.ok?null:pages};}
 const ANON_ACCTS=['Tills Girokonto','Tills Tagesgeld','Patricks Girokonto','Patricks Tagesgeld','Gemeinschaftskonto (Haushalt)','Gemeinsames Tagesgeld','Urlaubskonto','Anderes Konto'];
 /* Eigene IBAN eines Auszugs: erste IBAN im Kopf → letzte 4 Ziffern (nur zum Zuordnen, wird nicht exportiert) */
 const ANON_IBAN=/\bDE\d{2}(?:\s?\d{4}){4}\s?\d{2}\b/g;
@@ -131,15 +133,24 @@ function anonAnalyse(){const R=anonRows;const ein=R.filter(r=>r.b>0).reduce((s,r
 function anonRender(){const el=$('#an-out');if(!anonRows.length){el.innerHTML='';return;}
   const unk=anonRows.filter(r=>r.cat==='Sonstiges').length;
   const opts=c=>ANON_CATS.map(x=>`<option ${x===c?'selected':''}>${x}</option>`).join('');
-  const files=anonGroups().map(o=>{const bad=o.chk.filter(f=>!f.check.ok);return `<div class="row" style="flex-wrap:wrap;gap:6px"><span style="min-width:0">${o.end?`Konto …${esc(o.end)}`:esc(o.files[0].n)} <span class="muted">(${o.files.length} Auszug${o.files.length>1?'e':''}, ${o.k} Buchungen)</span></span><select data-anacct="${esc(o.key)}"><option value="">– welches Konto? –</option>${ANON_ACCTS.map(a=>`<option ${a===o.acct?'selected':''}>${a}</option>`).join('')}</select></div><div class="note" style="margin-top:0">${o.chk.length?(bad.length?`<b class="neg">Kontostand passt bei ${bad.length} Auszug/Auszügen nicht</b>: ${bad.map(f=>esc(f.n)).join(', ')} – dort fehlt evtl. eine Buchung.`:`<b class="pos">Vollständig</b> – Kontostand passt bei ${o.ok>1?'allen '+o.ok+' Auszügen':'dem Auszug'}.`):'Kontostand im Auszug nicht gefunden – keine Vollständigkeits-Kontrolle möglich.'}</div>`;}).join('');
+  const files=anonGroups().map(o=>{const bad=o.chk.filter(f=>!f.check.ok);return `<div class="row" style="flex-wrap:wrap;gap:6px"><span style="min-width:0">${o.end?`Konto …${esc(o.end)}`:esc(o.files[0].n)} <span class="muted">(${o.files.length} ${o.files.length>1?'Auszüge':'Auszug'}, ${o.k} ${o.k===1?'Buchung':'Buchungen'})</span></span><select data-anacct="${esc(o.key)}"><option value="">– welches Konto? –</option>${ANON_ACCTS.map(a=>`<option ${a===o.acct?'selected':''}>${a}</option>`).join('')}</select></div><div class="note" style="margin-top:0">${o.chk.length?(bad.length?`<b class="neg">Kontostand passt bei ${bad.length} ${bad.length>1?'Auszügen':'Auszug'} nicht</b>: ${bad.map(f=>esc(f.n)).join(', ')} – dort fehlt evtl. eine Buchung.`:`<b class="pos">Vollständig</b> – Kontostand passt bei ${o.ok>1?'allen '+o.ok+' Auszügen':'dem Auszug'}.`):'Kontostand im Auszug nicht gefunden – keine Vollständigkeits-Kontrolle möglich.'}</div>`;}).join('');
   el.innerHTML=`<div class="note"><b>${anonRows.length} Buchungen</b> von ${dDE(anonRows[0].d)} bis ${dDE(anonRows.at(-1).d)}. Bitte je Konto angeben, welches es ist (die App merkt sich das). Umbuchungen zwischen diesen Konten werden automatisch als „Übertrag eigene Konten“ markiert.</div>${files}
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="an-dl">Datei für Claude speichern</button><button type="button" class="btn sec" id="an-copy">Text kopieren</button><button type="button" class="btn sec" id="an-clear">Verwerfen</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="an-dl">Datei für Claude speichern</button><button type="button" class="btn sec" id="an-copy">Text kopieren</button><button type="button" class="btn sec" id="an-clear">Verwerfen</button>${anonInfo.some(i=>i.pages)?'<button type="button" class="btn sec" id="an-diag" title="Hilft Claude, die Erkennung für deine Bank zu verbessern">Prüfdatei (Kontrolle stimmt nicht)</button>':''}</div>
   <div class="note" id="an-msg" style="margin-top:6px">Die Datei dann im Claude-Chat hochladen (oder den kopierten Text einfügen) und Fragen stellen. Enthalten sind nur Datum, Konto, Betrag, Art, Kategorie und Firmenname.</div>
   <details ${unk?'open':''} style="margin-top:8px"><summary><b>Buchungen prüfen</b>${unk?` – <span class="neg">${unk} ohne Kategorie</span>, bitte zuordnen (die App merkt es sich)`:''}</summary>
   <div class="tw"><table class="stab"><thead><tr><th>Datum</th><th class="r">Betrag</th><th>Kategorie</th><th>Händler</th><th>Original (bleibt hier)</th></tr></thead><tbody>${anonRows.map((r,i)=>`<tr class="${r.cat==='Sonstiges'?'warnrow':''}"><td>${dDE(r.d)}</td><td class="r num ${r.b<0?'neg':'pos'}">${eur(r.b)}</td><td><select data-ani="${i}">${opts(r.cat)}</select></td><td><input data-anb="${i}" value="${esc(r.brand)}" placeholder="–" style="width:110px" title="Nur Firmenname, kein Personenname"></td><td class="muted" style="font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.raw)}">${esc(r.raw)}</td></tr>`).join('')}</tbody></table></div></details>
   <details style="margin-top:6px"><summary><b>Kurze Auswertung</b></summary>${anonAnalyse()}</details>`;}
 function anonAcctName(key){const x=anonInfo.find(i=>i.key===key)||{};if(!x.acct)return x.end?`Konto …${x.end}`:'Konto';const dup=new Set(anonInfo.filter(i=>i.acct===x.acct).map(i=>i.key)).size>1;return dup&&x.end?`${x.acct} (…${x.end})`:x.acct;}
 function anonGroups(){const g={};anonInfo.forEach((x,i)=>{const o=g[x.key]||(g[x.key]={key:x.key,end:x.end,files:[],acct:x.acct});o.files.push({...x,i});});return Object.values(g).map(o=>{o.files.sort((a,b)=>(a.d0||'').localeCompare(b.d0||''));const rr=anonRows.filter(r=>anonInfo[r.f].key===o.key);o.k=rr.length;o.sum=rr.reduce((s,r)=>s+r.b,0);o.chk=o.files.filter(f=>f.check);o.ok=o.chk.filter(f=>f.check.ok).length;return o;});}
+/* Prüfdatei: Aufbau der Auszüge, bei denen die Kontrolle nicht stimmt – Wörter unkenntlich, nur Daten, Beträge und Fachbegriffe bleiben */
+const ANON_KEEP=/^(alter|neuer|saldo|kontostand|buchung|buchungstag|valuta|wert|betrag|eur|euro|gutschrift|lastschrift|überweisung|ueberweisung|dauerauftrag|entgelt|zinsen|zins|kartenzahlung|seite|übertrag|uebertrag|summe|soll|haben|verwendungszweck|abschluss|rechnungsabschluss|kapitalertragsteuer|solidaritätszuschlag|kirchensteuer|rückbuchung|retoure|storno|sepa|gehalt|lohn|auszahlung|einzahlung|umbuchung|zeitraum|datum|kontoauszug|girokonto|extra-konto|tagesgeld|sparen|rundung|aufrundung|gebühr|abbuchung|eingang|ausgang|vorgang|von|bis|am|vom|zum|an|mit|für|und|der|die|das)$/i;
+function anonMask(t){return t.replace(ANON_IBAN,'[IBAN]').replace(/\S+@\S+/g,'[MAIL]').split(/(\s+)/).map(w=>{if(/^\s+$/.test(w)||!w)return w;
+  if(/^[+-]?(\d{1,3}(\.\d{3})+|\d+),\d{2}[+-]?$/.test(w)||/^\d{1,2}\.\d{1,2}\.(\d{2,4})?$/.test(w)||/^[+-]$|^[SH]$/.test(w))return w;
+  if(ANON_KEEP.test(w.replace(/[:.,]$/,'')))return w;if(/\d{5,}/.test(w.replace(/\D/g,'')))return '#';return /\d/.test(w)?w.replace(/[A-Za-zÄÖÜäöüß]/g,'x'):'X'.repeat(Math.min(4,w.length));}).join('');}
+function anonDiag(){const L=['# Prüfdatei Kontoauszug (Aufbau, Namen und Texte unkenntlich)'];
+  anonInfo.filter(i=>i.pages).forEach((i,n)=>{L.push('',`## Auszug ${n+1} (${i.acct||'Konto'}${i.check?`, Kontrolle: es fehlen ${i.check.diff.toFixed(2)}`:', Kontostand nicht gefunden'})`);
+    i.pages.forEach((ls,p)=>{L.push(`--- Seite ${p+1}`);ls.forEach(l=>L.push(l.c.map(c=>`[${Math.round(c.x)}]${anonMask(c.s)}`).join(' ')));});});
+  const out=L.join('\n');if(/[A-Z]{2}\d{2}[A-Z0-9]{10,}|\d{8,}|@/.test(out))throw new Error('Prüfdatei enthält noch eine lange Nummer – nicht gespeichert.');return out;}
 function anonExport(){const R=anonRows;const d1=R[0].d,d2=R.at(-1).d;const fmt=v=>v.toFixed(2).replace('.',',')+' €';
   const L=['# Kontoauszug (anonymisiert) – aus dem Haushaltsbuch Till & Patrick',`Zeitraum: ${dDE(d1)} bis ${dDE(d2)}, ${R.length} Buchungen`,
     'Hinweis: Namen, IBANs, Verwendungszwecke und Referenzen sind entfernt. Negative Beträge = Ausgaben, positive = Eingänge. Kategorie automatisch bzw. von Hand zugeordnet; „Übertrag eigene Konten“ ist Geld zwischen unseren eigenen Konten (keine echte Ausgabe).','','## Konten'];
@@ -156,7 +167,7 @@ let anonInfo=[];
 $('#an-file').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const msg=$('#an-status');msg.textContent='Wird gelesen …';
   const got=[],info=[],errs=[];
   for(const f of fs){try{const buf=await f.arrayBuffer();const head=new Uint8Array(buf.slice(0,5));const isPdf=/\.pdf$/i.test(f.name)||String.fromCharCode(...head)==='%PDF-';
-      if(isPdf){const r=anonParsePdf(await anonPdfPages(buf));got.push(...r.rows.map(x=>({...x,f:info.length})));info.push({n:f.name,k:r.rows.length,check:r.check,unsure:r.unsure,noYear:r.noYear,end:r.end,d0:r.rows[0].d});}
+      if(isPdf){const r=anonParsePdf(await anonPdfPages(buf));got.push(...r.rows.map(x=>({...x,f:info.length})));info.push({n:f.name,k:r.rows.length,check:r.check,unsure:r.unsure,noYear:r.noYear,end:r.end,d0:r.rows[0].d,pages:r.pages});}
       else{let txt;try{txt=new TextDecoder('utf-8',{fatal:true}).decode(buf);}catch(_){txt=new TextDecoder('windows-1252').decode(buf);}const rows=anonParse(txt);got.push(...rows.map(x=>({...x,f:info.length})));info.push({n:f.name,k:rows.length,end:anonEnd(txt.split(/\r?\n/).slice(0,12).join(' ')),d0:rows[0].d});}}
     catch(err){errs.push(`${f.name}: ${err.message||err}`);}}
   /* doppelte Buchungen (z. B. überlappende Auszüge) nur einmal */
@@ -177,6 +188,7 @@ $('#an-out').addEventListener('change',e=>{const i=e.target.dataset.ani;if(i!=nu
 $('#an-out').addEventListener('click',async e=>{const msg=$('#an-msg');if(!msg)return;
   if(e.target.id==='an-clear'){anonRows=[];anonInfo=[];anonRender();return;}
   if(e.target.id==='an-copy'){try{const out=anonExport();await navigator.clipboard.writeText(out);msg.innerHTML='<b class="pos">Kopiert.</b> Jetzt im Claude-Chat einfügen und deine Frage dazuschreiben.';}catch(err){msg.textContent=err.message||'Kopieren hat nicht geklappt.';}}
+  if(e.target.id==='an-diag'){try{const out=anonDiag();const fn='Kontoauszug-Pruefdatei.txt';const blob=new Blob([out],{type:'text/plain;charset=utf-8'});if(dlFn){await dlFn.save({filename:fn,data:blob});}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();}msg.innerHTML=`<b class="pos">Gespeichert: ${esc(fn)}</b> – im Claude-Chat hochladen, damit die Erkennung angepasst werden kann. Namen und Texte sind darin unkenntlich.`;}catch(err){msg.textContent=err.message||'Hat nicht geklappt.';}}
   if(e.target.id==='an-dl'){try{const out=anonExport();const m1=anonRows[0].d.slice(0,7),m2=anonRows.at(-1).d.slice(0,7);const fn=`Kontoauszug-anonym-${m1}${m2!==m1?'-bis-'+m2:''}.txt`;const blob=new Blob([out],{type:'text/plain;charset=utf-8'});if(dlFn){await dlFn.save({filename:fn,data:blob});}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();}msg.innerHTML=`<b class="pos">Gespeichert: ${esc(fn)}</b> – jetzt im Claude-Chat hochladen und fragen.`;}catch(err){msg.textContent=err.message||'Speichern hat nicht geklappt.';}}});
 
-window.__anonExport=()=>anonExport();
+window.__anonExport=()=>anonExport();window.__anonDiag=()=>anonDiag();
