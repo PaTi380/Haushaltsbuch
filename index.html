@@ -597,8 +597,8 @@ body{margin:0;padding:0 16px}
   <div class="sect-h">App <span class="appv" id="appv2" style="text-transform:none;letter-spacing:0"></span></div>
   <div id="app-sect">
   <div class="card"><div class="head"><h2>Kontoauszug anonymisieren</h2></div>
-    <div class="note" style="margin-top:0">Für Auswertungen mit Claude: CSV-Export vom Online-Banking hier auswählen. Die App ordnet jede Buchung einer Kategorie zu (Lebensmittel, Tanken, Versicherung …) und behält nur <b>Datum, Betrag, Kategorie und ggf. Firmenname</b>. Namen, IBANs, Verwendungszwecke und Referenzen bleiben weg. Alles passiert hier im Browser – die Datei wird nirgends hochgeladen. Zuordnungen, die du von Hand korrigierst, merkt sich die App für das nächste Mal.</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><label class="btn" style="cursor:pointer">CSV auswählen …<input type="file" id="an-file" accept=".csv,text/csv,text/plain" hidden></label><span class="note" id="an-status" style="margin:0">Sparda: Umsätze → Export → CSV. ING: Umsatzanzeige → Export → CSV.</span></div>
+    <div class="note" style="margin-top:0">Für Auswertungen mit Claude: Kontoauszug als <b>PDF</b> oder CSV-Export vom Online-Banking hier auswählen (auch mehrere Monate auf einmal). Die App ordnet jede Buchung einer Kategorie zu (Lebensmittel, Tanken, Versicherung …) und behält nur <b>Datum, Betrag, Kategorie und ggf. Firmenname</b>. Namen, IBANs, Verwendungszwecke und Referenzen bleiben weg. Alles passiert hier im Browser – die Datei wird nirgends hochgeladen. Zuordnungen, die du von Hand korrigierst, merkt sich die App für das nächste Mal.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><label class="btn" style="cursor:pointer">PDF oder CSV auswählen …<input type="file" id="an-file" accept=".pdf,application/pdf,.csv,text/csv,text/plain" multiple hidden></label><span class="note" id="an-status" style="margin:0">PDF: Kontoauszug aus dem Postfach des Online-Bankings. CSV: Umsätze → Export.</span></div>
     <div id="an-out" style="margin-top:8px"></div></div>
   <div class="card"><div class="head"><h2>Sicherung</h2></div>
     <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
@@ -1929,34 +1929,108 @@ function anonParse(text){
   const d=delim(lines[hi]);const head=split(lines[hi],d).map(h=>h.toLowerCase());
   const col=(...keys)=>{for(const k of keys){const i=head.findIndex(h=>h.includes(k));if(i>=0)return i;}return -1;};
   const cDate=col('buchungstag','buchungsdatum','buchung','datum','valuta'),cAmt=col('betrag','umsatz'),cSH=col('soll/haben','soll_haben','s/h'),cWhos=head.map((h,i)=>/auftraggeber|empf[äa]nger|zahlungspflicht|beg[üu]nstigter|^name/.test(h)?i:-1).filter(i=>i>=0),cTxt=col('verwendungszweck','buchungstext','vorgang','beschreibung','text'),cTyp=col('umsatzart','buchungsart','vorgang');
-  if(cDate<0||cAmt<0)throw new Error('Spalten für Datum und Betrag nicht gefunden. Erwartet wird ein CSV-Export deiner Bank.');
+  if(cDate<0||cAmt<0)throw new Error('Spalten für Datum und Betrag nicht gefunden. Erwartet wird ein CSV- oder PDF-Kontoauszug deiner Bank.');
   const toNum=s=>{s=String(s||'').replace(/\s|€|EUR/g,'');if(!s)return null;if(/,\d{1,2}$/.test(s))s=s.replace(/\./g,'').replace(',','.');else if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,'');const v=Number(s);return isFinite(v)?v:null;};
   const toDate=s=>{s=String(s||'').trim();let m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);if(m)return `${m[3].length===2?'20'+m[3]:m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[0];return null;};
   const rows=[];for(let i=hi+1;i<lines.length;i++){const f=split(lines[i],d);if(f.length<3)continue;const dt=toDate(f[cDate]);let amt=toNum(f[cAmt]);if(dt==null||amt==null)continue;
     if(cSH>=0&&/^s/i.test(f[cSH]||''))amt=-Math.abs(amt);else if(cSH>=0&&/^h/i.test(f[cSH]||''))amt=Math.abs(amt);
     const who=cWhos.map(i=>f[i]).filter(Boolean).join(' / ');const txt=cTxt>=0?f[cTxt]:'';const typ=cTyp>=0&&cTyp!==cTxt?f[cTyp]:'';rows.push({d:dt,b:Math.round(amt*100)/100,raw:[who,txt,typ].filter(Boolean).join(' | ')});}
-  if(!rows.length)throw new Error('Keine Buchungen erkannt. Ist es ein CSV-Export (nicht PDF)?');
+  if(!rows.length)throw new Error('Keine Buchungen erkannt. Ist es ein Kontoauszug als CSV oder PDF?');
   rows.sort((a,b)=>a.d.localeCompare(b.d));return rows;}
+
+/* ---------- PDF-Kontoauszüge (Text wird im Browser mit pdf.js ausgelesen, nichts wird hochgeladen) ---------- */
+const ANON_PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/';
+let anonPdfP=null;
+function anonPdfLib(){if(!anonPdfP)anonPdfP=import(ANON_PDFJS+'pdf.min.mjs').then(m=>{const lib=m.default&&m.default.getDocument?m.default:m;lib.GlobalWorkerOptions.workerSrc=ANON_PDFJS+'pdf.worker.min.mjs';return lib;}).catch(e=>{anonPdfP=null;throw new Error('PDF-Leser konnte nicht geladen werden (Internet?).');});return anonPdfP;}
+async function anonPdfPages(buf){const lib=await anonPdfLib();let doc;
+  try{doc=await lib.getDocument({data:new Uint8Array(buf),isEvalSupported:false}).promise;}catch(e){if(/password/i.test(e&&e.name||'')||/password/i.test(e&&e.message||''))throw new Error('Das PDF ist mit Passwort geschützt. Bitte ohne Passwort herunterladen.');throw new Error('PDF konnte nicht geöffnet werden.');}
+  const pages=[];for(let p=1;p<=doc.numPages;p++){const tc=await (await doc.getPage(p)).getTextContent();
+    const its=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:i.transform[5],w:i.width||0,h:Math.abs(i.transform[3])||Math.abs(i.transform[0])||10}));
+    its.sort((a,b)=>b.y-a.y||a.x-b.x);const lines=[];
+    for(const it of its){const L=lines.find(l=>Math.abs(l.y-it.y)<=Math.max(2,it.h*0.4));if(L)L.it.push(it);else lines.push({y:it.y,h:it.h,it:[it]});}
+    lines.forEach(l=>{l.it.sort((a,b)=>a.x-b.x);const c=[];for(const it of l.it){const p=c.at(-1);const gap=p?it.x-(p.x+p.w):99;if(p&&gap<it.h*0.6){p.s+=(gap>it.h*0.12?' ':'')+it.s;p.w=it.x+it.w-p.x;}else c.push({s:it.s,x:it.x,w:it.w});}l.c=c;l.t=c.map(x=>x.s).join('  ');delete l.it;});
+    lines.sort((a,b)=>b.y-a.y);pages.push(lines);}
+  if(!pages.flat().length)throw new Error('Im PDF steckt kein Text (eingescannt?). Bitte den Auszug als PDF aus dem Online-Banking oder als CSV nehmen.');
+  return pages;}
+const ANON_AMT=/(?:^|\s)([+-])?\s?(\d{1,3}(?:\.\d{3})+|\d+),(\d{2})(?:\s?(?:EUR|€))?\s?([+-]|S|H)?$/;
+function anonAmt(line){/* Betrag ganz rechts in der Zeile, Vorzeichen davor/dahinter oder S/H; x = rechte Kante (für Soll-/Haben-Spalte) */
+  const c=line.c;for(let k=c.length-1;k>=Math.max(0,c.length-3);k--){const t=c.slice(k).map(x=>x.s).join(' ');const m=t.match(ANON_AMT);
+    if(m){const v=Number(m[2].replace(/\./g,'')+'.'+m[3]);const sg=m[1]||m[4]||'';const amtCell=[...c.slice(k)].reverse().find(x=>/\d,\d{2}/.test(x.s))||c[k];
+      return {v,sign:sg==='-'||sg==='S'?-1:sg==='+'||sg==='H'?1:0,x:amtCell.x+amtCell.w,cut:k,head:c.slice(0,k).map(x=>x.s).join('  ')+' '+c[k].s.replace(ANON_AMT,'').trim()};}}
+  return null;}
+function anonParsePdf(pages){
+  const all=pages.flat().map(l=>l.t).join('\n');
+  /* Jahr bestimmen: Zeitraum „01.10.2026 – 31.10.2026“, sonst alle vollen Daten */
+  let y0=null,m0=null,y1=null;const per=all.match(/(\d{1,2})\.(\d{1,2})\.(20\d{2})\s*(?:-|–|bis)\s*(\d{1,2})\.(\d{1,2})\.(20\d{2})/);
+  if(per){y0=+per[3];m0=+per[2];y1=+per[6];}else{const f=[...all.matchAll(/\b\d{1,2}\.(\d{1,2})\.(20\d{2})\b/g)].map(m=>[+m[2],+m[1]]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);if(f.length){[y0,m0]=f[0];y1=f.at(-1)[0];}}
+  const noYear=y1==null;if(noYear){y1=y0=new Date().getFullYear();m0=1;}
+  const toD=(d,m,y)=>{let yy=y?(y.length===2?2000+ +y:+y):(y0!==y1&&+m>=m0?y0:y1);if(+m<1||+m>12||+d<1||+d>31)return null;return `${yy}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;};
+  const DRE=/^(\d{1,2})\.(\d{1,2})\.(\d{4}|\d{2}(?!\d))?/;
+  const SKIP=/kontostand|saldo|zwischensumme|^summe|übertrag auf|übertrag von|uebertrag auf|uebertrag von|gesamtumsätze|summe der/i;
+  const cnt={};const key=t=>t.replace(/\d/g,'#');pages.forEach(ls=>new Set(ls.map(l=>key(l.t))).forEach(k=>cnt[k]=(cnt[k]||0)+1));
+  const repeated=t=>pages.length>1&&cnt[key(t)]>=Math.max(2,Math.ceil(pages.length*0.6));
+  const rows=[];let old=null,neu=null,colS=null,colH=null,unsure=0;
+  for(const lines of pages){let cur=null,lastY=null,cont=0;
+    for(const l of lines){const t=l.t.trim();
+      const hs=l.c.find(c=>/^(soll|belastung(en)?|ausgang|abgang|lastschriften|ausgänge)$/i.test(c.s)),hh=l.c.find(c=>/^(haben|gutschrift(en)?|eingang|zugang|eingänge)$/i.test(c.s));
+      if(hs&&hh){colS=hs.x+hs.w;colH=hh.x+hh.w;cur=null;continue;}
+      if(/kontostand|saldo/i.test(t)){const a=anonAmt(l);if(a){const v=a.v*(a.sign||1);if(/neu|end|schluss|aktuell/i.test(t))neu=v;else if(/alt|anfang|bisher|vorher|start|letzt/i.test(t)&&old==null)old=v;}cur=null;continue;}
+      const dm=t.match(DRE),a=dm&&!SKIP.test(t)?anonAmt(l):null;
+      if(dm&&a){const d=toD(dm[1],dm[2],dm[3]);if(!d){cur=null;continue;}
+        let sg=a.sign;if(!sg&&colS!=null&&colH!=null)sg=Math.abs(a.x-colS)<Math.abs(a.x-colH)?-1:1;
+        let desc=a.head.replace(/^\s*(\d{1,2}\.\d{1,2}\.(\d{2,4})?\s*){1,2}/,'').trim();
+        if(!sg){unsure++;sg=/gutschrift|gehalt|lohn|eingang|zahlungseingang|erstattung|rückzahlung|zins.*haben/i.test(desc)?1:-1;}
+        cur={d,b:Math.round(a.v*sg*100)/100,raw:desc};rows.push(cur);lastY=l.y;cont=0;continue;}
+      if(!cur)continue;
+      if(SKIP.test(t)||/^seite\s*\d|^blatt\s*\d/i.test(t)||repeated(t)||cont>=6||(lastY!=null&&lastY-l.y>Math.max(l.h,9)*2.6)){cur=null;continue;}
+      cur.raw+=' | '+t.replace(DRE,'').trim();cont++;lastY=l.y;}}
+  if(!rows.length)throw new Error('Im PDF wurden keine Buchungen gefunden. Klappt es mit dem CSV-Export der Bank?');
+  rows.sort((a,b)=>a.d.localeCompare(b.d));const sum=rows.reduce((s,r)=>s+r.b,0);
+  const check=old!=null&&neu!=null?{old,neu,ok:Math.abs(old+sum-neu)<0.01,diff:Math.round((neu-old-sum)*100)/100}:null;
+  return {rows,check,unsure,noYear};}
 function anonCat(raw,amt){const t=' '+raw.toLowerCase().replace(/\s+/g,' ')+' ';const learned=(S.anonRules||{});for(const k of Object.keys(learned)){if(t.includes(k))return learned[k];}
+  if(amt>0&&/booking\.com|airbnb/.test(t))return 'Ferienwohnung';
   for(const [cat,keys] of ANON_RULES){if(keys.some(k=>t.includes(k)))return cat;}
   if(amt>0&&/gutschrift|überweisungsgutschr|ueberweisungsgutschr/.test(t))return 'Sonstiges';return 'Sonstiges';}
 function anonBrand(raw){const t=raw.toLowerCase();const hit=ANON_BRANDS.find(b=>t.includes(b.toLowerCase()));return hit||'';}
 let anonRows=[];
+function anonAnalyse(){const R=anonRows;const ein=R.filter(r=>r.b>0).reduce((s,r)=>s+r.b,0),aus=R.filter(r=>r.b<0).reduce((s,r)=>s+r.b,0);
+  const ohneUe=R.filter(r=>r.cat!=='Übertrag eigene Konten');const byOut={};ohneUe.filter(r=>r.b<0).forEach(r=>{byOut[r.cat]=(byOut[r.cat]||0)-r.b;});const outTot=Object.values(byOut).reduce((s,v)=>s+v,0)||1;
+  const months=[...new Set(R.map(r=>r.d.slice(0,7)))].sort();const byM={};R.forEach(r=>{const m=r.d.slice(0,7);const o=byM[m]||(byM[m]={e:0,a:0});if(r.cat==='Übertrag eigene Konten')return;if(r.b>0)o.e+=r.b;else o.a+=r.b;});
+  const top=[...ohneUe].filter(r=>r.b<0).sort((x,y)=>x.b-y.b).slice(0,5);
+  /* wiederkehrend: gleiche Kategorie + Firma, in mind. 2 Monaten, Betrag ähnlich (±10 %) */
+  const grp={};ohneUe.filter(r=>r.b<0).forEach(r=>{const k=r.cat+'|'+(r.brand||'');(grp[k]=grp[k]||[]).push(r);});
+  const wied=months.length>1?Object.entries(grp).map(([k,l])=>{const ms=new Set(l.map(r=>r.d.slice(0,7)));const avg=l.reduce((s,r)=>s+r.b,0)/l.length;return {k,n:ms.size,avg,ok:ms.size>=2&&l.every(r=>Math.abs(r.b-avg)<=Math.abs(avg)*0.1+1)};}).filter(x=>x.ok&&x.k.split('|')[1]).sort((x,y)=>x.avg-y.avg):[];
+  const bar=v=>`<span style="display:inline-block;height:8px;border-radius:4px;background:var(--neg,#c0392b);opacity:.7;width:${Math.max(2,Math.round(v/outTot*120))}px;vertical-align:middle;margin-right:6px"></span>`;
+  return `<h3>Auswertung</h3>
+  <div class="row"><span>Einnahmen</span><b class="num pos">${eur(ein)}</b></div><div class="row"><span>Ausgaben</span><b class="num neg">${eur(aus)}</b></div><div class="row"><span>Differenz</span><b class="num ${ein+aus<0?'neg':'pos'}">${eur(ein+aus)}</b></div>
+  <h3>Wofür das Geld rausging <span class="muted" style="font-weight:400;font-size:12px">(ohne Überträge auf eigene Konten)</span></h3>${Object.entries(byOut).sort((x,y)=>y[1]-x[1]).map(([c,v])=>`<div class="row"><span>${bar(v)}${esc(c)}</span><b class="num">${eur(v)} <span class="muted" style="font-weight:400">${Math.round(v/outTot*100)} %</span></b></div>`).join('')||'<div class="note">Keine Ausgaben.</div>'}
+  ${months.length>1?`<h3>Je Monat <span class="muted" style="font-weight:400;font-size:12px">(ohne Überträge)</span></h3><div class="tw"><table class="stab"><thead><tr><th>Monat</th><th class="r">Ein</th><th class="r">Aus</th><th class="r">Differenz</th></tr></thead><tbody>${months.map(m=>`<tr><td>${m.slice(5)}/${m.slice(0,4)}</td><td class="r num pos">${eur(byM[m].e)}</td><td class="r num neg">${eur(byM[m].a)}</td><td class="r num ${byM[m].e+byM[m].a<0?'neg':'pos'}">${eur(byM[m].e+byM[m].a)}</td></tr>`).join('')}</tbody></table></div>`:''}
+  ${top.length?`<h3>Größte Einzelausgaben</h3>${top.map(r=>`<div class="row"><span>${dDE(r.d)} · ${esc(r.cat)}${r.brand?' · '+esc(r.brand):''}</span><b class="num neg">${eur(r.b)}</b></div>`).join('')}`:''}
+  ${wied.length?`<h3>Wiederkehrende Zahlungen</h3>${wied.map(x=>`<div class="row"><span>${esc(x.k.split('|')[1])} <span class="muted">(${esc(x.k.split('|')[0])}, in ${x.n} Monaten)</span></span><b class="num neg">≈ ${eur(x.avg)}</b></div>`).join('')}`:''}`;}
 function anonRender(){const el=$('#an-out');if(!anonRows.length){el.innerHTML='';return;}
-  const by={};anonRows.forEach(r=>{by[r.cat]=(by[r.cat]||0)+r.b;});const unk=anonRows.filter(r=>r.cat==='Sonstiges').length;
+  const unk=anonRows.filter(r=>r.cat==='Sonstiges').length;
   const opts=c=>ANON_CATS.map(x=>`<option ${x===c?'selected':''}>${x}</option>`).join('');
-  el.innerHTML=`<div class="note">${anonRows.length} Buchungen von ${dDE(anonRows[0].d)} bis ${dDE(anonRows.at(-1).d)} erkannt${unk?`, davon <b>${unk}</b> ohne Kategorie („Sonstiges“) – unten zuordnen, damit die Auswertung etwas taugt`:''}. Die Spalte „Original“ siehst nur du; sie wird <b>nicht</b> exportiert.</div>
-  <div class="tw"><table class="stab"><thead><tr><th>Datum</th><th class="r">Betrag</th><th>Kategorie</th><th>Händler</th><th>Original (bleibt hier)</th></tr></thead><tbody>${anonRows.map((r,i)=>`<tr class="${r.cat==='Sonstiges'?'warnrow':''}"><td>${dDE(r.d)}</td><td class="r num ${r.b<0?'neg':'pos'}">${eur(r.b)}</td><td><select data-ani="${i}">${opts(r.cat)}</select></td><td><input data-anb="${i}" value="${esc(r.brand)}" placeholder="–" style="width:110px" title="Nur Firmenname, kein Personenname"></td><td class="muted" style="font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.raw)}">${esc(r.raw)}</td></tr>`).join('')}</tbody></table></div>
-  <h3>Summen je Kategorie</h3>${Object.entries(by).sort((a,b)=>a[1]-b[1]).map(([c,v])=>`<div class="row"><span>${esc(c)}</span><b class="num ${v<0?'neg':'pos'}">${eur(v)}</b></div>`).join('')}
+  const pdfNote=anonInfo.filter(i=>i.check||i.unsure||i.noYear).map(i=>`<div class="note">${esc(i.n)}: ${i.check?(i.check.ok?`<b class="pos">Kontrolle stimmt</b> – alter Kontostand ${eur(i.check.old)} + Buchungen = neuer Kontostand ${eur(i.check.neu)}.`:`<b class="neg">Kontrolle stimmt nicht</b> (es fehlen ${eur(i.check.diff)}) – bitte Beträge und Vorzeichen prüfen, evtl. wurde eine Buchung nicht erkannt.`):''}${i.unsure&&!(i.check&&i.check.ok)?` Bei ${i.unsure} Buchung(en) war nicht klar, ob Ein- oder Ausgang – bitte prüfen.`:''}${i.noYear?' Kein Jahr im Auszug gefunden – es wurde das aktuelle Jahr angenommen.':''}</div>`).join('');
+  el.innerHTML=`<div class="note">${anonRows.length} Buchungen von ${dDE(anonRows[0].d)} bis ${dDE(anonRows.at(-1).d)} erkannt${anonInfo.length>1?` (aus ${anonInfo.length} Dateien)`:''}${unk?`, davon <b>${unk}</b> ohne Kategorie („Sonstiges“) – unten zuordnen, damit die Auswertung etwas taugt`:''}. Die Spalte „Original“ siehst nur du; sie wird <b>nicht</b> exportiert.</div>${pdfNote}
+  ${anonAnalyse()}
+  <h3>Buchungen</h3><div class="tw"><table class="stab"><thead><tr><th>Datum</th><th class="r">Betrag</th><th>Kategorie</th><th>Händler</th><th>Original (bleibt hier)</th></tr></thead><tbody>${anonRows.map((r,i)=>`<tr class="${r.cat==='Sonstiges'?'warnrow':''}"><td>${dDE(r.d)}</td><td class="r num ${r.b<0?'neg':'pos'}">${eur(r.b)}</td><td><select data-ani="${i}">${opts(r.cat)}</select></td><td><input data-anb="${i}" value="${esc(r.brand)}" placeholder="–" style="width:110px" title="Nur Firmenname, kein Personenname"></td><td class="muted" style="font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.raw)}">${esc(r.raw)}</td></tr>`).join('')}</tbody></table></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="an-copy">Anonymisierten Text kopieren</button><button type="button" class="btn sec" id="an-dl">Als Datei speichern</button><button type="button" class="btn sec" id="an-clear">Verwerfen</button></div>
   <div class="note" id="an-msg" style="margin-top:6px"></div>`;}
 function anonExport(){const L=['Datum;Betrag;Kategorie;Haendler'];anonRows.forEach(r=>L.push(`${r.d};${r.b.toFixed(2)};${r.cat};${(r.brand||'').replace(/[;\n]/g,' ')}`));const out=L.join('\n');
   /* Sicherheitsnetz: nichts exportieren, was wie IBAN, lange Zahl oder E-Mail aussieht */
   if(/[A-Z]{2}\d{2}[A-Z0-9]{10,}|\d{8,}|@/.test(out.replace(/^Datum.*$/m,'')))throw new Error('Im Ergebnis steckt noch etwas, das wie eine Konto- oder Referenznummer aussieht. Bitte die Händler-Spalte prüfen.');return out;}
-$('#an-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#an-status');
-  try{let txt;const buf=await f.arrayBuffer();try{txt=new TextDecoder('utf-8',{fatal:true}).decode(buf);}catch(_){txt=new TextDecoder('windows-1252').decode(buf);}
-    const rows=anonParse(txt);anonRows=rows.map(r=>({...r,cat:anonCat(r.raw,r.b),brand:anonBrand(r.raw)}));msg.textContent='';anonRender();}
-  catch(err){msg.textContent='Das klappt so nicht: '+(err.message||err);anonRows=[];anonRender();}};
+let anonInfo=[];
+$('#an-file').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const msg=$('#an-status');msg.textContent='Wird gelesen …';
+  const got=[],info=[],errs=[];
+  for(const f of fs){try{const buf=await f.arrayBuffer();const head=new Uint8Array(buf.slice(0,5));const isPdf=/\.pdf$/i.test(f.name)||String.fromCharCode(...head)==='%PDF-';
+      if(isPdf){const r=anonParsePdf(await anonPdfPages(buf));got.push(...r.rows);info.push({n:f.name,k:r.rows.length,check:r.check,unsure:r.unsure,noYear:r.noYear});}
+      else{let txt;try{txt=new TextDecoder('utf-8',{fatal:true}).decode(buf);}catch(_){txt=new TextDecoder('windows-1252').decode(buf);}const rows=anonParse(txt);got.push(...rows);info.push({n:f.name,k:rows.length});}}
+    catch(err){errs.push(`${f.name}: ${err.message||err}`);}}
+  /* doppelte Buchungen (z. B. überlappende Auszüge) nur einmal */
+  const seen=new Set(),rows=got.filter(r=>{const k=r.d+'|'+r.b+'|'+r.raw;if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>a.d.localeCompare(b.d));
+  anonRows=rows.map(r=>({...r,cat:anonCat(r.raw,r.b),brand:anonBrand(r.raw)}));anonInfo=info;
+  msg.textContent=errs.length?(rows.length?'Nicht alles geklappt – ':'Das klappt so nicht: ')+errs.join(' · '):'';anonRender();};
 $('#an-out').addEventListener('change',e=>{const i=e.target.dataset.ani;if(i!=null){const r=anonRows[+i];r.cat=e.target.value;
     /* Zuordnung merken: erstes aussagekräftiges Wort des Originals → Kategorie (nur in eurer Datenbank, nicht im Export) */
     const freq={};anonRows.forEach(x=>{new Set(x.raw.toLowerCase().match(/[a-zäöüß][a-zäöüß.&-]{3,}/g)||[]).forEach(y=>{freq[y]=(freq[y]||0)+1;});});const common=y=>freq[y]>Math.max(2,anonRows.length*0.3);
@@ -1965,7 +2039,7 @@ $('#an-out').addEventListener('change',e=>{const i=e.target.dataset.ani;if(i!=nu
     anonRender();return;}
   const j=e.target.dataset.anb;if(j!=null){anonRows[+j].brand=e.target.value.trim();}});
 $('#an-out').addEventListener('click',async e=>{const msg=$('#an-msg');if(!msg)return;
-  if(e.target.id==='an-clear'){anonRows=[];anonRender();return;}
+  if(e.target.id==='an-clear'){anonRows=[];anonInfo=[];anonRender();return;}
   if(e.target.id==='an-copy'){try{const out=anonExport();await navigator.clipboard.writeText(out);msg.innerHTML='<b class="pos">Kopiert.</b> Jetzt im Chat einfügen – es sind nur Datum, Betrag, Kategorie und ggf. Firmenname enthalten.';}catch(err){msg.textContent=err.message||'Kopieren hat nicht geklappt.';}}
   if(e.target.id==='an-dl'){try{const out=anonExport();const fn=`Kontoauszug-anonym-${anonRows[0].d.slice(0,7)}.csv`;const blob=new Blob(['﻿'+out],{type:'text/csv'});if(dlFn){await dlFn.save({filename:fn,data:blob});}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();}msg.innerHTML=`<b class="pos">Gespeichert: ${esc(fn)}</b>`;}catch(err){msg.textContent=err.message||'Speichern hat nicht geklappt.';}}});
 
@@ -2142,7 +2216,7 @@ const HILFE=[
 - spart ab Februar für das nächste Jahr den Gesamtbetrag des Bescheids an. Der Januar (noch alter Bescheid, meist schon abgeschlossen) wird verrechnet, damit bis Dezember genau der Gesamtbetrag zusammenkommt; ab Januar des Folgejahres Gesamtbetrag ÷ 12.
 Wasser und Grundsteuer werden immer im Vorjahr angespart (Januar–Dezember für die Raten des Folgejahres); der Balken im Ausblick („Wasser 2027“) wächst bis Dezember auf 100 %. Geht auch per Schnell eintragen: „Wasserbescheid 2027: Februar 297 €, danach 280 €“. Falsch eingetragen: Bescheid in der Liste mit × löschen und neu eintragen.`],
 ['Neuer Beitrag Versicherung, Abfall, ADAC',`Einstellungen → Gemeinsam → „+ Neuer Bescheid“ → Posten (Wohngebäude-, Hausrat-, Haftpflichtversicherung, Abfallgebühr, ADAC) → neuer Jahresbetrag und Fälligkeitsmonat (vorausgefüllt) → Übernehmen. Die Zahlung im Fälligkeitsmonat wird angepasst. Reicht das in den 12 Monaten davor Angesparte nicht (oder ist etwas übrig), zahlen Till und Patrick im Fälligkeitsmonat je die Hälfte nach (bzw. weniger). Danach wird der neue Betrag ÷ 12 angespart. Diese Posten werden jeweils bis zur nächsten Zahlung angespart. Per Schnell eintragen: „Wohngebäudeversicherung kostet ab April 2027 2.000 €“.`],
-['Kontoauszug anonymisieren',`Einstellungen → „Kontoauszug anonymisieren“: CSV-Export der Bank auswählen. Die App erkennt Datum und Betrag, ordnet Kategorien zu und zeigt eine Vorschau. Zeilen mit „Sonstiges“ von Hand zuordnen (die App merkt sich das). „Kopieren“ oder „Als Datei speichern“ liefert nur Datum, Betrag, Kategorie, Firmenname – ohne Namen, IBAN oder Verwendungszweck. Das kannst du gefahrlos an Claude schicken, z. B. für „Wo geht unser Geld hin?“.`],
+['Kontoauszug anonymisieren',`Einstellungen → „Kontoauszug anonymisieren“: Kontoauszug als PDF (aus dem Online-Banking-Postfach, nicht eingescannt) oder CSV-Export auswählen, gern mehrere Monate auf einmal. Die App erkennt Datum und Betrag, prüft bei PDFs „alter Kontostand + Buchungen = neuer Kontostand“, ordnet Kategorien zu und zeigt eine Auswertung (Einnahmen/Ausgaben, wofür das Geld rausging, je Monat, größte Ausgaben, wiederkehrende Zahlungen). Zeilen mit „Sonstiges“ von Hand zuordnen (die App merkt sich das). „Kopieren“ oder „Als Datei speichern“ liefert nur Datum, Betrag, Kategorie, Firmenname – ohne Namen, IBAN oder Verwendungszweck. Das kannst du gefahrlos an Claude schicken, z. B. für „Wo geht unser Geld hin?“.`],
 ['Monatsabschluss-Check',`Beim ersten Tippen auf „… abschließen“ zeigt die App eine Checkliste: Kontostände abgeglichen? Giroausgleich festgeschrieben? Echtes Gehalt drin? Essen/Sonstiges überzogen? Ferienwohnungs-Gutschrift ohne Urlaubskonto-Eintrag? Sicherung aktuell? Abschließen geht trotzdem (zweites Tippen) – die Punkte lassen sich auch danach noch erledigen (Abschluss aufheben).`],
 ['Automatische Sicherung',`Sobald ein Monat komplett abgeschlossen ist (Tills Giro, Patricks Giro, Haushaltskonto), legt die App eine Sicherung in der Datenbank ab und behält die letzten 12. Unter Einstellungen → Sicherung → „Automatische Sicherungen“ lässt sich jede als Datei herunterladen und wie gewohnt wiederherstellen. Die Datei-Sicherung bleibt zusätzlich sinnvoll (falls die Datenbank selbst betroffen ist).`],
 ['Was bringt eine Sondertilgung?',`Reiter Kredite, oben: Kredit (Sparda oder ING), Betrag und Datum eingeben – sofort steht da, wie viel Zinsen das bis zum Ende spart, wann der Kredit fertig ist und (Sparda) was am Ende der Zinsbindung 03/2053 übrig bleibt. Es wird nichts gespeichert. Die App warnt, wenn das Jahreslimit von 17.250 € überschritten würde. Auch per Textfeld: „Was bringt eine Sondertilgung von 5.000 € bei der Sparda?“`],
