@@ -2004,7 +2004,8 @@ function anonCat(raw,amt){const t=' '+raw.toLowerCase().replace(/\s+/g,' ')+' ';
   if(amt>0&&/booking\.com|airbnb/.test(t))return 'Ferienwohnung';
   for(const [cat,keys] of ANON_RULES){if(keys.some(k=>t.includes(k)))return cat;}
   if(amt>0&&/gutschrift|überweisungsgutschr|ueberweisungsgutschr/.test(t))return 'Sonstiges';return 'Sonstiges';}
-function anonBrand(raw){const t=raw.toLowerCase();const hit=ANON_BRANDS.find(b=>t.includes(b.toLowerCase()));return hit||'';}
+function anonBrand(raw){const t=' '+raw.toLowerCase().replace(/[^a-z0-9äöüß&.+]+/g,' ')+' ';/* nur ganze Wörter, sonst wird z. B. „ING“ in „Leasing“ gefunden */
+  const hit=ANON_BRANDS.find(b=>{const k=b.toLowerCase().replace(/[^a-z0-9äöüß&.+]+/g,' ').trim();return new RegExp('(^|\\s)'+k.replace(/[.+&]/g,'\\$&')+'(\\s|$)').test(t)||(k.length>=5&&t.includes(' '+k));});return hit||'';}
 let anonRows=[];
 function anonAnalyse(){const R=anonRows;const ein=R.filter(r=>r.b>0).reduce((s,r)=>s+r.b,0),aus=R.filter(r=>r.b<0).reduce((s,r)=>s+r.b,0);
   const ohneUe=R.filter(r=>r.cat!=='Übertrag eigene Konten');const byOut={};ohneUe.filter(r=>r.b<0).forEach(r=>{byOut[r.cat]=(byOut[r.cat]||0)-r.b;});const outTot=Object.values(byOut).reduce((s,v)=>s+v,0)||1;
