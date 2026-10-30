@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")"
 OUT=../1_App-fuer-GitHub
-JS="core.js views1.js fewo.js views2.js views3.js whatif.js strom.js backup.js export.js mig.js hilfe.js main.js"
+JS="core.js views1.js fewo.js views2.js views3.js whatif.js strom.js anon.js backup.js export.js mig.js hilfe.js main.js"
 {
 echo '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
 echo '<meta name="theme-color" content="#0c231b"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg">'
@@ -26,7 +26,7 @@ echo '<script>'; cat $JS; echo '</script></body></html>'
 # Testversion: gleiche App, aber mit Mock-Datenbank (mock.js) und testdaten.js statt Firebase
 python3 - <<'PY'
 body=open('body.html').read();css=open('style.css').read()+open('extra.css').read()
-js=''.join(open(f).read() for f in "core.js views1.js fewo.js views2.js views3.js whatif.js strom.js backup.js export.js mig.js hilfe.js main.js".split())
+js=''.join(open(f).read() for f in "core.js views1.js fewo.js views2.js views3.js whatif.js strom.js anon.js backup.js export.js mig.js hilfe.js main.js".split())
 mock=open('mock.js').read().replace("window.claude={use:async n=>n==='db'?db:n==='downloads'?downloads:n==='sample'?sample:null};","window.__mockdb=db;")
 js=js.replace("try{db=await cl?.use?.('db');}catch(_){db=null;}","db=window.__mockdb;")
 banner='<div class="banner" style="border-left-color:var(--till);margin-top:14px"><b>Testversion.</b> Nichts wird gespeichert; beim Neuladen ist alles wieder auf dem Ausgangsstand.</div>'

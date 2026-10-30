@@ -169,3 +169,9 @@ Eintrag: `{l, v, f?, fest?, p?, lk?, fix?, gk?, _c?, cm?}`
 - Direktbuchungen zählen erst ab Status „Bestätigt“ fürs Haushaltsbuch; Status „storniert_bezahlt“ bei Direktbuchungen bucht die Stornopauschale (`calc().erhalten`). Stornofrist je Buchung (`stoTage`), 0 = nicht stornierbar.
 - Testmodus mit Beispieldaten nur, wenn kein `config.js` geladen ist und die Seite nicht auf github.io läuft; auf der echten Seite erscheint sonst eine Fehlermeldung.
 - Tarife: Booking Standard Rate 105 € für 3 Gäste, Belegungsabschläge 10 %/20 %, Non-refundable −10 %, Weekly −8 %, Weekly ohne Storno −15 %, Sauna-Rate 125/118,75/117,50 €, Genius 10 %; Airbnb 98 €/Nacht, Gebühr 15,5 % + MwSt (18,45 %). Gästebeitrag 2,10 € je Erwachsenem/Nacht (unter 18, beruflich, GdB ≥ 50 befreit). Tourismusbeitrag ≈ 2,97 % vom Umsatz (18 % Gewinnsatz × 16,5 % Hebesatz).
+
+## Kontoauszug anonymisieren (2.6, 30.10.2026)
+- Quelle `quellcode/anon.js` (in `build.sh` zwischen `strom.js` und `backup.js`), Karte in `body.html` vor „Sicherung“ (Einstellungen), Listener `cfg('anonregeln')` in `main.js`, Stil `.warnrow` in `extra.css`, Hilfe-Abschnitt in `hilfe.js`.
+- Liest CSV-Exporte (Sparda, ING u. a.; Spalten werden über die Kopfzeile erkannt, `;`/`,`/Tab, UTF-8 oder Windows-1252, Soll/Haben-Spalte oder Vorzeichen).
+- Kategorien `ANON_CATS`, Schlagwörter `ANON_RULES`, erlaubte Firmennamen `ANON_BRANDS`. Von Hand korrigierte Zuordnungen → `config/anonregeln` {wort: kategorie} (nur eigene Datenbank; Wörter, die in vielen Zeilen vorkommen, z. B. eigener Name, werden nicht gelernt).
+- Export nur `Datum;Betrag;Kategorie;Haendler`; vor dem Export Sicherheitsprüfung gegen IBAN, lange Ziffernfolgen und E-Mail. Alles läuft im Browser, nichts wird hochgeladen.

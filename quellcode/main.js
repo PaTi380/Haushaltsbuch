@@ -32,7 +32,7 @@ render();
   const later=()=>{if(editing()){clearTimeout(later.t);later.t=setTimeout(later,700);}else{render();clearTimeout(later.m);later.m=setTimeout(migrate,1500);}};
   const cfg=(p,f)=>db.doc('config/'+p).onSnapshot(s=>{const d=s.data();remember('config/'+p,d);if(d)f(d);later();flash('ok','Synchronisiert');},onErr);
   cfg('grund',d=>S.grund=d);cfg('archiv',d=>S.archiv=d);cfg('urlaub',d=>S.urlaub=d);cfg('strom',d=>S.strom=d);cfg('kredit',d=>S.kredit=d);
-  cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);cfg('sicherungen',d=>S.sichAuto=d.l||[]);cfg('sicherung',d=>S.sich=d);
+  cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);cfg('sicherungen',d=>S.sichAuto=d.l||[]);cfg('anonregeln',d=>S.anonRules=d||{});cfg('sicherung',d=>S.sich=d);
   db.collection('plan').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('plan/'+d.id,m[d.id]);});S.plan=m;if(!window.__mset&&m[CUR]&&CUR<PLAN0){month=CUR;}window.__mset=1;later();},onErr);
   db.collection('budget').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('budget/'+d.id,m[d.id]);});S.budget=m;later();},onErr);
   db.collection('fewo').onSnapshot(q=>{const f={};q.docs.forEach(d=>{const x=d.data();remember('fewo/'+d.id,x);f[d.id]=(x?.b)||[];});S.fewo=f;later();clearTimeout(fwPublish.t);fwPublish.t=setTimeout(fwPublish,3000);},onErr);

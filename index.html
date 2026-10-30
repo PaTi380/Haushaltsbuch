@@ -398,6 +398,8 @@ body.is-closed main,body.is-closed header{visibility:hidden}
 .tw.tw-x{box-shadow:inset -18px 0 14px -12px rgba(0,0,0,.28)}
 
 .chk{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:13px}.chk ul{margin:6px 0 0;padding-left:0;list-style:none}.chk li{padding:3px 0;border-top:1px dashed var(--line)}.chk li.warn{color:var(--warn)}
+
+.warnrow td{background:color-mix(in srgb,var(--warn) 10%,transparent)}
 body{margin:0;padding:0 16px}
 #fbgate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#123126 0,#081a14 75%);color:#e9dcb8}
 #fbgate[hidden]{display:none}.fbg-c{text-align:center;padding:24px;max-width:340px}.fbg-t{font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:#f3dc9a}.fbg-s{font-style:italic;letter-spacing:.2em;margin:6px 0 22px;color:#d9bd74}.fbg-m{margin:0 0 16px;font-size:14px;line-height:1.5}
@@ -594,6 +596,10 @@ body{margin:0;padding:0 16px}
   </div>
   <div class="sect-h">App <span class="appv" id="appv2" style="text-transform:none;letter-spacing:0"></span></div>
   <div id="app-sect">
+  <div class="card"><div class="head"><h2>Kontoauszug anonymisieren</h2></div>
+    <div class="note" style="margin-top:0">Für Auswertungen mit Claude: CSV-Export vom Online-Banking hier auswählen. Die App ordnet jede Buchung einer Kategorie zu (Lebensmittel, Tanken, Versicherung …) und behält nur <b>Datum, Betrag, Kategorie und ggf. Firmenname</b>. Namen, IBANs, Verwendungszwecke und Referenzen bleiben weg. Alles passiert hier im Browser – die Datei wird nirgends hochgeladen. Zuordnungen, die du von Hand korrigierst, merkt sich die App für das nächste Mal.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><label class="btn" style="cursor:pointer">CSV auswählen …<input type="file" id="an-file" accept=".csv,text/csv,text/plain" hidden></label><span class="note" id="an-status" style="margin:0">Sparda: Umsätze → Export → CSV. ING: Umsatzanzeige → Export → CSV.</span></div>
+    <div id="an-out" style="margin-top:8px"></div></div>
   <div class="card"><div class="head"><h2>Sicherung</h2></div>
     <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn" id="bk-save">Sicherung speichern</button><label class="btn sec" style="cursor:pointer">Wiederherstellen …<input type="file" id="bk-file" accept=".json,application/json" hidden></label><span class="note" id="bk-msg" style="margin:0"></span></div><div id="bk-conf"></div>
@@ -636,7 +642,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
-const APPV={nr:'2.5',datum:'26.10.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
+const APPV={nr:'2.6',datum:'30.10.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
 const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
@@ -1888,6 +1894,82 @@ function rWx(){const a=S.strom.wx,b=S.live?.wx;const w=(b?.tage?.length&&(!a?.am
   const best=rows.filter(r=>r.ueb>8).map(r=>dDE(r.datum));
   out.innerHTML=`<div class="tw"><table><thead><tr><th>Tag</th><th>Wetter</th><th class="r">PV (kWh)</th><th class="r">Verbrauch</th><th class="r">Überschuss</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${dDE(r.datum)}</td><td>${esc(r.text||'')}</td><td class="r">${n0(r.pv)}</td><td class="r">${n0(r.load)}</td><td class="r ${r.ueb>0?'pos':'neg'}">${r.ueb>0?'+':''}${n0(r.ueb)}</td></tr>`).join('')}</tbody></table></div>
   <div class="note">${best.length?`Gute Tage zum E-Auto laden oder für Waschmaschine und Trockner: <b>${best.join(', ')}</b>. `:'In diesen Tagen bleibt kaum Überschuss; laden lohnt sich eher in günstigen Stunden eures Tarifs. '}Vorhersage vom ${dDE(w.am)}${w.quelle?' ('+esc(w.quelle)+', automatisch)':''}, Werte grob geschätzt.${w.am<TODAY?' Für neue Tage einfach die aktuelle Vorhersage einfügen.':''}</div>`;}
+/* ---------- Kontoauszug anonymisieren (alles läuft nur im Browser, nichts wird hochgeladen) ---------- */
+const ANON_CATS=['Lebensmittel','Drogerie','Restaurant & Lieferdienst','Tanken & Auto','Strom & Energie','Wohnen & Kredit','Versicherung','Online-Einkauf','Abo & Medien','Telefon & Internet','Gesundheit','Freizeit & Reise','Kleidung','Bargeld','Gehalt','Ferienwohnung','Übertrag eigene Konten','Steuern & Gebühren','Spenden & Mitgliedschaft','Kinder & Familie','Sonstiges'];
+const ANON_RULES=[
+ ['Lebensmittel',['rewe','aldi','lidl','edeka','netto','penny','kaufland','norma','hit ','globus','real,-','bäcker','baecker','metzger','wasgau','tegut','denns','alnatura','nahkauf','markant','getränke','getraenke','trinkgut']],
+ ['Drogerie',['dm-drogerie','dm drogerie','dm fil','rossmann','mueller','müller','budni']],
+ ['Restaurant & Lieferdienst',['restaurant','pizzeria','pizza','trattoria','ristorante','döner','doener','lieferando','wolt','uber eats','burger','mcdonald','mc donald','kfc','subway','gastst','gasthaus','café','cafe','bistro','imbiss','kebap','sushi','bäckerei cafe','eiscafe','eis ','bar ','brauhaus','vapiano','nordsee','starbucks']],
+ ['Versicherung',['versicherung','huk','axa','allianz','debeka','ergo','signal iduna','provinzial','württembergische','wuerttembergische','r+v','hdi','generali','zurich','devk','lvm','vhv','hansemerkur','barmenia','krankenkasse','tk ','aok','barmer','dak','ikk']],
+ ['Tanken & Auto',['aral','shell','total','esso','jet ','avia','tankstelle','tank ','agip','orlen','star tank','hem ','hyundai','werkstatt','reifen','atu ','a.t.u','kfz','tüv','tuev','dekra','autohaus','ionity','ewe go','enbw mobility','elli','go-e','wallbox','parkhaus','parken','easypark','paybyphone','adac']],
+ ['Strom & Energie',['tibber','e.on','eon ','stadtwerke','energie','strom','gas ','evm','innogy','vattenfall','heizöl','heizoel','pellets','fenecon']],
+ ['Wohnen & Kredit',['sparda','darlehen','tilgung','zins','ing-diba','ing diba','baufinanz','bausparkasse','lbs ','schwäbisch hall','wüstenrot','miete','hausgeld','grundsteuer','abwasser','wasserwerk','wasserversorgung','verbandsgemeinde','vg daun','gemeinde','abfall','müllgeb','muellgeb','schornstein','kamin']],
+ ['Online-Einkauf',['amazon','amzn','ebay','paypal','otto ','zalando','about you','mediamarkt','saturn','conrad','reichelt','alternate','notebooksbilliger','ikea','obi ','hornbach','bauhaus','toom','hagebau','globus bau','temu','shein','aliexpress','apple.com','google *','klarna']],
+ ['Abo & Medien',['netflix','spotify','disney','amazon prime','prime video','dazn','sky ','youtube','apple music','audible','kindle','rundfunk','ard zdf','beitragsservice','gez','zeitung','abo ','patreon','steam','playstation','nintendo','xbox','microsoft','adobe','dropbox','icloud','google one','anthropic','openai','chatgpt','claude']],
+ ['Telefon & Internet',['telekom','vodafone','o2 ','telefonica','1&1','1und1','congstar','aldi talk','freenet','mobilcom','drillisch','fraenk','pyur','unitymedia','netcologne']],
+ ['Gesundheit',['apotheke','arzt','ärzt','praxis','zahn','physio','optik','fielmann','apollo','klinik','krankenhaus','sanitäts','massage']],
+ ['Freizeit & Reise',['kino','cinema','theater','konzert','eventim','ticket','schwimmbad','bad ','fitness','mcfit','clever fit','sport','verein','bahn','db vertrieb','flixbus','lufthansa','eurowings','ryanair','hotel','booking.com','airbnb','ferien','reise','urlaub','camping','museum','zoo','freizeitpark','thermal','sauna']],
+ ['Kleidung',['h&m','c&a','zara','primark','deichmann','takko','kik','ernsting','peek','p&c','s.oliver','esprit','tk maxx','jack & jones','engelhorn','breuninger','snipes','foot locker','decathlon','intersport']],
+ ['Bargeld',['geldautomat','bargeld','auszahlung','atm','cash','abhebung','ga nr','geldausgabe']],
+ ['Gehalt',['gehalt','lohn','bezüge','bezuege','entgelt','vergütung','verguetung','arbeitgeber','salary','sold']],
+ ['Ferienwohnung',['booking.com b.v.','booking.com bv','airbnb payments','airbnb pay','fewo','ferienwohnung','gästebeitrag','gaestebeitrag','kurbeitrag','tourist','meldeschein']],
+ ['Übertrag eigene Konten',['übertrag','uebertrag','umbuchung','rückgabe','rueckgabe','eigenes konto','tagesgeld','sparen','dauerauftrag','rücklage','ruecklage','scalable','trade republic','depot','etf','sparplan','haushaltskonto','giroausgleich']],
+ ['Steuern & Gebühren',['finanzamt','steuer','kontoführung','kontofuehrung','entgelt kontoführung','gebühr','gebuehr','mahn','bußgeld','bussgeld','stadtkasse','kreiskasse','zoll']],
+ ['Spenden & Mitgliedschaft',['spende','mitgliedsbeitrag','beitrag','gewerkschaft','igbce','ig bce','verdi','verein ','kirche','caritas','drk','unicef','greenpeace','wwf','nabu']],
+ ['Kinder & Familie',['kita','kindergarten','schule','elterngeld','kindergeld','familienkasse','spielzeug','toys']],
+];
+/* Händler-Namen, die in der Ausgabe stehen dürfen (bekannte Firmen – keine Personen) */
+const ANON_BRANDS=['REWE','ALDI','LIDL','EDEKA','Netto','Penny','Kaufland','dm','Rossmann','Amazon','eBay','PayPal','Otto','Zalando','IKEA','OBI','Hornbach','Bauhaus','Toom','Aral','Shell','Total','Esso','JET','Tibber','E.ON','Telekom','Vodafone','o2','1&1','Netflix','Spotify','Disney','Apple','Google','Microsoft','Lieferando','McDonald','Burger King','Subway','Bahn','Flixbus','Booking.com','Airbnb','Sparda','ING','Scalable','HUK','AXA','Allianz','Debeka','ADAC','IGBCE','Finanzamt','Rundfunk','Apotheke','Decathlon','H&M','C&A','Deichmann','Media Markt','Saturn','Tedi','Action','Woolworth','Kik','Takko','Ernsting','Fressnapf','Zoo','Hyundai','Shein','Temu','Klarna','Steam','Anthropic','Fielmann','Apollo','Starbucks','Nordsee','Vapiano','DAZN','Sky'];
+function anonParse(text){
+  text=text.replace(/^﻿/,'');const lines=text.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)throw new Error('Datei ist leer');
+  const delim=(l=>{const c={';':(l.match(/;/g)||[]).length,',':(l.match(/,/g)||[]).length,'\t':(l.match(/\t/g)||[]).length};return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];});
+  const split=(l,d)=>{const out=[];let cur='',q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(x=>x.trim());};
+  const H=/buchung|datum|valuta|betrag|umsatz|verwendung|empf|auftraggeber/i;
+  let hi=lines.findIndex(l=>H.test(l)&&(l.match(/[;,\t]/g)||[]).length>=3);if(hi<0)hi=0;
+  const d=delim(lines[hi]);const head=split(lines[hi],d).map(h=>h.toLowerCase());
+  const col=(...keys)=>{for(const k of keys){const i=head.findIndex(h=>h.includes(k));if(i>=0)return i;}return -1;};
+  const cDate=col('buchungstag','buchungsdatum','buchung','datum','valuta'),cAmt=col('betrag','umsatz'),cSH=col('soll/haben','soll_haben','s/h'),cWhos=head.map((h,i)=>/auftraggeber|empf[äa]nger|zahlungspflicht|beg[üu]nstigter|^name/.test(h)?i:-1).filter(i=>i>=0),cTxt=col('verwendungszweck','buchungstext','vorgang','beschreibung','text'),cTyp=col('umsatzart','buchungsart','vorgang');
+  if(cDate<0||cAmt<0)throw new Error('Spalten für Datum und Betrag nicht gefunden. Erwartet wird ein CSV-Export deiner Bank.');
+  const toNum=s=>{s=String(s||'').replace(/\s|€|EUR/g,'');if(!s)return null;if(/,\d{1,2}$/.test(s))s=s.replace(/\./g,'').replace(',','.');else if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,'');const v=Number(s);return isFinite(v)?v:null;};
+  const toDate=s=>{s=String(s||'').trim();let m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);if(m)return `${m[3].length===2?'20'+m[3]:m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[0];return null;};
+  const rows=[];for(let i=hi+1;i<lines.length;i++){const f=split(lines[i],d);if(f.length<3)continue;const dt=toDate(f[cDate]);let amt=toNum(f[cAmt]);if(dt==null||amt==null)continue;
+    if(cSH>=0&&/^s/i.test(f[cSH]||''))amt=-Math.abs(amt);else if(cSH>=0&&/^h/i.test(f[cSH]||''))amt=Math.abs(amt);
+    const who=cWhos.map(i=>f[i]).filter(Boolean).join(' / ');const txt=cTxt>=0?f[cTxt]:'';const typ=cTyp>=0&&cTyp!==cTxt?f[cTyp]:'';rows.push({d:dt,b:Math.round(amt*100)/100,raw:[who,txt,typ].filter(Boolean).join(' | ')});}
+  if(!rows.length)throw new Error('Keine Buchungen erkannt. Ist es ein CSV-Export (nicht PDF)?');
+  rows.sort((a,b)=>a.d.localeCompare(b.d));return rows;}
+function anonCat(raw,amt){const t=' '+raw.toLowerCase().replace(/\s+/g,' ')+' ';const learned=(S.anonRules||{});for(const k of Object.keys(learned)){if(t.includes(k))return learned[k];}
+  for(const [cat,keys] of ANON_RULES){if(keys.some(k=>t.includes(k)))return cat;}
+  if(amt>0&&/gutschrift|überweisungsgutschr|ueberweisungsgutschr/.test(t))return 'Sonstiges';return 'Sonstiges';}
+function anonBrand(raw){const t=raw.toLowerCase();const hit=ANON_BRANDS.find(b=>t.includes(b.toLowerCase()));return hit||'';}
+let anonRows=[];
+function anonRender(){const el=$('#an-out');if(!anonRows.length){el.innerHTML='';return;}
+  const by={};anonRows.forEach(r=>{by[r.cat]=(by[r.cat]||0)+r.b;});const unk=anonRows.filter(r=>r.cat==='Sonstiges').length;
+  const opts=c=>ANON_CATS.map(x=>`<option ${x===c?'selected':''}>${x}</option>`).join('');
+  el.innerHTML=`<div class="note">${anonRows.length} Buchungen von ${dDE(anonRows[0].d)} bis ${dDE(anonRows.at(-1).d)} erkannt${unk?`, davon <b>${unk}</b> ohne Kategorie („Sonstiges“) – unten zuordnen, damit die Auswertung etwas taugt`:''}. Die Spalte „Original“ siehst nur du; sie wird <b>nicht</b> exportiert.</div>
+  <div class="tw"><table class="stab"><thead><tr><th>Datum</th><th class="r">Betrag</th><th>Kategorie</th><th>Händler</th><th>Original (bleibt hier)</th></tr></thead><tbody>${anonRows.map((r,i)=>`<tr class="${r.cat==='Sonstiges'?'warnrow':''}"><td>${dDE(r.d)}</td><td class="r num ${r.b<0?'neg':'pos'}">${eur(r.b)}</td><td><select data-ani="${i}">${opts(r.cat)}</select></td><td><input data-anb="${i}" value="${esc(r.brand)}" placeholder="–" style="width:110px" title="Nur Firmenname, kein Personenname"></td><td class="muted" style="font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.raw)}">${esc(r.raw)}</td></tr>`).join('')}</tbody></table></div>
+  <h3>Summen je Kategorie</h3>${Object.entries(by).sort((a,b)=>a[1]-b[1]).map(([c,v])=>`<div class="row"><span>${esc(c)}</span><b class="num ${v<0?'neg':'pos'}">${eur(v)}</b></div>`).join('')}
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="an-copy">Anonymisierten Text kopieren</button><button type="button" class="btn sec" id="an-dl">Als Datei speichern</button><button type="button" class="btn sec" id="an-clear">Verwerfen</button></div>
+  <div class="note" id="an-msg" style="margin-top:6px"></div>`;}
+function anonExport(){const L=['Datum;Betrag;Kategorie;Haendler'];anonRows.forEach(r=>L.push(`${r.d};${r.b.toFixed(2)};${r.cat};${(r.brand||'').replace(/[;\n]/g,' ')}`));const out=L.join('\n');
+  /* Sicherheitsnetz: nichts exportieren, was wie IBAN, lange Zahl oder E-Mail aussieht */
+  if(/[A-Z]{2}\d{2}[A-Z0-9]{10,}|\d{8,}|@/.test(out.replace(/^Datum.*$/m,'')))throw new Error('Im Ergebnis steckt noch etwas, das wie eine Konto- oder Referenznummer aussieht. Bitte die Händler-Spalte prüfen.');return out;}
+$('#an-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#an-status');
+  try{let txt;const buf=await f.arrayBuffer();try{txt=new TextDecoder('utf-8',{fatal:true}).decode(buf);}catch(_){txt=new TextDecoder('windows-1252').decode(buf);}
+    const rows=anonParse(txt);anonRows=rows.map(r=>({...r,cat:anonCat(r.raw,r.b),brand:anonBrand(r.raw)}));msg.textContent='';anonRender();}
+  catch(err){msg.textContent='Das klappt so nicht: '+(err.message||err);anonRows=[];anonRender();}};
+$('#an-out').addEventListener('change',e=>{const i=e.target.dataset.ani;if(i!=null){const r=anonRows[+i];r.cat=e.target.value;
+    /* Zuordnung merken: erstes aussagekräftiges Wort des Originals → Kategorie (nur in eurer Datenbank, nicht im Export) */
+    const freq={};anonRows.forEach(x=>{new Set(x.raw.toLowerCase().match(/[a-zäöüß][a-zäöüß.&-]{3,}/g)||[]).forEach(y=>{freq[y]=(freq[y]||0)+1;});});const common=y=>freq[y]>Math.max(2,anonRows.length*0.3);
+    const w=(r.raw.toLowerCase().match(/[a-zäöüß][a-zäöüß.&-]{3,}/g)||[]).filter(x=>!common(x)).filter(x=>!['sepa','lastschrift','ueberweisung','überweisung','gutschrift','kartenzahlung','girocard','mandat','mandatsref','glaeubiger','gläubiger','ende-zu-ende','ref.','debitk','kreditk','online','datum','verwendungszweck','gmbh','e.v.','mbh'].includes(x)).sort((a,b)=>b.length-a.length)[0];
+    if(w&&r.cat!=='Sonstiges'){const d={...(S.anonRules||{}),[w]:r.cat};S.anonRules=d;save('config/anonregeln',d);anonRows.forEach(x=>{if(x.cat==='Sonstiges'&&(' '+x.raw.toLowerCase()+' ').includes(w))x.cat=r.cat;});}
+    anonRender();return;}
+  const j=e.target.dataset.anb;if(j!=null){anonRows[+j].brand=e.target.value.trim();}});
+$('#an-out').addEventListener('click',async e=>{const msg=$('#an-msg');if(!msg)return;
+  if(e.target.id==='an-clear'){anonRows=[];anonRender();return;}
+  if(e.target.id==='an-copy'){try{const out=anonExport();await navigator.clipboard.writeText(out);msg.innerHTML='<b class="pos">Kopiert.</b> Jetzt im Chat einfügen – es sind nur Datum, Betrag, Kategorie und ggf. Firmenname enthalten.';}catch(err){msg.textContent=err.message||'Kopieren hat nicht geklappt.';}}
+  if(e.target.id==='an-dl'){try{const out=anonExport();const fn=`Kontoauszug-anonym-${anonRows[0].d.slice(0,7)}.csv`;const blob=new Blob(['﻿'+out],{type:'text/csv'});if(dlFn){await dlFn.save({filename:fn,data:blob});}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();}msg.innerHTML=`<b class="pos">Gespeichert: ${esc(fn)}</b>`;}catch(err){msg.textContent=err.message||'Speichern hat nicht geklappt.';}}});
+
+window.__anonExport=()=>anonExport();
 /* ---------- Sicherung ---------- */
 function bkData(){const docs={};Object.entries(KNOWN).forEach(([p,d])=>{if(d!==undefined&&d!==null)docs[p]=d;});return {app:'haushaltsbuch-till-patrick',version:1,am:new Date().toISOString(),docs};}
 $('#bk-save').onclick=async()=>{const msg=$('#bk-msg');const d=bkData();const n=Object.keys(d.docs).length;if(!n){msg.textContent='Noch keine Daten geladen.';return;}
@@ -2060,6 +2142,7 @@ const HILFE=[
 - spart ab Februar für das nächste Jahr den Gesamtbetrag des Bescheids an. Der Januar (noch alter Bescheid, meist schon abgeschlossen) wird verrechnet, damit bis Dezember genau der Gesamtbetrag zusammenkommt; ab Januar des Folgejahres Gesamtbetrag ÷ 12.
 Wasser und Grundsteuer werden immer im Vorjahr angespart (Januar–Dezember für die Raten des Folgejahres); der Balken im Ausblick („Wasser 2027“) wächst bis Dezember auf 100 %. Geht auch per Schnell eintragen: „Wasserbescheid 2027: Februar 297 €, danach 280 €“. Falsch eingetragen: Bescheid in der Liste mit × löschen und neu eintragen.`],
 ['Neuer Beitrag Versicherung, Abfall, ADAC',`Einstellungen → Gemeinsam → „+ Neuer Bescheid“ → Posten (Wohngebäude-, Hausrat-, Haftpflichtversicherung, Abfallgebühr, ADAC) → neuer Jahresbetrag und Fälligkeitsmonat (vorausgefüllt) → Übernehmen. Die Zahlung im Fälligkeitsmonat wird angepasst. Reicht das in den 12 Monaten davor Angesparte nicht (oder ist etwas übrig), zahlen Till und Patrick im Fälligkeitsmonat je die Hälfte nach (bzw. weniger). Danach wird der neue Betrag ÷ 12 angespart. Diese Posten werden jeweils bis zur nächsten Zahlung angespart. Per Schnell eintragen: „Wohngebäudeversicherung kostet ab April 2027 2.000 €“.`],
+['Kontoauszug anonymisieren',`Einstellungen → „Kontoauszug anonymisieren“: CSV-Export der Bank auswählen. Die App erkennt Datum und Betrag, ordnet Kategorien zu und zeigt eine Vorschau. Zeilen mit „Sonstiges“ von Hand zuordnen (die App merkt sich das). „Kopieren“ oder „Als Datei speichern“ liefert nur Datum, Betrag, Kategorie, Firmenname – ohne Namen, IBAN oder Verwendungszweck. Das kannst du gefahrlos an Claude schicken, z. B. für „Wo geht unser Geld hin?“.`],
 ['Monatsabschluss-Check',`Beim ersten Tippen auf „… abschließen“ zeigt die App eine Checkliste: Kontostände abgeglichen? Giroausgleich festgeschrieben? Echtes Gehalt drin? Essen/Sonstiges überzogen? Ferienwohnungs-Gutschrift ohne Urlaubskonto-Eintrag? Sicherung aktuell? Abschließen geht trotzdem (zweites Tippen) – die Punkte lassen sich auch danach noch erledigen (Abschluss aufheben).`],
 ['Automatische Sicherung',`Sobald ein Monat komplett abgeschlossen ist (Tills Giro, Patricks Giro, Haushaltskonto), legt die App eine Sicherung in der Datenbank ab und behält die letzten 12. Unter Einstellungen → Sicherung → „Automatische Sicherungen“ lässt sich jede als Datei herunterladen und wie gewohnt wiederherstellen. Die Datei-Sicherung bleibt zusätzlich sinnvoll (falls die Datenbank selbst betroffen ist).`],
 ['Was bringt eine Sondertilgung?',`Reiter Kredite, oben: Kredit (Sparda oder ING), Betrag und Datum eingeben – sofort steht da, wie viel Zinsen das bis zum Ende spart, wann der Kredit fertig ist und (Sparda) was am Ende der Zinsbindung 03/2053 übrig bleibt. Es wird nichts gespeichert. Die App warnt, wenn das Jahreslimit von 17.250 € überschritten würde. Auch per Textfeld: „Was bringt eine Sondertilgung von 5.000 € bei der Sparda?“`],
@@ -2129,7 +2212,7 @@ render();
   const later=()=>{if(editing()){clearTimeout(later.t);later.t=setTimeout(later,700);}else{render();clearTimeout(later.m);later.m=setTimeout(migrate,1500);}};
   const cfg=(p,f)=>db.doc('config/'+p).onSnapshot(s=>{const d=s.data();remember('config/'+p,d);if(d)f(d);later();flash('ok','Synchronisiert');},onErr);
   cfg('grund',d=>S.grund=d);cfg('archiv',d=>S.archiv=d);cfg('urlaub',d=>S.urlaub=d);cfg('strom',d=>S.strom=d);cfg('kredit',d=>S.kredit=d);
-  cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);cfg('sicherungen',d=>S.sichAuto=d.l||[]);cfg('sicherung',d=>S.sich=d);
+  cfg('budget',d=>S.bcfg={...S.bcfg,...d});cfg('einstellungen',d=>S.einst=d);cfg('steuer',d=>S.steuer={...S.steuer,...d});cfg('live',d=>S.live=d);cfg('sicherungen',d=>S.sichAuto=d.l||[]);cfg('anonregeln',d=>S.anonRules=d||{});cfg('sicherung',d=>S.sich=d);
   db.collection('plan').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('plan/'+d.id,m[d.id]);});S.plan=m;if(!window.__mset&&m[CUR]&&CUR<PLAN0){month=CUR;}window.__mset=1;later();},onErr);
   db.collection('budget').onSnapshot(q=>{const m={};q.docs.forEach(d=>{m[d.id]=d.data();remember('budget/'+d.id,m[d.id]);});S.budget=m;later();},onErr);
   db.collection('fewo').onSnapshot(q=>{const f={};q.docs.forEach(d=>{const x=d.data();remember('fewo/'+d.id,x);f[d.id]=(x?.b)||[];});S.fewo=f;later();clearTimeout(fwPublish.t);fwPublish.t=setTimeout(fwPublish,3000);},onErr);

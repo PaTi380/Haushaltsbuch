@@ -189,6 +189,10 @@
   </div>
   <div class="sect-h">App <span class="appv" id="appv2" style="text-transform:none;letter-spacing:0"></span></div>
   <div id="app-sect">
+  <div class="card"><div class="head"><h2>Kontoauszug anonymisieren</h2></div>
+    <div class="note" style="margin-top:0">Für Auswertungen mit Claude: CSV-Export vom Online-Banking hier auswählen. Die App ordnet jede Buchung einer Kategorie zu (Lebensmittel, Tanken, Versicherung …) und behält nur <b>Datum, Betrag, Kategorie und ggf. Firmenname</b>. Namen, IBANs, Verwendungszwecke und Referenzen bleiben weg. Alles passiert hier im Browser – die Datei wird nirgends hochgeladen. Zuordnungen, die du von Hand korrigierst, merkt sich die App für das nächste Mal.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><label class="btn" style="cursor:pointer">CSV auswählen …<input type="file" id="an-file" accept=".csv,text/csv,text/plain" hidden></label><span class="note" id="an-status" style="margin:0">Sparda: Umsätze → Export → CSV. ING: Umsatzanzeige → Export → CSV.</span></div>
+    <div id="an-out" style="margin-top:8px"></div></div>
   <div class="card"><div class="head"><h2>Sicherung</h2></div>
     <div class="note" style="margin-top:0">Speichert <b>alle</b> App-Daten als kleine Datei (auch Vormerkungen, P-Markierungen, Kinder, PV-Annahmen …). Mit „Wiederherstellen“ spielst du so eine Datei komplett zurück. Tipp: einmal im Monat zusammen mit der Excel sichern.</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn" id="bk-save">Sicherung speichern</button><label class="btn sec" style="cursor:pointer">Wiederherstellen …<input type="file" id="bk-file" accept=".json,application/json" hidden></label><span class="note" id="bk-msg" style="margin:0"></span></div><div id="bk-conf"></div>

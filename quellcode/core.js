@@ -23,7 +23,7 @@ const ymName=ym=>{const[y,m]=ym.split('-');return `${MN[+m-1]} ${y}`};
 const ymShort=ym=>{const[y,m]=ym.split('-');return `${MS[+m-1]} ${y.slice(2)}`};
 const ymNum=ym=>{const[y,m]=ym.split('-').map(Number);return y*12+m;};
 const uid=()=>Math.random().toString(36).slice(2,9);
-const APPV={nr:'2.5',datum:'26.10.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
+const APPV={nr:'2.6',datum:'30.10.2026'};/* Nur an einem neuen Tag hochzählen (gleicher Tag = gleiche Nummer) */
 const PLAN0='2026-10',PLAN1='2040-12',MIN_M='2026-09';
 
 const S={plan:{},budget:{},fewo:{},grund:{items:[]},archiv:null,urlaub:{start:0,e:[]},strom:{m:{}},kredit:null,bcfg:{essen:350,sonst:[{ab:'2026-01',v:100}],dauerauftrag:['Wasserabgabe','Grundsteuer']},einst:{},steuer:{fw:86,rest:106,afa:0,direkt:0,energie:0},live:{}};
