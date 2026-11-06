@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Einkaufsliste Till & Patrick – Version 1.22 vom 05.11.2026 -->
+<!-- Einkaufsliste Till & Patrick – Version 1.23 vom 06.11.2026 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -223,7 +223,6 @@ button.rv-li{text-decoration:underline dotted}
 .rz-tag{display:block;color:var(--leaf);font-size:12px;font-weight:600}
 .rz-row .price{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tabs button{white-space:nowrap}
-@media (max-width:420px){.tabs button{font-size:13.5px;padding:9px 2px;letter-spacing:-.01em}}
 .pl-done .name{text-decoration:line-through;color:var(--mute)}
 .st-open:disabled{opacity:.55}
 .st-add + .st-add{margin-left:-4px}
@@ -232,14 +231,6 @@ button.rv-li{text-decoration:underline dotted}
 .rz-top .choice{padding:12px;gap:10px}
 .rz-top .choice span:first-child{font-size:24px}
 .ci-tools{display:flex;gap:18px;margin:-4px 0 4px}
-.ur-head{margin:0 4px 12px}
-.ur-bar{height:6px;border-radius:3px;background:var(--soft);margin-top:8px;overflow:hidden}
-.ur-bar i{display:block;height:100%;background:var(--leaf);border-radius:3px;transition:width .2s}
-.ur-n{margin-left:auto;font-weight:500;font-variant-numeric:tabular-nums}
-#urlaub .group h2{margin-right:4px}
-.ur-x{flex-shrink:0;width:40px;height:40px;margin-right:6px;border:0;background:none;color:var(--mute);font-size:15px;border-radius:50%}
-.ur-tools{display:flex;gap:10px;margin-top:18px}
-.ur-tools button{flex:1;min-height:46px;border-radius:12px;font-weight:700;font-size:15px}
 .pk-item{border-top:1px solid var(--line)}
 .pk-item:first-child{border-top:0}
 .pk-item .st-row{border-top:0}
@@ -282,7 +273,7 @@ button.rv-li{text-decoration:underline dotted}
 <div id="intro" aria-hidden="true"><div class="nb">
   <div class="nb-cover"><div class="nb-frame">
     <svg class="nb-ico" viewBox="0 0 40 40" fill="none" stroke="url(#ng)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7a34"/><stop offset=".5" stop-color="#f3dc9a"/><stop offset="1" stop-color="#b8903f"/></linearGradient></defs><path d="M7 16h26l-3 15a3 3 0 0 1-3 2.4H13a3 3 0 0 1-3-2.4z"/><path d="M13 16l5-8M27 16l-5-8"/><path d="M15 21v7M20 21v7M25 21v7"/></svg>
-    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.22</div>
+    <div class="nb-t">Einkaufsliste</div><div class="nb-rule"></div><div class="nb-n">Till &amp; Patrick</div><div class="nb-y">seit 2026</div><div class="nb-v">Version 1.23</div>
   </div></div>
   <div class="nb-rings"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </div></div>
@@ -303,12 +294,11 @@ button.rv-li{text-decoration:underline dotted}
     </div>
   </header>
   <div class="status" id="status"><span class="dot"></span><span id="statusText">Verbinde …</span></div>
-  <nav class="tabs" role="tablist"><button role="tab" data-tab="liste" aria-selected="true">Liste</button><button role="tab" data-tab="plan" aria-selected="false">Essen</button><button role="tab" data-tab="stat" aria-selected="false">Preise</button><button role="tab" data-tab="rez" aria-selected="false">Rezepte</button><button role="tab" data-tab="urlaub" aria-selected="false">Urlaub</button></nav>
+  <nav class="tabs" role="tablist"><button role="tab" data-tab="liste" aria-selected="true">Liste</button><button role="tab" data-tab="plan" aria-selected="false">Essen</button><button role="tab" data-tab="stat" aria-selected="false">Preise</button><button role="tab" data-tab="rez" aria-selected="false">Rezepte</button></nav>
   <main id="main"></main>
   <section id="stat" hidden></section>
   <section id="rez" hidden></section>
   <section id="plan" hidden></section>
-  <section id="urlaub" hidden></section>
 </div>
 
 <div class="dock">
@@ -367,7 +357,7 @@ button.rv-li{text-decoration:underline dotted}
   <p class="note" id="setKi"></p>
   <p class="note" id="setLog"></p>
   <button class="choice" id="openLearned" style="margin-top:14px"><span>🧠</span><span><b>Gelernte Zuordnungen</b><small id="learnedCount">Was ihr zu welchem Listeneintrag gekauft habt</small></span></button>
-  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.22 vom 05.11.2026</p>
+  <p class="note" style="margin-top:14px">Einkaufsliste Version 1.23 vom 06.11.2026</p>
   <div class="actions"><button class="btn-ghost" id="logout">Abmelden</button><button class="btn-main" data-close>Fertig</button></div>
 </div></div>
 
@@ -389,8 +379,8 @@ button.rv-li{text-decoration:underline dotted}
 // =====================================================================
 const CFG = window.FB_CONFIG || {};
 const FB_OK = !!(window.firebase && CFG.apiKey && CFG.projectId && !/HIER/.test(CFG.apiKey));
-const APP_VERSION = "Version 1.22 vom 05.11.2026";
-const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte", plan:"einkauf_plan", urlaub:"einkauf_urlaub"};
+const APP_VERSION = "Version 1.23 vom 06.11.2026";
+const COL = {items:"einkauf_items", prod:"einkauf_produkte", bons:"einkauf_bons", zuord:"einkauf_zuordnung", rez:"einkauf_rezepte", plan:"einkauf_plan"};
 const GEMINI_FALLBACK = ["gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-flash-latest"];
 
 const CATS = [
@@ -468,7 +458,6 @@ const clean = d => JSON.parse(JSON.stringify(d ?? null));
 
 // ---------- Zustand ----------
 let bons = [];      // eingelesene Kassenbons {store,date,total,items:[{name,qty,price}]}
-let urlaub = [];    // Urlaubs-Packliste {name, cat, done, createdAt} – unabhängig von allem anderen
 let plan = [];      // Essensplan {title, recipeId, done, createdAt, doneAt, by}
 let recipes = [];   // gespeicherte Rezepte {title, portionen, zutaten:[{name,qty,cat,vorrat}]}
 let learned = {};   // Listeneintrag → was tatsächlich gekauft wurde {list, bought:{key:{name,count,last}}}
@@ -479,8 +468,8 @@ let fs = null, auth = null, user = null;
 
 // ---------- Speicher: Firebase oder Demo auf diesem Gerät ----------
 const LKEY = "einkauf-demo-v1";
-function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; bons = d.bons||[]; learned = d.learned||{}; recipes = d.recipes||[]; plan = d.plan||[]; urlaub = d.urlaub||[]; } catch(e){} }
-function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products, bons, learned, recipes, plan, urlaub})); } catch(e){} }
+function loadLocal(){ try { const d = JSON.parse(localStorage.getItem(LKEY)||"{}"); items = d.items||[]; products = d.products||{}; bons = d.bons||[]; learned = d.learned||{}; recipes = d.recipes||[]; plan = d.plan||[]; } catch(e){} }
+function saveLocal(){ try { localStorage.setItem(LKEY, JSON.stringify({items, products, bons, learned, recipes, plan})); } catch(e){} }
 
 const store = {
   async add(data){
@@ -513,18 +502,6 @@ const store = {
   async saveRecipe(data){
     if (backend==="fb") { const ref = fs.collection(COL.rez).doc(); await ref.set(clean(data)); return ref.id; }
     const id = "r"+Date.now(); recipes.push({id, ...data}); saveLocal(); render(); return id;
-  },
-  async urlAdd(data){
-    if (backend==="fb") return fs.collection(COL.urlaub).add(clean(data));
-    urlaub.push({id:"u"+Date.now()+Math.random().toString(36).slice(2,5), ...data}); saveLocal(); renderUrlaub();
-  },
-  async urlUpdate(id, patch){
-    if (backend==="fb") return fs.doc(`${COL.urlaub}/${id}`).update(clean(patch));
-    const u = urlaub.find(x => x.id === id); if (u) Object.assign(u, patch); saveLocal(); renderUrlaub();
-  },
-  async urlRemove(id){
-    if (backend==="fb") return fs.doc(`${COL.urlaub}/${id}`).delete();
-    urlaub = urlaub.filter(x => x.id !== id); saveLocal(); renderUrlaub();
   },
   async planAdd(data){
     if (backend==="fb") return fs.collection(COL.plan).add(clean(data));
@@ -618,7 +595,6 @@ function connect(){
   subs.push(fs.collection(COL.zuord).onSnapshot(q => { learned = Object.fromEntries(q.docs.map(d => [d.id, d.data()])); render(); }, () => {}));
   subs.push(fs.collection(COL.rez).onSnapshot(q => { recipes = q.docs.map(d => ({id:d.id, ...d.data()})); if (tab==="rez") renderRecipes(); }, () => {}));
   subs.push(fs.collection(COL.plan).onSnapshot(q => { plan = q.docs.map(d => ({id:d.id, ...d.data()})); if (tab==="plan") renderPlan(); }, () => {}));
-  subs.push(fs.collection(COL.urlaub).onSnapshot(q => { urlaub = q.docs.map(d => ({id:d.id, ...d.data()})); if (tab==="urlaub") renderUrlaub(); }, () => {}));
   });
 }
 
@@ -921,62 +897,6 @@ $("#rez").addEventListener("click", e => {
   const o = e.target.closest("[data-rid]"); if (o) { const id = o.dataset.rid; rzOpen.has(id) ? rzOpen.delete(id) : rzOpen.add(id); renderRecipes(); }
 });
 
-// ---------- Urlaub: eigene Packliste, unabhängig von Einkauf, Rezepten und Essensplan ----------
-const URL_CATS = [["kleid","👕","Kleidung"],["hyg","🧴","Hygiene & Gesundheit"],["doku","🛂","Dokumente & Geld"],["tech","🔌","Technik"],["essen","🥪","Proviant"],["haus","🏠","Haus & Abreise"],["sonst","🎒","Sonstiges"]];
-const URL_KW = {kleid:["hose","shirt","pulli","pullover","jacke","socken","unterwäsche","schuhe","badehose","bikini","badeanzug","mütze","schal","handschuhe","kleid","jeans","shorts","schlafanzug","sandalen","wanderschuhe","regenjacke","gürtel","kappe","sonnenhut"],
-  hyg:["zahn","duschgel","shampoo","deo","rasier","sonnencreme","creme","bürste","kamm","medikament","tabletten","pflaster","handtuch","kosmetik","brille","kontaktlinsen","haargummi","föhn","nagel","tampon","binden","mückenspray","after sun","taschentücher","waschzeug","erste hilfe"],
-  doku:["ausweis","pass","reisepass","führerschein","geld","bargeld","karte","kreditkarte","ec-karte","versicherung","tickets","ticket","bordkarte","buchung","impfpass","krankenkarte","schlüssel","vignette"],
-  tech:["lade","kabel","handy","powerbank","kamera","kopfhörer","adapter","tablet","laptop","akku","stativ","speicherkarte","e-reader","kindle","uhr","navi"],
-  essen:["snack","proviant","wasser","getränke","brot","obst","kekse","kaffee","tee","süßigkeiten"],
-  haus:["müll","pflanzen","gießen","heizung","fenster","kühlschrank","post","herd","stecker","licht","rollladen","abschließen","nachbar","wasser abdrehen","alarmanlage"]};
-function urlCat(name){ const n = (name||"").toLowerCase(); for (const [k, list] of Object.entries(URL_KW)) if (list.some(w => n.includes(w))) return k; return "sonst"; }
-let urlOpenAdd = false;
-function renderUrlaub(){
-  const el = $("#urlaub"); if (!el) return;
-  const hadFocus = document.activeElement?.id === "urInput", typed = $("#urInput")?.value || "";
-  const open = urlaub.filter(u => !u.done), done = urlaub.filter(u => u.done);
-  const total = urlaub.length;
-  const row = u => `<div class="item${u.done ? " done" : ""}" data-uid="${esc(u.id)}">
-      <button class="check" data-uact="toggle" aria-label="${esc(u.name)} ${u.done ? "wieder offen" : "abhaken"}"><span class="box"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--leaf-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></span></button>
-      <span class="body" style="cursor:default"><span class="txt"><span class="line1"><span class="name">${esc(u.name)}</span>${u.qty ? `<span class="qty">${esc(u.qty)}</span>` : ""}</span></span></span>
-      <button class="ur-x" data-uact="del" aria-label="${esc(u.name)} löschen">✕</button></div>`;
-  let groups = "";
-  for (const [k, ic, label] of URL_CATS) {
-    const g = urlaub.filter(u => (u.cat || "sonst") === k).sort((a,b) => (a.done - b.done) || a.name.localeCompare(b.name, "de"));
-    if (!g.length) continue;
-    const d = g.filter(u => u.done).length;
-    groups += `<section class="group"><h2><span aria-hidden="true">${ic}</span>${label}<span class="ur-n">${d}/${g.length}</span></h2><div class="list">${g.map(row).join("")}</div></section>`;
-  }
-  el.innerHTML = `
-    <div class="ur-head"><div class="count" style="margin:0;font-size:16px">${total ? (open.length ? `<b>${open.length}</b> von ${total} noch offen` : "Alles gepackt – schönen Urlaub!") : "Packliste ist leer"}</div>
-      ${total ? `<div class="ur-bar" aria-hidden="true"><i style="width:${Math.round(done.length / total * 100)}%"></i></div>` : ""}</div>
-    <form class="addrow" id="urForm" autocomplete="off" style="margin-bottom:6px">
-      <input id="urInput" type="text" placeholder="Was muss mit? z. B. Ladekabel" aria-label="Für den Urlaub eintragen" enterkeyhint="done">
-      <button class="addbtn" type="submit">Dazu</button>
-    </form>
-    <p class="note" style="margin:0 4px 14px">Diese Liste ist nur für den Urlaub – sie hat nichts mit Einkaufsliste, Rezepten oder Essensplan zu tun.</p>
-    ${groups || `<div class="empty" style="padding:30px 20px"><strong>Noch nichts eingetragen</strong>Tragt ein, was mit muss oder vor der Abfahrt zu erledigen ist. Abgehakte Sachen bleiben für den nächsten Urlaub gespeichert.</div>`}
-    ${done.length ? `<div class="ur-tools"><button class="btn-ghost" id="urReset">Alle Haken entfernen</button><button class="btn-danger" id="urClear">Abgehakte löschen</button></div>
-      <p class="note" style="margin:6px 4px 0">„Alle Haken entfernen“ macht die Liste für den nächsten Urlaub wieder bereit, ohne etwas zu löschen.</p>` : ""}`;
-  const go = () => { const v = $("#urInput").value.trim(); if (!v) return; $("#urInput").value = "";
-    const {qty, name} = parseInput(v);
-    if (urlaub.some(u => fold(u.name) === fold(name))) { showToast(`${name} steht schon drauf`); $("#urInput").focus(); return; }
-    safe(store.urlAdd({name, qty, cat: urlCat(name), done: false, createdAt: Date.now(), by: S.me || ""})); $("#urInput").focus(); };
-  $("#urForm").addEventListener("submit", e => { e.preventDefault(); go(); });
-  $("#urForm .addbtn").addEventListener("click", e => { e.preventDefault(); go(); });
-  $("#urInput").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); go(); } });
-  if (typed) $("#urInput").value = typed;
-  if (hadFocus) $("#urInput").focus();
-}
-$("#urlaub").addEventListener("click", async e => {
-  if (e.target.closest("#urReset")) { const d = urlaub.filter(u => u.done); for (const u of d) await safe(store.urlUpdate(u.id, {done: false})); showToast("Alle Haken entfernt", async () => { for (const u of d) await safe(store.urlUpdate(u.id, {done: true})); }); return; }
-  if (e.target.closest("#urClear")) { const d = urlaub.filter(u => u.done); const back = d.map(({id, ...x}) => x); for (const u of d) await safe(store.urlRemove(u.id)); showToast(`${d.length} gelöscht`, async () => { for (const x of back) await safe(store.urlAdd(x)); }); return; }
-  const b = e.target.closest("[data-uact]"); if (!b) return;
-  const u = urlaub.find(x => x.id === b.closest("[data-uid]")?.dataset.uid); if (!u) return;
-  if (b.dataset.uact === "toggle") { u.done = !u.done; renderUrlaub(); await safe(store.urlUpdate(u.id, {done: u.done})); }
-  if (b.dataset.uact === "del") { const {id, ...x} = u; await safe(store.urlRemove(id)); showToast(`${u.name} gelöscht`, () => safe(store.urlAdd(x))); }
-});
-
 // ---------- Essensplan (ohne Wochentage) ----------
 const recFor = m => m.recipeId ? recipes.find(r => r.id === m.recipeId) : null;
 function missingFor(rec){
@@ -1208,12 +1128,11 @@ $("#plan").addEventListener("click", async e => {
 function setTab(t){
   tab = t;
   document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
-  $("#main").hidden = t !== "liste"; $("#stat").hidden = t !== "stat"; $("#rez").hidden = t !== "rez"; $("#plan").hidden = t !== "plan"; $("#urlaub").hidden = t !== "urlaub";
+  $("#main").hidden = t !== "liste"; $("#stat").hidden = t !== "stat"; $("#rez").hidden = t !== "rez"; $("#plan").hidden = t !== "plan";
   document.querySelector(".dock").hidden = t !== "liste";
   if (t === "stat") renderStats();
   if (t === "rez") renderRecipes();
   if (t === "plan") renderPlan();
-  if (t === "urlaub") renderUrlaub();
   window.scrollTo(0,0);
 }
 document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
