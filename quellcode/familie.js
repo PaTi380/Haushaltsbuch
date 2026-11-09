@@ -93,6 +93,18 @@ function fCalc(f){
   const zwischen=early?(+K().sparda.rate||0)+(+K().bauspar.monat||0)+(+f.rate||0):0; // Belastung zwischen Verkauf und Ablösung (ING weg, Petra-Rate dazu)
   return {abl,geld,early,tr,trSum,rows,eig,eigUeb,eigSpar,eigJahr,rest0,rest,bs,ingRest,ingBleibt,ek,ekIng,ekSp,extraEk,ingFreiMon,vorAbl,petraAbl,bankRest,uebrig,pRows,pZins,pEnde,pStart,rateStart,vorZins,pOk,bPf,bZa,bZiPf:zi(bPf),bZiZa:zi(bZa),ohne,ohneEnde,ohneZins,mitZins,sparZinsBis,rente,stop,reserve,lueckeMon,lueckeKosten,lueckeOhne,vorher,nachherPf,nachherZa,zwischen};}
 
+/* Ampel: Wie günstig ist das gewählte Szenario? 0–100 Punkte aus Bankrest, Zwischenbelastung, Petras Reserve und Zinsersparnis */
+function fAmpel(c,f){const lin=(v,gut,schlecht)=>Math.max(0,Math.min(1,(v-schlecht)/(gut-schlecht)));const spar=c.ohneZins-c.mitZins;const g=[];
+  const a=lin(c.bankRest,75000,160000),b=c.early?lin(c.zwischen-c.vorher,0,600):1,d=c.lueckeKosten<=c.reserve?1:Math.max(0,1-(c.lueckeKosten-c.reserve)/15000),e=lin(spar,75000,25000);
+  const score=Math.round(100*(0.35*a+0.25*b+0.2*d+0.2*e));
+  if(a<0.7)g.push(`Bankrest ${eur(c.bankRest,0)} – ein großer Teil von Petras Geld ist vor der Ablösung schon an sie zurückgeflossen`);
+  if(b<0.7)g.push(`${eur(c.zwischen-c.vorher,0)} mehr im Monat bis zur Ablösung`);
+  if(d<1)g.push(`Petras Reserve reicht nicht für die Zeit bis zur Rente`);
+  if(e<0.7)g.push(`Zinsersparnis nur ${eur(spar,0)}`);
+  if(!g.length)g.push(c.early?'Tranchen nutzen die Sondertilgungs-Grenze, Belastung bleibt tragbar':'Petras Geld wirkt komplett bei der Ablösung, Bankrest klein, Belastung sinkt');
+  return {score,label:score>=70?'günstig':score>=45?'mittel':'ungünstig',cls:score>=70?'gut':score>=45?'mittel':'schlecht',gruende:g};}
+const fAmpelHTML=(c,f,klein)=>{const a=fAmpel(c,f);return `<div class="fampel ${a.cls}"><div class="fampel-h"><span>Wie günstig ist dieses Szenario?</span><b>${a.label}</b></div><div class="fampel-bar"><i style="left:${a.score}%"></i></div>${klein?'':`<div class="note">${a.gruende.join(' · ')}. Faustregel: Je näher der Verkauf an Oktober 2033 liegt und je länger Petra arbeitet, desto besser wirkt ihr Geld – weil es dann ungeschmälert in die Ablösung geht.</div>`}</div>`;};
+
 function fSet(mut){const d={...F()};mut(d);S.familie=d;save('config/familie',d);render();}
 const fRow=(l,v,cls='')=>`<div class="row"><span>${l}</span><b class="num ${cls}">${v}</b></div>`;
 const fMon=n=>`${n} Monate (${num(n/12,1)} Jahre)`;
@@ -109,6 +121,7 @@ function rFamilie(){
     <div class="form" style="margin-top:10px"><label>Petras Anteil am Verkaufserlös (geschätzt) ${fNum('f-erloes',f.erloes,'€')}</label><label>davon als Darlehen an euch ${fNum('f-darlehen',f.darlehen,'€')}</label></div>
     <div class="note">Bei Petra bleiben dann <b>${eur(Math.max(0,(+f.erloes||0)-(+f.darlehen||0)),0)}</b> als eigene Reserve (Notgroschen, Zahnarzt, Auto, Überbrückung bis zur Rente).</div>
     ${c.geld<KUEND?`<div class="mu-box"><b>Geld kommt früher (${ymName(c.geld)}):</b> Eine komplette Ablösung vor ${ymName(KUEND)} kostet Vorfälligkeitsentschädigung (geschätzt 15–20 Tsd. €) – lohnt nicht. Stattdessen in Tranchen: ${c.tr.length?c.tr.map(t=>`${ymName(t.ym)}: ${eur(t.b,0)} (${t.was})`).join('; '):'–'}; der Rest (${eur(c.petraAbl,0)}) zur Ablösung ${ymName(c.abl)}. Zinsersparnis bei der Sparda bis dahin ca. <b>${eur(c.sparZinsBis,0)}</b>. Die ING-Rate (${eur(K().ing.rate,0)}) fällt weg und eure eigenen geplanten Sondertilgungen überweist ihr ab ${c.geld.slice(0,4)} nicht mehr, sondern spart sie – beides zählt zur Ablösung als Eigenkapital (Schritt 5).</div>`:c.geld>KUEND?`<div class="mu-box">Geld erst ${ymName(c.geld)} → Kündigung dann aussprechen, Ablösung nach 6 Monaten Frist im <b>${ymName(c.abl)}</b>. Bis dahin läuft alles weiter wie bisher.</div>`:''}
+    ${fAmpelHTML(c,f,true)}
     </div>`+btns();}
   else if(step===1){h=`<div class="card"><h2>2 · Konditionen für Petra</h2>
     <p class="sub">Petra soll jeden Monat verlässlich ihren Betrag bekommen. Zins zwischen 2 und 2,5 % ist marktnah und glaubwürdig (Sozialamt/Finanzamt); unter 1 % wäre angreifbar als Teil-Schenkung.</p>
@@ -158,7 +171,7 @@ function rFamilie(){
     </div>`+btns();}
   else {const r=c.rente;const pf=c.bPf,za=c.bZa;const endeZa=za.at(-1)?.ym,endePf=pf.at(-1)?.ym;const frei=endeZa&&c.pEnde?(endeZa>c.pEnde?endeZa:c.pEnde):(endeZa||c.pEnde);
     const spar=c.ohneZins-c.mitZins;
-    h=`<div class="grid">${kpi('Ablösung Sparda',ymName(c.abl),c.geld<KUEND?'mit Tranchen ab '+ymName(c.geld):'Kündigung 6 Monate vorher')}
+    h=fAmpelHTML(c,f)+`<div class="grid">${kpi('Ablösung Sparda',ymName(c.abl),c.geld<KUEND?'mit Tranchen ab '+ymName(c.geld):'Kündigung 6 Monate vorher')}
       ${kpi('Rest bei der Bank',eur(c.bankRest,0),c.bankRest>0?`Pflichtrate ${eur(f.pflicht,0)}, Zins ${num(f.bankZins)} %`:'komplett bankfrei ✓',c.bankRest>0?'':'pos')}
       ${kpi('Bankfrei',endeZa?ymName(endeZa):(c.bankRest>0?'–':ymName(c.abl)),c.bankRest>0?`bei ${eur(f.zahlung,0)} im Monat; mit Pflichtrate ${endePf?ymName(endePf):'–'}`:'')}
       ${kpi('Zinsen gespart',eur(spar,0),`statt ${eur(c.ohneZins,0)} (Sparda bis ${c.ohneEnde?ymName(c.ohneEnde):'–'}) nur ${eur(c.mitZins,0)}`,spar>0?'pos':'neg')}</div>
