@@ -248,3 +248,20 @@ body.is-closed main,body.is-closed header{visibility:hidden}
 .chk{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:13px}.chk ul{margin:6px 0 0;padding-left:0;list-style:none}.chk li{padding:3px 0;border-top:1px dashed var(--line)}.chk li.warn{color:var(--warn)}
 
 .warnrow td{background:color-mix(in srgb,var(--warn) 10%,transparent)}
+
+/* Familiendarlehen-Rechner (2.7) */
+.fsteps{display:flex;min-width:0;max-width:100%;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none}.fsteps::-webkit-scrollbar{display:none}
+.fsteps button{flex:0 0 auto;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--ink2);border-radius:20px;padding:4px 10px 4px 4px;font:inherit;font-size:12px;cursor:pointer}
+.fsteps button i{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--soft);font-style:normal;font-size:11px;font-weight:600}
+.fsteps button.on{border-color:var(--acc);color:var(--ink);font-weight:600}.fsteps button.on i{background:var(--acc);color:var(--acc-ink)}
+.fsteps button.done i{background:color-mix(in srgb,var(--good) 25%,var(--soft));color:var(--ink)}
+.fnav{display:flex;justify-content:space-between;gap:8px;margin-top:14px}
+.fseg{flex-wrap:wrap;max-width:100%}.fseg button[aria-pressed="true"]{background:var(--acc);color:var(--acc-ink)}
+.fin{display:inline-flex;align-items:center;gap:6px}.fin input{text-align:right}
+#p-familie .form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+#p-familie .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px}#p-familie .chk input{margin-top:3px}
+#p-familie .mu-box .row{padding:4px 0}#p-familie .mu-box .row.muted,#p-familie .muted{color:var(--mute)}
+.flist{margin:0;padding-left:20px}.flist li{margin:4px 0}
+#p-familie .kpi .v{font-size:20px}
+@media (max-width:560px){#p-familie .form label{flex:1 1 100%}}
+#p-familie{grid-template-columns:minmax(0,1fr)}#fam{min-width:0}
