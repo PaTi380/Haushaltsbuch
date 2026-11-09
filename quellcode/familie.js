@@ -198,6 +198,10 @@ function rFamilie(){
     <p class="sub">Das ist Petras Bedingung: Ohne euer Darlehen könnte sie mit dem Geld aus dem Hausverkauf sofort aufhören und bis zur Rente davon leben. Das darf sie durch das Darlehen nicht verlieren – deshalb beginnt eure Rate in dem Monat, in dem sie aufhört, und ihre Reserve deckt den Rest.</p>
     <div class="seg fseg"><button type="button" data-fstop="geld" ${stopArt==='geld'?'aria-pressed="true"':''}>sobald das Geld da ist (${ymName(c.geld<r.ab?c.geld:ymAdd(r.ab,-1))})</button><button type="button" data-fstop="rente" ${stopArt==='rente'?'aria-pressed="true"':''}>bis zur Rente</button><button type="button" data-fstop="monat" ${stopArt==='monat'?'aria-pressed="true"':''}>anderer Monat</button></div>
     ${stopArt==='monat'?`<div class="form" style="margin-top:10px"><label>Letzter Arbeitsmonat ${fYmIn('f-stop',f.stop)}</label></div>`:''}
+    ${c.lueckeMon?(()=>{const ent=Math.max(0,r2(c.bedarf-c.rateVor));const opts=[0,100,200,300,400,500].filter(v=>v<c.bedarf);const reicht=ent>0?Math.floor(c.reserve/ent):null;
+      return `<h3>Wie viel nimmt Petra bis zur Rente selbst aus der Reserve?</h3><p class="sub">Je mehr sie aus ihren ${eur(c.reserve,0)} zuschießt, desto kleiner darf eure Rate bis zur Rente sein. Antippen setzt die „Rate bis zum Rentenbeginn“ (Schritt 2) passend: Bedarf ${eur(c.bedarf,0)} − Entnahme.</p>
+      <div class="seg fseg">${opts.map(v=>`<button type="button" data-fent="${v}" ${Math.abs(ent-v)<0.5?'aria-pressed="true"':''}>${v?eur(v,0):'nichts'}</button>`).join('')}</div>
+      <div class="note">Aktuell: ${eur(ent,0)} aus der Reserve + ${eur(c.rateVor,0)} von euch = ${eur(Math.max(c.bedarf,c.rateVor),0)} im Monat. ${ent>0?`Die Reserve reicht so ${reicht} Monate (Lücke: ${c.lueckeMon} Monate)${reicht<c.lueckeMon?' – <b>zu wenig</b>':''}; nach der Lücke bleiben ${eur(c.reserve-c.lueckeKosten,0)}.`:'Die Reserve bleibt unangetastet.'}</div>`;})():''}
     <div class="mu-box">${fRow('letzter Arbeitsmonat',ymName(c.stop))}${fRow('eure Rate läuft ab',ymName(c.rateStart))}
     ${c.lueckeMon?fRow('Monate ohne Gehalt und ohne Rente',c.lueckeMon)+fRow('Bedarf in dieser Zeit ('+eur(c.bedarf,0)+' / Monat)',eur(c.lueckeOhne,0))+fRow('davon aus eurer Rate ('+eur(c.rateVor,0)+' / Monat ab '+ymName(c.rateStart)+')',eur(c.lueckeRate,0))+fRow('aus Petras Reserve ('+eur(Math.max(0,c.bedarf-c.rateVor),0)+' / Monat)',eur(c.lueckeKosten,0),c.lueckeKosten>c.reserve?'neg':''):fRow('Lücke bis zur Rente','keine – Petra arbeitet bis zum Rentenbeginn')}
     ${fRow('Reserve laut Schritt 1',eur(c.reserve,0))}${c.lueckeKosten>c.reserve?`<div class="note neg">⚠️ Die Reserve reicht nicht: ${eur(c.lueckeKosten-c.reserve,0)} fehlen. Darlehen kleiner machen (Schritt 1) oder die Rate bis zur Rente erhöhen (Schritt 2).</div>`:c.lueckeMon?`<div class="note">Nach der Lücke bleiben Petra noch ${eur(c.reserve-c.lueckeKosten,0)} Reserve.${c.rateVor>=c.bedarf?' Eure Rate deckt ihren Bedarf komplett – die Reserve bleibt unangetastet; ihr könntet die Rate bis zur Rente also auch kleiner wählen (Schritt 2).':''}</div>`:''}</div>
@@ -257,10 +261,11 @@ function rFamilie(){
     lineChart(ch,labels,[{n:'Sparda ohne Petra',c:'var(--till)',v:fill('o',c.ohne)},{n:'Bank neu',c:'var(--gem)',v:fill('b',c.bZa)},{n:'Darlehen Petra',c:'var(--pat)',v:fill('p',c.pRows)}],{xl:l=>l.slice(0,4),xt:l=>'Ende '+l.slice(0,4)});}
 }
 /* Eingaben */
-document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [data-fstep],#p-familie [data-fgeld],#p-familie [data-frente],#p-familie [data-fstop],#p-familie [data-fanteil],#p-familie [data-fzahl],#p-familie [data-feigen],#p-familie [data-fekauto]');if(!el)return;el.blur();
+document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [data-fstep],#p-familie [data-fgeld],#p-familie [data-frente],#p-familie [data-fstop],#p-familie [data-fanteil],#p-familie [data-fzahl],#p-familie [data-fent],#p-familie [data-feigen],#p-familie [data-fekauto]');if(!el)return;el.blur();
   if(el.dataset.fstep!=null){fSet(d=>d.step=+el.dataset.fstep);window.scrollTo({top:0,behavior:'smooth'});}
   else if(el.dataset.fgeld){fSet(d=>{d.geldArt=el.dataset.fgeld;if(d.geldArt==='kuend')d.geld=KUEND;else if(d.geldArt==='frueh'&&!(normYm(d.geld)<KUEND))d.geld='2029-01';else if(d.geldArt==='spaet'&&!(normYm(d.geld)>KUEND))d.geld='2036-01';});}
   else if(el.dataset.frente){fSet(d=>d.renteArt=el.dataset.frente);}
+  else if(el.dataset.fent){fSet(d=>{const bed=fBedarf(d);const v=Math.max(0,r2(bed-+el.dataset.fent));d.rateVor=v>=(+d.rate||0)?null:v;});}
   else if(el.dataset.fzahl){fSet(d=>d.zahlung=+el.dataset.fzahl);}
   else if(el.dataset.fanteil){fSet(d=>d.anteilTill=+el.dataset.fanteil);}
   else if(el.dataset.feigen){fSet(d=>d.eigenArt=el.dataset.feigen);}
