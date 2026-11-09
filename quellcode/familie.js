@@ -8,7 +8,9 @@ const PETRA_GEB='1964-04'; // Petras Geburtsmonat (fest)
 const F=()=>({...FDEF,...(S.familie||{})});
 const FSTEPS=['Geld','Petra','Tilgung','Eigenkapital','Bank','Rente','Ergebnis'];
 const KUEND='2033-10'; // frühester Monat, zu dem die Sparda nach § 489 BGB (10 Jahre nach Vollauszahlung April 2023 + 6 Monate) gekündigt werden kann
-const fYmIn=(id,v)=>{const m=normYm(v);return `<input type="month" id="${id}" value="${m||''}" min="2026-01" max="2053-03">`;};
+/* Monat + Jahr als zwei Auswahlfelder (type="month" springt am PC beim Tippen zurück) */
+const fYmIn=(id,v,y0=2026,y1=2045)=>{const m=normYm(v)||'';const[yy,mm]=m?m.split('-'):['',''];let ys='';for(let y=y0;y<=y1;y++)ys+=`<option value="${y}" ${String(y)===yy?'selected':''}>${y}</option>`;
+  return `<span class="fym" data-fym="${id}"><select id="${id}-m"><option value="">–</option>${MN.map((n,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${String(i+1).padStart(2,'0')===mm?'selected':''}>${n}</option>`).join('')}</select><select id="${id}-y"><option value="">–</option>${ys}</select></span>`;};
 const fNum=(id,v,unit,w=110)=>`<span class="fin"><input inputmode="decimal" id="${id}" value="${num(v,unit==='%'?2:0)}" style="width:${w}px">${unit?`<span>${unit}</span>`:''}</span>`;
 const fRateVor=f=>f.rateVor==null||f.rateVor===''?(+f.rate||0):+f.rateVor; // Rate bis zum Rentenbeginn
 const fBedarf=f=>f.bedarf==null||f.bedarf===''?(+f.gehalt||0):+f.bedarf; // was Petra monatlich braucht
@@ -271,5 +273,7 @@ document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [dat
   else if(el.dataset.feigen){fSet(d=>d.eigenArt=el.dataset.feigen);}
   else if(el.dataset.fstop){fSet(d=>{d.stopArt=el.dataset.fstop;if(d.stopArt==='monat'&&!normYm(d.stop))d.stop='2030-12';});}
   else if(el.dataset.fekauto!=null){fSet(d=>d.ek=null);}});
-document.addEventListener('change',e=>{const t=e.target;if(!t.closest||!t.closest('#p-familie'))return;const id=(t.id||'').replace(/^f-/,'');if(!id)return;t.blur();
+document.addEventListener('change',e=>{const t=e.target;if(!t.closest||!t.closest('#p-familie'))return;
+  const ym=t.closest('.fym');if(ym){const base=ym.dataset.fym;const m=ym.querySelector(`#${base}-m`).value,y=ym.querySelector(`#${base}-y`).value;const key=base.replace(/^f-/,'');if(!m||!y){if(!m&&!y)fSet(d=>d[key]='');return;}t.blur();fSet(d=>d[key]=`${y}-${m}`);return;}
+  const id=(t.id||'').replace(/^f-/,'');if(!id)return;t.blur();
   fSet(d=>{if(t.type==='checkbox')d[id]=t.checked;else if(t.type==='month')d[id]=t.value||'';else{const v=parseNum(t.value);d[id]=v==null?(['ek','rateVor','bedarf'].includes(id)?null:0):v;}});});

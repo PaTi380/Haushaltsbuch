@@ -275,3 +275,4 @@ body.is-closed main,body.is-closed header{visibility:hidden}
 .ftrag td.warn,.ftrag .warn{color:#c98a00}.ftrag td.neg{color:var(--bad)}.ftrag td.pos{color:var(--good)}.ftrag th,.ftrag td{padding:3px 4px;font-size:12px}.ftrag th{text-align:left}.ftrag .num{text-align:right}
 #p-familie .g2+.card{margin-top:12px}
 .fklar li{margin:6px 0}.ftrag tr.akt td{font-weight:600;background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.fym{display:inline-flex;gap:6px}.fym select{min-width:0}
