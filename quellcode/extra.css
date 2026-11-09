@@ -272,3 +272,5 @@ body.is-closed main,body.is-closed header{visibility:hidden}
 .fampel.gut .fampel-h b{color:var(--good)}.fampel.mittel .fampel-h b{color:#c98a00}.fampel.schlecht .fampel-h b{color:var(--bad)}
 .fampel-bar{position:relative;height:12px;border-radius:6px;margin:8px 0 2px;background:linear-gradient(90deg,#d94b3a 0,#e9b949 50%,#2f9e5f 100%)}
 .fampel-bar i{position:absolute;top:-4px;width:4px;height:20px;margin-left:-2px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--card)}
+.ftrag td.warn,.ftrag .warn{color:#c98a00}.ftrag td.neg{color:var(--bad)}.ftrag td.pos{color:var(--good)}.ftrag th,.ftrag td{padding:3px 4px;font-size:12px}.ftrag th{text-align:left}.ftrag .num{text-align:right}
+#p-familie .g2+.card{margin-top:12px}
