@@ -212,11 +212,31 @@ function rFamilie(){
     </div>`+btns();}
   else {const r=c.rente;const pf=c.bPf,za=c.bZa;const endeZa=za.at(-1)?.ym,endePf=pf.at(-1)?.ym;const frei=endeZa&&c.pEnde?(endeZa>c.pEnde?endeZa:c.pEnde):(endeZa||c.pEnde);
     const spar=c.ohneZins-c.mitZins;
-    h=fAmpelHTML(c,f)+`<div class="grid">${kpi('Ablösung Sparda',ymName(c.abl),c.geld<KUEND?'mit Tranchen ab '+ymName(c.geld):'Kündigung 6 Monate vorher')}
-      ${kpi('Rest bei der Bank',eur(c.bankRest,0),c.bankRest>0?`Pflichtrate ${eur(f.pflicht,0)}, Zins ${num(f.bankZins)} %`:'komplett bankfrei ✓',c.bankRest>0?'':'pos')}
-      ${kpi('Bankfrei',endeZa?ymName(endeZa):(c.bankRest>0?'–':ymName(c.abl)),c.bankRest>0?`bei ${eur(f.zahlung,0)} im Monat; mit Pflichtrate ${endePf?ymName(endePf):'–'}`:'')}
-      ${kpi('Zinsen gespart',eur(spar,0),`statt ${eur(c.ohneZins,0)} (Sparda bis ${c.ohneEnde?ymName(c.ohneEnde):'–'}) nur ${eur(c.mitZins,0)}`,spar>0?'pos':'neg')}</div>
-    <div class="card" style="margin-top:12px"><h2>Auf einen Blick</h2><ol class="flist fklar">${(()=>{const L=[];
+    h=fAmpelHTML(c,f)+`
+    ${(()=>{const t=fTragbar(f,c);const n=t.nach;const dPlan=c.nachherZa-c.vorAblPlan;const dHeute=c.nachherZa-c.vorher;const jahreFrueher=c.ohneEnde&&frei?Math.round(fMonDiff(frei,c.ohneEnde)/12):null;
+      const worst=c.early?Math.min(...t.jahre.flatMap(o=>[o.TILL.nach,o.PATRICK.nach])):null;const cls=v=>v<0?'neg':v<100?'warn':'pos';
+      return `<div class="card fklar-card" style="margin-top:12px"><h2>Was das für euch bedeutet</h2>
+      <h3>Jeden Monat</h3>
+      ${fRow('heute: Sparda + Bausparen + ING',eur(c.vorher,0))}
+      ${fRow('laut Plan im '+ymName(c.abl)+' (dann mit '+eur(c.pv.TILL.son+c.pv.PATRICK.son,0)+' Sondertilgungs-Raten)',eur(c.vorAblPlan,0))}
+      ${c.early?fRow(ymName(c.rateStart)+' – '+ymName(c.abl)+': Sparda + Bausparen + Petra, ING weg',eur(c.zwischen,0),c.zwischen>c.vorher?'neg':'pos'):''}
+      ${fRow('<b>nach der Ablösung, Pflicht</b> (Petra '+eur(c.rateAbl,0)+' + Bank '+eur(f.pflicht,0)+')','<b>'+eur(c.nachherPf,0)+'</b>')}
+      ${fRow('<b>nach der Ablösung, so wie ihr es plant</b> (Petra '+eur(c.rateAbl,0)+' + Bank '+eur(f.zahlung,0)+')','<b>'+eur(c.nachherZa,0)+'</b>',dPlan>0?'neg':'pos')}
+      <div class="note">Das ist ${eur(Math.abs(dPlan),0)} ${dPlan>0?'<b>mehr</b>':'weniger'} als laut Plan im ${ymName(c.abl)} und ${eur(Math.abs(dHeute),0)} ${dHeute>0?'mehr':'weniger'} als heute. Ihr könnt jederzeit bis auf die Pflicht runter – die Bank-Zahlung über ${eur(f.pflicht,0)} ist freiwillig.</div>
+      <h3>Was jedem übrig bleibt (nach allen Ausgaben, laut Monatsplan)</h3>
+      ${fRow('<span style="color:var(--till)">Till</span> – nach der Ablösung, geplante Zahlung',`<span class="${cls(n.za.TILL)}">${eur(n.za.TILL,0)}</span> <small class="muted">(heute laut Plan ${eur(t.p1.TILL.rest,0)})</small>`)}
+      ${fRow('<span style="color:var(--pat)">Patrick</span> – nach der Ablösung, geplante Zahlung',`<span class="${cls(n.za.PATRICK)}">${eur(n.za.PATRICK,0)}</span> <small class="muted">(heute laut Plan ${eur(t.p1.PATRICK.rest,0)})</small>`)}
+      ${c.early&&worst!=null?fRow('schlechtester Wert bis zur Ablösung',`<span class="${cls(worst)}">${eur(worst,0)}</span>`):''}
+      <h3>Wann ihr frei seid</h3>
+      ${fRow('Sparda abgelöst',ymName(c.abl))}${c.bankRest>0?fRow('Bank abbezahlt (bei '+eur(f.zahlung,0)+'; mit Pflichtrate '+(endePf?ymName(endePf):'–')+')',endeZa?ymName(endeZa):'–'):''}${fRow('Petra abbezahlt',c.pEnde?ymName(c.pEnde):'–')}
+      ${fRow('<b>komplett schuldenfrei</b>','<b>'+(frei?ymName(frei):'–')+'</b>'+(jahreFrueher?` <small class="muted">(${jahreFrueher} Jahre früher als ohne Petra: ${ymName(c.ohneEnde)})</small>`:''))}
+      <h3>Was es kostet und spart</h3>
+      ${fRow('Zinsen ab '+ymName(c.abl)+' ohne Petra (Sparda weiter)',eur(c.ohneZins,0))}${fRow('Zinsen mit Petra (Petra '+eur(c.pZins,0)+' + Bank '+eur(c.bZiZa,0)+')',eur(c.mitZins,0))}${fRow('<b>gespart</b>','<b>'+eur(spar,0)+'</b>',spar>0?'pos':'neg')}
+      <h3>Petra</h3>
+      ${c.lueckeMon?fRow(ymName(ymAdd(c.stop,1))+' – '+ymName(ymAdd(r.ab,-1))+': von euch + aus ihrer Reserve',eur(c.rateVor,0)+(c.lueckeKosten?' + '+eur(c.lueckeKosten/c.lueckeMon,0):'')):''}
+      ${fRow('ab '+ymName(r.ab)+': Rente '+eur(r.netto,0)+' + von euch '+eur(f.rate,0),'<b>'+eur(r.netto+(+f.rate||0),0)+'</b>')}${fRow('Reserve'+(c.lueckeMon?' nach der Überbrückung':''),eur(c.reserve-c.lueckeKosten,0),c.reserve-c.lueckeKosten<0?'neg':'')}
+      </div>`;})()}
+    <details class="fdet" open><summary>Zeitplan – was passiert wann</summary><div class="card"><h2>Auf einen Blick</h2><ol class="flist fklar">${(()=>{const L=[];
       if(c.tr.length)L.push([c.tr[0].ym,`Petras Geld kommt, erste Tranche (${c.tr[0].was}).`]);
       L.push([c.abl,`Sparda abgelöst${c.bankRest>0?`, ${eur(c.bankRest,0)} laufen bei einer neuen Bank weiter`:', keine Bank mehr'}.`]);
       if(c.stop<ymAdd(c.rente.ab,-1))L.push([ymAdd(c.stop,1),`Petra hört auf zu arbeiten, bekommt ab ${ymName(c.rateStart)} ${eur(c.rateVor,0)} von euch.`]);
@@ -224,12 +244,12 @@ function rFamilie(){
       if(c.bankRest>0&&endeZa)L.push([endeZa,`Bank abbezahlt (bei ${eur(f.zahlung,0)} im Monat).`]);
       if(c.pEnde)L.push([c.pEnde,`Petra abbezahlt (${eur(f.darlehen,0)} + ${eur(c.pZins,0)} Zinsen).`]);
       if(frei)L.push([frei,`<b>Komplett schuldenfrei.</b> Ohne Petra wärt ihr es erst ${c.ohneEnde?ymName(c.ohneEnde):'–'} gewesen.`]);
-      return L.sort((x,y)=>x[0].localeCompare(y[0])).map(([ym,t])=>`<li><b>${ymName(ym)}</b> – ${t}</li>`).join('');})()}</ol></div>
-    ${c.bankRest>0?(()=>{const v=fBankVgl(f,c);return `<div class="card" style="margin-top:12px"><h2>Wie viel an die Bank?</h2><p class="sub">Antippen, um die Zahlung an die Bank zu wechseln – Diagramm, Ablauf und Tragbarkeit rechnen sofort mit. Die Pflichtrate bleibt immer ${eur(f.pflicht,0)}; alles darüber ist freiwillig.</p>
+      return L.sort((x,y)=>x[0].localeCompare(y[0])).map(([ym,t])=>`<li><b>${ymName(ym)}</b> – ${t}</li>`).join('');})()}</ol></div></details>
+    ${c.bankRest>0?(()=>{const v=fBankVgl(f,c);return `<details class="fdet"><summary>Wie viel an die Bank? – Varianten vergleichen</summary><div class="card"><h2>Wie viel an die Bank?</h2><p class="sub">Antippen, um die Zahlung an die Bank zu wechseln – Diagramm, Ablauf und Tragbarkeit rechnen sofort mit. Die Pflichtrate bleibt immer ${eur(f.pflicht,0)}; alles darüber ist freiwillig.</p>
       <div class="seg fseg">${v.map(x=>`<button type="button" data-fzahl="${x.z}" ${x.akt?'aria-pressed="true"':''}>${eur(x.z,0)}${x.pflicht?' (Pflicht)':''}</button>`).join('')}</div>
       <table class="stab ftrag" style="margin-top:8px"><tr><th>an die Bank</th><th>+ Petra = gesamt</th><th>Bank fertig</th><th class="num">Zinsen Bank</th><th>schuldenfrei</th></tr>${v.map(x=>`<tr${x.akt?' class="akt"':''}><td>${eur(x.z,0)}${x.pflicht?' (Pflicht)':''}</td><td>${eur(x.gesamt,0)}</td><td>${x.ende?ymName(x.ende):'–'}</td><td class="num">${eur(x.zi,0)}</td><td>${x.frei?ymName(x.frei):'–'}</td></tr>`).join('')}</table>
-      <div class="note">„gesamt“ = Zahlung an die Bank + ${eur(f.rate,0)} an Petra. Schuldenfrei = Bank und Petra beide abbezahlt (Petra: ${c.pEnde?ymName(c.pEnde):'–'}). Heute zahlt ihr ${eur(c.vorher,0)}.</div></div>`;})():''}
-    <div class="g2" style="margin-top:12px"><div class="card"><h2>So läuft es ab</h2>
+      <div class="note">„gesamt“ = Zahlung an die Bank + ${eur(f.rate,0)} an Petra. Schuldenfrei = Bank und Petra beide abbezahlt (Petra: ${c.pEnde?ymName(c.pEnde):'–'}). Heute zahlt ihr ${eur(c.vorher,0)}.</div></div></details>`;})():''}
+    <details class="fdet"><summary>Ablauf im Detail, monatliche Belastung, Petras Einkommen</summary><div class="g2"><div class="card"><h2>So läuft es ab</h2>
       <ol class="flist">${c.tr.map(t=>`<li><b>${ymName(t.ym)}</b> – Petra gibt ${eur(t.b,0)}: ${t.was}.</li>`).join('')}
       <li><b>${ymName(ymAdd(c.abl,-6))}</b> – Sparda-Darlehen kündigen (schriftlich, § 489 BGB, Teilkündigung in Höhe der Ablösesumme).</li>
       <li><b>${ymName(c.abl)}</b> – Ablösung: Restschuld ${eur(c.rest,0)} − Bausparguthaben ${eur(c.bs,0)} − Petra ${eur(c.petraAbl,0)} − Eigenkapital ${eur(c.ekSp,0)}${c.extraEk?` − ${eur(c.extraEk,0)} gespartes Sondertilgungsgeld`:''}${c.ingRest>0?` (vorher ING mit ${eur(c.ekIng,0)} ablösen)`:''} → <b>${c.bankRest>0?eur(c.bankRest,0)+' neu finanzieren':'nichts mehr offen bei der Bank'}</b>.</li>
@@ -242,22 +262,22 @@ function rFamilie(){
       <div class="note">Pflicht = Petra + Mindestrate Bank. Alles darüber ist freiwillig; in einem schlechten Monat könnt ihr auf ${eur(c.nachherPf,0)} runtergehen. Vergleichsmaßstab ist die Zeile „laut Plan im ${ymName(c.abl)}“ – dort stecken auch die Sondertilgungs-Raten (${eur(c.pv.TILL.son+c.pv.PATRICK.son,0)}), die ihr laut Plan dann zahlt und die nach der Ablösung wegfallen. Deshalb kann „mit Petra“ mehr Luft lassen als „heute“, obwohl die Summe ähnlich aussieht.</div>
       <h3>Petras Einkommen</h3>
       ${fRow('bis '+ymName(c.stop)+': Gehalt netto',eur(f.gehalt,0))}${c.lueckeMon?fRow(`${ymName(ymAdd(c.stop,1))} – ${ymName(ymAdd(r.ab,-1))}: eure Rate${c.lueckeKosten?' + Reserve':''}`,eur(c.rateVor,0)+(c.lueckeKosten?' + '+eur(c.lueckeKosten/c.lueckeMon,0):''),''):''}${fRow('ab '+ymName(r.ab)+': Rente netto'+(r.absch?` (−${num(r.absch,1)} %)`:'')+' + eure Rate',`<b>${eur(r.netto+(+f.rate||0),0)}</b>`)}${fRow('ab '+ymName(ymAdd(c.pEnde||r.ab,1))+' (Darlehen zurückgezahlt): nur Rente',eur(r.netto,0))}${c.lueckeMon?fRow('Reserve nach der Überbrückung',eur(c.reserve-c.lueckeKosten,0),c.reserve-c.lueckeKosten<0?'neg':''):''}
-    </div></div>
+    </div></div></details>
     ${(()=>{const t=fTragbar(f,c);const neg=v=>v<0?'neg':v<100?'warn':'pos';const col=sh=>sh==='TILL'?'var(--till)':'var(--pat)';
       const segA=`<div class="seg fseg">${[[50,'50 / 50'],[60,'60 / 40'],[70,'70 / 30']].map(([v,l])=>`<button type="button" data-fanteil="${v}" ${(+f.anteilTill||50)===v?'aria-pressed="true"':''}>${l}</button>`).join('')}</div>`;
       const segE=c.early?`<div class="seg fseg" style="margin-top:6px"><button type="button" data-feigen="sparen" ${f.eigenArt!=='streichen'?'aria-pressed="true"':''}>Sondertilgungs-Raten sparen</button><button type="button" data-feigen="streichen" ${f.eigenArt==='streichen'?'aria-pressed="true"':''}>streichen</button></div>`:'';
       const tbl=c.early?`<h3>Bis zur Ablösung (${ymName(c.rateStart)} – ${ymName(c.abl)})</h3><table class="stab ftrag"><tr><th>Jahr</th><th class="num" style="color:var(--till)">Till heute</th><th class="num" style="color:var(--till)">mit Petra</th><th class="num" style="color:var(--pat)">Patrick heute</th><th class="num" style="color:var(--pat)">mit Petra</th></tr>${t.jahre.map(o=>`<tr><td>${o.y}</td><td class="num">${eur(o.TILL.rest,0)}</td><td class="num ${neg(o.TILL.nach)}">${eur(o.TILL.nach,0)}</td><td class="num">${eur(o.PATRICK.rest,0)}</td><td class="num ${neg(o.PATRICK.nach)}">${eur(o.PATRICK.nach,0)}</td></tr>`).join('')}</table><div class="note">„heute“ = was laut Monatsplan nach allen Ausgaben aufs Tagesgeld geht (Rest Gehalt, Jahresdurchschnitt). „mit Petra“ = davon − Anteil an Petras Rate + wegfallende ING-Rate${t.streichen?' + gestrichene Sondertilgungs-Rate':''}. Patricks Plangehalt ist fest (Spesen und Gehaltserhöhungen stehen nicht im Plan).</div>`:'';
-      const n=t.nach;return `<div class="card"><h2>Tragbar je Person?</h2><div class="row"><span>Aufteilung der Petra-Rate (Till / Patrick)</span><b class="num">${eur(t.share.TILL,0)} / ${eur(t.share.PATRICK,0)}</b></div>${segA}${segE}${c.early?fEigenVglHTML(f):''}${tbl}
+      const n=t.nach;return `<details class="fdet"><summary>Tragbar je Person? – Jahr für Jahr</summary><div class="card"><h2>Tragbar je Person?</h2><div class="row"><span>Aufteilung der Petra-Rate (Till / Patrick)</span><b class="num">${eur(t.share.TILL,0)} / ${eur(t.share.PATRICK,0)}</b></div>${segA}${segE}${c.early?fEigenVglHTML(f):''}${tbl}
       <h3>Nach der Ablösung (ab ${ymName(ymAdd(c.abl,1))})</h3><table class="stab ftrag"><tr><th></th><th class="num" style="color:var(--till)">Till</th><th class="num" style="color:var(--pat)">Patrick</th></tr><tr><td>heute laut Plan</td><td class="num">${eur(t.p1.TILL.rest,0)}</td><td class="num">${eur(t.p1.PATRICK.rest,0)}</td></tr><tr><td>mit Petra, Bank-Pflichtrate ${eur(f.pflicht,0)}</td><td class="num ${neg(n.pf.TILL)}">${eur(n.pf.TILL,0)}</td><td class="num ${neg(n.pf.PATRICK)}">${eur(n.pf.PATRICK,0)}</td></tr><tr><td>mit Petra, geplante Zahlung ${eur(f.zahlung,0)}</td><td class="num ${neg(n.za.TILL)}">${eur(n.za.TILL,0)}</td><td class="num ${neg(n.za.PATRICK)}">${eur(n.za.PATRICK,0)}</td></tr></table>
-      <div class="note">„heute laut Plan“ = Rest Gehalt im ${ymName(ymAdd(c.abl,1))} laut Monatsplan – da sind Sparda + Bausparen (${eur(fHausAlt(),0)}), ING (${eur(c.pv.TILL.ing+c.pv.PATRICK.ing,0)}) und eure Sondertilgungs-Raten (${eur(c.pv.TILL.son+c.pv.PATRICK.son,0)}) schon abgezogen. „mit Petra“: das alles fällt weg, dafür kommen Bankrate und Petra. Rot = Minus, gelb = unter 100 € Puffer. Steigt Patricks Gehalt im Haushaltsbuch, rechnet diese Karte automatisch mit.</div></div>`;})()}
-    <div class="card" style="margin-top:12px"><h2>Restschuld im Vergleich</h2><div class="legend"><span><i style="background:var(--till)"></i>Sparda ohne Petra</span><span><i style="background:var(--gem)"></i>Bank neu (geplante Zahlung)</span><span><i style="background:var(--pat)"></i>Darlehen Petra</span></div><div id="f-chart" class="chart"></div></div>
-    <div class="card" style="margin-top:12px"><h2>Unsere Empfehlung</h2><ul class="flist">
+      <div class="note">„heute laut Plan“ = Rest Gehalt im ${ymName(ymAdd(c.abl,1))} laut Monatsplan – da sind Sparda + Bausparen (${eur(fHausAlt(),0)}), ING (${eur(c.pv.TILL.ing+c.pv.PATRICK.ing,0)}) und eure Sondertilgungs-Raten (${eur(c.pv.TILL.son+c.pv.PATRICK.son,0)}) schon abgezogen. „mit Petra“: das alles fällt weg, dafür kommen Bankrate und Petra. Rot = Minus, gelb = unter 100 € Puffer. Steigt Patricks Gehalt im Haushaltsbuch, rechnet diese Karte automatisch mit.</div></div></details>`;})()}
+    <details class="fdet"><summary>Diagramm – Restschuld im Vergleich</summary><div class="card"><h2>Restschuld im Vergleich</h2><div class="legend"><span><i style="background:var(--till)"></i>Sparda ohne Petra</span><span><i style="background:var(--gem)"></i>Bank neu (geplante Zahlung)</span><span><i style="background:var(--pat)"></i>Darlehen Petra</span></div><div id="f-chart" class="chart"></div></div></details>
+    <details class="fdet" open><summary>Unsere Empfehlung</summary><div class="card"><ul class="flist">
       <li>${c.bankRest>0?`Den Rest von ${eur(c.bankRest,0)} bei einer Bank mit niedriger Pflichtrate (${eur(f.pflicht,0)}) und freier Sondertilgung aufnehmen – so bleibt ihr flexibel und seid ${endeZa?'bis '+ymName(endeZa):''} bankfrei.`:'Ihr braucht keine Bank mehr – nur noch den Vertrag mit Petra.'}</li>
       <li>Vertrag mit Petra schriftlich, ${num(f.zins)} % Zins, ${c.rateVor!==(+f.rate||0)?`gestaffelt ${eur(c.rateVor,0)} bis ${ymName(ymAdd(c.rente.ab,-1))}, danach ${eur(f.rate,0)}`:eur(f.rate,0)} monatlich per Dauerauftrag, keine Grundschuld, Risikolebensversicherung habt ihr schon. Till und Patrick gemeinsam als Darlehensnehmer.</li>
       <li>Bis ${ymName(c.abl)}: ING zuerst tilgen (teuerster Kredit), ${c.early?'eigene Sondertilgungs-Raten ab '+c.geld.slice(0,4)+' aufs Tagesgeld legen (Petras Tranchen füllen die Sparda-Grenze), ':'geplante Sondertilgungen bei der Sparda durchziehen, '}Notgroschen behalten.</li>
       <li>Petra behält ${eur(c.reserve,0)} Reserve${c.lueckeMon?` – davon ${eur(c.lueckeKosten,0)} für die Zeit ohne Gehalt (${ymName(ymAdd(c.stop,1))} – ${ymName(ymAdd(c.rente.ab,-1))}); eure Rate läuft ab ${ymName(c.rateStart)}${c.rateStart<c.rente.ab?` mit ${eur(c.rateVor,0)}, ab ${ymName(c.rente.ab)} ${eur(f.rate,0)}`:''}`:''}.</li>
       <li>Ein Jahr vor der Ablösung: Angebote für den Restkredit einholen und Sparda-Kündigung vorbereiten (6 Monate Frist).</li></ul>
-      <div class="note">Alle Zahlen kommen live aus dem Haushaltsbuch (Kredite, Monatspläne, Tagesgeld, Gold). Ändert sich dort etwas, rechnet dieser Reiter automatisch neu. Nichts hier verändert Pläne oder Kredite.</div></div>`+btns();}
+      <div class="note">Alle Zahlen kommen live aus dem Haushaltsbuch (Kredite, Monatspläne, Tagesgeld, Gold). Ändert sich dort etwas, rechnet dieser Reiter automatisch neu. Nichts hier verändert Pläne oder Kredite.</div></div></details>`+btns();}
   el.innerHTML=nav+h;
   if(step===FSTEPS.length-1){const ch=$('#f-chart');const by={};const put=(k,rows)=>rows.forEach(r=>{(by[r.ym]=by[r.ym]||{})[k]=r.st;});put('o',c.ohne);put('b',c.bZa);put('p',c.pRows);
     const labels=Object.keys(by).filter(ym=>ym>=TODAY.slice(0,7)&&ym.endsWith('-12')).sort();    const fill=(k,rows)=>labels.map(ym=>{const r=by[ym]?.[k];if(r!=null)return r;const first=rows[0]?.ym,last=rows.at(-1)?.ym;if(!first)return null;return ym<first?(k==='o'?null:0):ym>last?0:null;});
@@ -274,6 +294,7 @@ document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [dat
   else if(el.dataset.feigen){fSet(d=>d.eigenArt=el.dataset.feigen);}
   else if(el.dataset.fstop){fSet(d=>{d.stopArt=el.dataset.fstop;if(d.stopArt==='monat'&&!normYm(d.stop))d.stop='2030-12';});}
   else if(el.dataset.fekauto!=null){fSet(d=>d.ek=null);}});
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('fdet')&&d.open&&d.querySelector('#f-chart'))render();},true);
 document.addEventListener('change',e=>{const t=e.target;if(!t.closest||!t.closest('#p-familie'))return;
   const ym=t.closest('.fym');if(ym){const base=ym.dataset.fym;const m=ym.querySelector(`#${base}-m`).value,y=ym.querySelector(`#${base}-y`).value;const key=base.replace(/^f-/,'');if(!m||!y){if(!m&&!y)fSet(d=>d[key]='');return;}t.blur();fSet(d=>d[key]=`${y}-${m}`);return;}
   const id=(t.id||'').replace(/^f-/,'');if(!id)return;t.blur();
