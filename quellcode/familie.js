@@ -16,7 +16,7 @@ const fMonDiff=(a,b)=>(+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5)-+a.slice(5))
 
 /* Rentenbeginn: Regelaltersgrenze 67 (Jahrgang 1964) = Geburtsmonat + 67 Jahre, Rente ab dem Folgemonat (Mai 2031).
    Früher (63/64/65) nur mit Abschlag 0,3 % je Monat (max. 14,4 %). */
-function fRente(f){const g=PETRA_GEB;const regel=ymAdd(g,67*12+1);const alter={regel:67,'65':65,'64':64,'63':63}[f.renteArt]??67;const ab=ymAdd(g,alter*12+1);
+function fRente(f){const g=PETRA_GEB;const regel=ymAdd(g,67*12+1);const alter={regel:67,'66':66,'65':65,'64':64,'63':63}[f.renteArt]??67;const ab=ymAdd(g,alter*12+1);
   const mon=Math.max(0,(67-alter)*12);const absch=Math.min(14.4,mon*0.3);const brutto=(+f.renteBrutto||0)*(1-absch/100);
   return {ab,regel,absch,brutto:r2(brutto),netto:r2(brutto*0.885),mon};}
 
@@ -180,7 +180,7 @@ function rFamilie(){
     <div class="form"><label>Gehalt netto heute ${fNum('f-gehalt',f.gehalt,'€',90)}</label><label>Rente brutto laut Rentenauskunft (mit 67) ${fNum('f-renteBrutto',f.renteBrutto,'€',90)}</label><label>Was Petra im Monat wirklich braucht ${fNum('f-bedarf',c.bedarf,'€',90)}</label></div>
     <div class="note">Vorgabe = heutiges Netto. Ohne Arbeit fallen Fahrtkosten und Ähnliches weg, vielleicht reichen ihr auch 1.100 €. Mit diesem Betrag rechnet die Lücke unten.</div>
     <h3>Wann in Rente?</h3>
-    <div class="seg fseg">${[['regel','mit 67 (ohne Abschlag)'],['65','mit 65'],['64','mit 64'],['63','mit 63']].map(([k,l])=>`<button type="button" data-frente="${k}" ${f.renteArt===k?'aria-pressed="true"':''}>${l}</button>`).join('')}</div>
+    <div class="seg fseg">${[['regel','mit 67 (ohne Abschlag)'],['66','mit 66 (−3,6 %)'],['65','mit 65 (−7,2 %)'],['64','mit 64 (−10,8 %)'],['63','mit 63 (−14,4 %)']].map(([k,l])=>`<button type="button" data-frente="${k}" ${f.renteArt===k?'aria-pressed="true"':''}>${l}</button>`).join('')}</div>
     <div class="mu-box">${fRow('Rentenbeginn',ymName(r.ab))}${r.absch?fRow('Abschlag dauerhaft','− '+num(r.absch,1)+' %','neg'):''}${fRow('Rente brutto',eur(r.brutto,0))}${fRow('Rente netto (geschätzt, nach KV/PV)',eur(r.netto,0))}</div>
     <h3>Wann hört Petra auf zu arbeiten?</h3>
     <p class="sub">Das ist Petras Bedingung: Ohne euer Darlehen könnte sie mit dem Geld aus dem Hausverkauf sofort aufhören und bis zur Rente davon leben. Das darf sie durch das Darlehen nicht verlieren – deshalb beginnt eure Rate in dem Monat, in dem sie aufhört, und ihre Reserve deckt den Rest.</p>
