@@ -111,6 +111,9 @@ function fTragbar(f,c){const antT=Math.max(0,Math.min(100,+f.anteilTill||50))/10
   return {share,jahre,nach,p1:p,streichen};}
 
 const fHausAlt=()=>+gv('h_tilgung')||((+K().sparda.rate||0)+(+K().bauspar.monat||0)); // was heute vom Haushaltskonto an Sparda + Bausparkasse geht
+/* Vergleich: verschiedene monatliche Zahlungen an die Bank → wann fertig, Zinsen, Gesamtbelastung */
+function fBankVgl(f,c){const bz=+f.bankZins||0;const minR=Math.ceil(c.bankRest*bz/100/12+1);const cand=[+f.pflicht||0,700,900,+f.zahlung||0,1150,1500].map(v=>Math.max(v,minR)).filter((v,i,a)=>v>0&&a.indexOf(v)===i).sort((a,b)=>a-b);
+  return cand.map(z=>{const rows=c.bankRest>0?annuity(c.bankRest,bz,ymAdd(c.abl,1),z,[]):[];const ende=rows.at(-1)?.ym||null;const zi=rows.reduce((a,r)=>a+r.zi,0);const frei=ende&&c.pEnde?(ende>c.pEnde?ende:c.pEnde):(ende||c.pEnde);return {z,ende,zi,n:rows.length,gesamt:z+(+f.rate||0),frei,akt:z===(+f.zahlung||0),pflicht:z===(+f.pflicht||0)};});}
 /* Ampel: Wie günstig ist das gewählte Szenario? 0–100 Punkte aus Bankrest, Zwischenbelastung, Petras Reserve und Zinsersparnis */
 function fAmpel(c,f){const lin=(v,gut,schlecht)=>Math.max(0,Math.min(1,(v-schlecht)/(gut-schlecht)));const spar=c.ohneZins-c.mitZins;const g=[];
   const a=lin(c.bankRest,75000,160000),b=c.early?lin(c.zwischen-c.vorher,0,600):1,d=c.lueckeKosten<=c.reserve?1:Math.max(0,1-(c.lueckeKosten-c.reserve)/15000),e=lin(spar,75000,25000);
@@ -197,6 +200,19 @@ function rFamilie(){
       ${kpi('Rest bei der Bank',eur(c.bankRest,0),c.bankRest>0?`Pflichtrate ${eur(f.pflicht,0)}, Zins ${num(f.bankZins)} %`:'komplett bankfrei ✓',c.bankRest>0?'':'pos')}
       ${kpi('Bankfrei',endeZa?ymName(endeZa):(c.bankRest>0?'–':ymName(c.abl)),c.bankRest>0?`bei ${eur(f.zahlung,0)} im Monat; mit Pflichtrate ${endePf?ymName(endePf):'–'}`:'')}
       ${kpi('Zinsen gespart',eur(spar,0),`statt ${eur(c.ohneZins,0)} (Sparda bis ${c.ohneEnde?ymName(c.ohneEnde):'–'}) nur ${eur(c.mitZins,0)}`,spar>0?'pos':'neg')}</div>
+    <div class="card" style="margin-top:12px"><h2>Auf einen Blick</h2><ol class="flist fklar">${(()=>{const L=[];
+      if(c.tr.length)L.push([c.tr[0].ym,`Petras Geld kommt, erste Tranche (${c.tr[0].was}).`]);
+      L.push([c.abl,`Sparda abgelöst${c.bankRest>0?`, ${eur(c.bankRest,0)} laufen bei einer neuen Bank weiter`:', keine Bank mehr'}.`]);
+      if(c.stop<ymAdd(c.rente.ab,-1))L.push([ymAdd(c.stop,1),`Petra hört auf zu arbeiten, bekommt ab ${ymName(c.rateStart)} ${eur(c.rateVor,0)} von euch.`]);
+      L.push([c.rente.ab,`Petra geht in Rente: ${eur(c.rente.netto,0)} Rente + ${eur(f.rate,0)} von euch = ${eur(c.rente.netto+(+f.rate||0),0)} im Monat.`]);
+      if(c.bankRest>0&&endeZa)L.push([endeZa,`Bank abbezahlt (bei ${eur(f.zahlung,0)} im Monat).`]);
+      if(c.pEnde)L.push([c.pEnde,`Petra abbezahlt (${eur(f.darlehen,0)} + ${eur(c.pZins,0)} Zinsen).`]);
+      if(frei)L.push([frei,`<b>Komplett schuldenfrei.</b> Ohne Petra wärt ihr es erst ${c.ohneEnde?ymName(c.ohneEnde):'–'} gewesen.`]);
+      return L.sort((x,y)=>x[0].localeCompare(y[0])).map(([ym,t])=>`<li><b>${ymName(ym)}</b> – ${t}</li>`).join('');})()}</ol></div>
+    ${c.bankRest>0?(()=>{const v=fBankVgl(f,c);return `<div class="card" style="margin-top:12px"><h2>Wie viel an die Bank?</h2><p class="sub">Antippen, um die Zahlung an die Bank zu wechseln – Diagramm, Ablauf und Tragbarkeit rechnen sofort mit. Die Pflichtrate bleibt immer ${eur(f.pflicht,0)}; alles darüber ist freiwillig.</p>
+      <div class="seg fseg">${v.map(x=>`<button type="button" data-fzahl="${x.z}" ${x.akt?'aria-pressed="true"':''}>${eur(x.z,0)}${x.pflicht?' (Pflicht)':''}</button>`).join('')}</div>
+      <table class="stab ftrag" style="margin-top:8px"><tr><th>an die Bank</th><th>+ Petra = gesamt</th><th>Bank fertig</th><th class="num">Zinsen Bank</th><th>schuldenfrei</th></tr>${v.map(x=>`<tr${x.akt?' class="akt"':''}><td>${eur(x.z,0)}${x.pflicht?' (Pflicht)':''}</td><td>${eur(x.gesamt,0)}</td><td>${x.ende?ymName(x.ende):'–'}</td><td class="num">${eur(x.zi,0)}</td><td>${x.frei?ymName(x.frei):'–'}</td></tr>`).join('')}</table>
+      <div class="note">„gesamt“ = Zahlung an die Bank + ${eur(f.rate,0)} an Petra. Schuldenfrei = Bank und Petra beide abbezahlt (Petra: ${c.pEnde?ymName(c.pEnde):'–'}). Heute zahlt ihr ${eur(c.vorher,0)}.</div></div>`;})():''}
     <div class="g2" style="margin-top:12px"><div class="card"><h2>So läuft es ab</h2>
       <ol class="flist">${c.tr.map(t=>`<li><b>${ymName(t.ym)}</b> – Petra gibt ${eur(t.b,0)}: ${t.was}.</li>`).join('')}
       <li><b>${ymName(ymAdd(c.abl,-6))}</b> – Sparda-Darlehen kündigen (schriftlich, § 489 BGB, Teilkündigung in Höhe der Ablösesumme).</li>
@@ -232,10 +248,11 @@ function rFamilie(){
     lineChart(ch,labels,[{n:'Sparda ohne Petra',c:'var(--till)',v:fill('o',c.ohne)},{n:'Bank neu',c:'var(--gem)',v:fill('b',c.bZa)},{n:'Darlehen Petra',c:'var(--pat)',v:fill('p',c.pRows)}],{xl:l=>l.slice(0,4),xt:l=>'Ende '+l.slice(0,4)});}
 }
 /* Eingaben */
-document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [data-fstep],#p-familie [data-fgeld],#p-familie [data-frente],#p-familie [data-fstop],#p-familie [data-fanteil],#p-familie [data-feigen],#p-familie [data-fekauto]');if(!el)return;el.blur();
+document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [data-fstep],#p-familie [data-fgeld],#p-familie [data-frente],#p-familie [data-fstop],#p-familie [data-fanteil],#p-familie [data-fzahl],#p-familie [data-feigen],#p-familie [data-fekauto]');if(!el)return;el.blur();
   if(el.dataset.fstep!=null){fSet(d=>d.step=+el.dataset.fstep);window.scrollTo({top:0,behavior:'smooth'});}
   else if(el.dataset.fgeld){fSet(d=>{d.geldArt=el.dataset.fgeld;if(d.geldArt==='kuend')d.geld=KUEND;else if(d.geldArt==='frueh'&&!(normYm(d.geld)<KUEND))d.geld='2029-01';else if(d.geldArt==='spaet'&&!(normYm(d.geld)>KUEND))d.geld='2036-01';});}
   else if(el.dataset.frente){fSet(d=>d.renteArt=el.dataset.frente);}
+  else if(el.dataset.fzahl){fSet(d=>d.zahlung=+el.dataset.fzahl);}
   else if(el.dataset.fanteil){fSet(d=>d.anteilTill=+el.dataset.fanteil);}
   else if(el.dataset.feigen){fSet(d=>d.eigenArt=el.dataset.feigen);}
   else if(el.dataset.fstop){fSet(d=>{d.stopArt=el.dataset.fstop;if(d.stopArt==='monat'&&!normYm(d.stop))d.stop='2030-12';});}

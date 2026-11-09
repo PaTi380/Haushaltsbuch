@@ -274,3 +274,4 @@ body.is-closed main,body.is-closed header{visibility:hidden}
 .fampel-bar i{position:absolute;top:-4px;width:4px;height:20px;margin-left:-2px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--card)}
 .ftrag td.warn,.ftrag .warn{color:#c98a00}.ftrag td.neg{color:var(--bad)}.ftrag td.pos{color:var(--good)}.ftrag th,.ftrag td{padding:3px 4px;font-size:12px}.ftrag th{text-align:left}.ftrag .num{text-align:right}
 #p-familie .g2+.card{margin-top:12px}
+.fklar li{margin:6px 0}.ftrag tr.akt td{font-weight:600;background:color-mix(in srgb,var(--acc) 12%,transparent)}
