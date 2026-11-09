@@ -2,76 +2,96 @@
    Eingaben liegen in S.familie (Firestore config/familie). Rechnet mit den Live-Daten der App:
    Sparda-Tilgungsplan sparda(), ING ingRows(), Bausparvertrag, Tagesgeld/Gold aus CALC.
    Es wird nichts an Plänen oder Krediten verändert. */
-const FDEF={erloes:175000,darlehen:155000,geld:'2033-10',geldArt:'kuend',zins:2,rate:1000,rateAb:'abl',sonderKorr:0,bausparAuf:true,ek:30000,ingFirst:true,bankZins:4,pflicht:500,zahlung:1150,
-  geb:'1964-04',gehalt:1277,renteBrutto:1018,renteArt:'regel',stop:'',step:0};
+const FDEF={erloes:175000,darlehen:155000,geld:'2033-10',geldArt:'kuend',zins:2,rate:1000,sonderKorr:0,bausparAuf:true,ek:30000,ingFirst:true,bankZins:4,pflicht:500,zahlung:1150,
+  gehalt:1277,renteBrutto:1018,renteArt:'regel',stopArt:'geld',stop:'',step:0};
+const PETRA_GEB='1964-04'; // Petras Geburtsmonat (fest)
 const F=()=>({...FDEF,...(S.familie||{})});
 const FSTEPS=['Geld','Petra','Tilgung','Eigenkapital','Bank','Rente','Ergebnis'];
 const KUEND='2033-10'; // frühester Monat, zu dem die Sparda nach § 489 BGB (10 Jahre nach Vollauszahlung April 2023 + 6 Monate) gekündigt werden kann
 const fYmIn=(id,v)=>{const m=normYm(v);return `<input type="month" id="${id}" value="${m||''}" min="2026-01" max="2053-03">`;};
 const fNum=(id,v,unit,w=110)=>`<span class="fin"><input inputmode="decimal" id="${id}" value="${num(v,unit==='%'?2:0)}" style="width:${w}px">${unit?`<span>${unit}</span>`:''}</span>`;
+const fMonDiff=(a,b)=>(+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5)-+a.slice(5)); // Monate von a bis b
 
-/* Rentenbeginn: Regelaltersgrenze 67 (Jahrgang 1964) = Geburtsmonat + 67 Jahre, Rente ab dem Folgemonat.
+/* Rentenbeginn: Regelaltersgrenze 67 (Jahrgang 1964) = Geburtsmonat + 67 Jahre, Rente ab dem Folgemonat (Mai 2031).
    Früher (63/64/65) nur mit Abschlag 0,3 % je Monat (max. 14,4 %). */
-function fRente(f){const g=normYm(f.geb)||'1964-04';const regel=ymAdd(g,67*12+1);const alter={regel:67,'65':65,'64':64,'63':63}[f.renteArt]??67;const ab=ymAdd(g,alter*12+1);
+function fRente(f){const g=PETRA_GEB;const regel=ymAdd(g,67*12+1);const alter={regel:67,'65':65,'64':64,'63':63}[f.renteArt]??67;const ab=ymAdd(g,alter*12+1);
   const mon=Math.max(0,(67-alter)*12);const absch=Math.min(14.4,mon*0.3);const brutto=(+f.renteBrutto||0)*(1-absch/100);
   return {ab,regel,absch,brutto:r2(brutto),netto:r2(brutto*0.885),mon};}
 
 /* Ablösemonat: Geld vor Oktober 2033 → Kündigung zum frühesten Termin (Okt 2033). Geld später → 6 Monate Kündigungsfrist. */
 function fAbl(f){const g=normYm(f.geld)||KUEND;return g<=KUEND?KUEND:ymAdd(g,6);}
+const fFrueh=f=>(normYm(f.geld)||KUEND)<KUEND;
 
-/* Tranchen bei früherem Verkauf: erst ING ablösen, dann je Jahr bis 17.250 € Sondertilgung Sparda (abzüglich schon geplanter), Rest zur Ablösung. */
+/* Tranchen bei früherem Verkauf: erst ING ablösen, dann je Jahr die volle Sondertilgungsgrenze (17.250 €) aus Petras Geld, Rest zur Ablösung.
+   Die eigenen geplanten Sondertilgungen („Rate Sondertilgung Haus“) werden in diesen Jahren NICHT an die Sparda überwiesen, sondern gespart
+   und zur Ablösung als Eigenkapital eingesetzt (gleiche Wirkung bei der Bank, aber das Geld bleibt bis dahin flexibel). */
 function fTranchen(f,abl){const g=normYm(f.geld)||KUEND;const out=[];if(g>=KUEND)return out;let frei=+f.darlehen||0;
   const ing=ingRows();const ir=ing.find(r=>r.ym===g);const ingRest=ir?ir.st:(ing.length&&g<ing[0].ym?+K().ing.betrag:0);
   if(ingRest>0.5){const b=Math.min(frei,ingRest);out.push({ym:g,b:r2(b),was:'ING-Kredit komplett abgelöst'});frei-=b;}
-  const max=+K().sparda.sonderMax||17250;const ps=planSonder();const byY={};ps.forEach(x=>{byY[x.ym.slice(0,4)]=(byY[x.ym.slice(0,4)]||0)+x.b;});
-  for(let y=+g.slice(0,4);y<+abl.slice(0,4)&&frei>0.5;y++){const ym=`${y}-12`;if(ym<=g||ym>=abl)continue;const b=Math.min(frei,Math.max(0,max-(byY[y]||0)));if(b>0.5){out.push({ym,b:r2(b),was:'Sondertilgung Sparda (Jahresgrenze '+eur(max,0)+')'});frei-=b;}}
+  const max=+K().sparda.sonderMax||17250;
+  for(let y=+g.slice(0,4);y<+abl.slice(0,4)&&frei>0.5;y++){const ym=`${y}-12`;if(ym<=g||ym>=abl)continue;const b=Math.min(frei,max);if(b>0.5){out.push({ym,b:r2(b),was:'Sondertilgung Sparda (Jahresgrenze '+eur(max,0)+')'});frei-=b;}}
   return out;}
+/* eigene geplante Sondertilgungen (Dezember-Buchungen laut Plan) */
+function fEigen(f,abl){const g=normYm(f.geld)||KUEND;const early=g<KUEND;return planSonder().filter(x=>x.ym<=ymAdd(abl,2)).map(x=>({...x,gespart:early&&x.ym.slice(0,4)>=g.slice(0,4)}));}
 
-/* Sparda-Verlauf mit Tranchen, ohne das alte „Mutter übernimmt“-Szenario und ohne automatische Bauspar-Sondertilgung */
-function fSparda(f,abl,tr){const d=structuredClone(K());d.sparda.szenario={aktiv:false};d.bauspar.alsSonder=false;d.sparda.sonder=[...(d.sparda.sonder||[]),...tr.filter(t=>/Sparda/.test(t.was)).map(t=>({ym:t.ym,b:t.b}))];
+/* Sparda-Verlauf mit Tranchen, ohne das alte „Mutter übernimmt“-Szenario und ohne automatische Bauspar-Sondertilgung.
+   Gesparte eigene Sondertilgungen werden mit negativen Einträgen neutralisiert (sparda() addiert so). */
+function fSparda(f,abl,tr,eig){const d=structuredClone(K());d.sparda.szenario={aktiv:false};d.bauspar.alsSonder=false;
+  d.sparda.sonder=[...(d.sparda.sonder||[]),...tr.filter(t=>/Sparda/.test(t.was)).map(t=>({ym:t.ym,b:t.b})),...eig.filter(x=>x.gespart).map(x=>({ym:x.ym,b:-x.b}))];
   const keep=S.kredit;S.kredit=d;try{return sparda(true);}finally{S.kredit=keep;}}
 function fBauspar(abl){const b=K().bauspar;if(!b.summe)return 0;let s=+b.saldo||0,ym=normYm(b.stand)||CUR;let n=0;while(ym<abl&&n<400){ym=ymAdd(ym,1);s+=+b.monat||0;n++;}return r2(s);}
 function fEkAuto(abl){const c=CALC?.[abl]||CALC?.[Object.keys(CALC||{}).sort().at(-1)];if(!c)return 0;return r2(Math.max(0,c.TILL.tg)+Math.max(0,c.PATRICK.tg)+(c.TILL.gold||0));}
+/* monatliche Sondertilgungs-Raten laut Plan in einem Zeitraum (einschließlich) */
+function fPlanSonder(a,b){let v=0;for(let ym=a;ym<=b;ym=ymAdd(ym,1)){useYm(ym);['TILL','PATRICK'].forEach(sh=>{const bl=S.plan[ym]?.[sh];(bl?.C||[]).forEach(e=>{if(/sonde?r?tilgung/i.test(e.l||''))v+=entryVal(e,bl,sh);});});}useYm(month);return r2(v);}
 
 function fCalc(f){
-  const abl=fAbl(f);const geld=normYm(f.geld)||KUEND;const tr=fTranchen(f,abl);const rows=fSparda(f,abl,tr);
+  const abl=fAbl(f);const geld=normYm(f.geld)||KUEND;const early=geld<KUEND;const tr=fTranchen(f,abl);const eig=fEigen(f,abl);const rows=fSparda(f,abl,tr,eig);
   const sumZi=(r,a,b)=>r.filter(x=>x.ym>a&&(!b||x.ym<=b)).reduce((s,x)=>s+x.zi,0);
   const at=rows.find(r=>r.ym===abl);const rest0=at?at.st:(rows.length&&abl<rows[0].ym?+K().sparda.stand:0);
-  const sonderBis=rows.filter(r=>r.ym<=abl).reduce((s,r)=>s+r.so,0);
-  const sonderOffen=(()=>{if(abl.endsWith('-12'))return 0;let v=0;for(let ym=abl.slice(0,4)+'-01';ym<=abl;ym=ymAdd(ym,1)){useYm(ym);['TILL','PATRICK'].forEach(sh=>{const b=S.plan[ym]?.[sh];(b?.C||[]).forEach(e=>{if(/sonde?r?tilgung/i.test(e.l||''))v+=entryVal(e,b,sh);});});}useYm(month);return r2(v);})();
-  const rest=Math.max(0,r2(rest0-sonderOffen-(+f.sonderKorr||0)));
+  // eigene Sondertilgungen: überwiesen (vor dem Verkaufsjahr) bzw. gespart (ab Verkaufsjahr + Jan–Ablösemonat des Ablösejahres)
+  const eigUeb=eig.filter(x=>!x.gespart&&x.ym<=abl).reduce((s,x)=>s+x.b,0);
+  const eigJahr=abl.endsWith('-12')?0:fPlanSonder(abl.slice(0,4)+'-01',abl); // im Ablösejahr bis zum Ablösemonat angespart
+  const eigSpar=r2(eig.filter(x=>x.gespart&&x.ym<abl).reduce((s,x)=>s+x.b,0)+eigJahr);
+  const rest=Math.max(0,r2(rest0-(+f.sonderKorr||0)));
   const bs=f.bausparAuf?fBauspar(abl):0;
   const ingAll=ingRows();const ingTr=tr.find(t=>/ING/.test(t.was));const ir=ingAll.find(r=>r.ym===abl);let ingRest=ingTr?0:(ir?ir.st:(ingAll.length&&abl<ingAll[0].ym?+K().ing.betrag:0));ingRest=r2(ingRest);
-  // Geld kommt früher und löst den ING ab: die gesparte ING-Rate (bis zur Ablösung) abzüglich der Zinsen an Petra kommt als Eigenkapital dazu
-  const ingFreiMon=ingTr?ingAll.filter(r=>r.ym>ingTr.ym&&r.ym<=abl).length:0;
+  const ingFreiMon=ingTr?ingAll.filter(r=>r.ym>ingTr.ym&&r.ym<=abl).length:0; // Monate, in denen die ING-Rate wegfällt
   const ek=(f.ek==null||f.ek===''?fEkAuto(abl):+f.ek);
   const ekIng=f.ingFirst?Math.min(ek,ingRest):0;const ekSp=ek-ekIng;const ingBleibt=r2(ingRest-ekIng);
   const trSum=tr.reduce((s,t)=>s+t.b,0);const petraAbl=Math.max(0,(+f.darlehen||0)-trSum); // was zur Ablösung noch von Petra kommt
-  let bankRest=0,uebrig=0,extraEk=0;
-  // Petra: Darlehen (Tranchen + Rest zur Ablösung), Rate ab dem Monat nach der ersten Auszahlung
-  const pStart=tr.length?tr[0].ym:abl;let pBal=0;const pRows=[];{let ym=pStart;const z=(+f.zins||0)/100;const rate=+f.rate||0;let n=0;const trs=[...tr,{ym:abl,b:petraAbl}];
-    while(n<600){trs.filter(t=>t.ym===ym).forEach(t=>{pBal=r2(pBal+t.b);});if(n>0){const zi=r2(pBal*z/12);const nurZins=f.rateAb!=='sofort'&&ym<=abl;const tg=nurZins?0:Math.min(Math.max(0,rate-zi),pBal);pBal=r2(pBal-tg);pRows.push({ym,zi,tg,st:pBal,nurZins});}
+  // Petra: Rente, Arbeitsende, Beginn der Rate
+  const rente=fRente(f);
+  const stop=f.stopArt==='rente'?ymAdd(rente.ab,-1):f.stopArt==='monat'&&normYm(f.stop)?normYm(f.stop):(geld<rente.ab?geld:ymAdd(rente.ab,-1)); // letzter Arbeitsmonat
+  const pStart=tr.length?tr[0].ym:abl; // erste Auszahlung des Darlehens
+  const rateStart=(x=>x>ymAdd(stop,1)?x:ymAdd(stop,1))(ymAdd(pStart,1)); // Rate läuft, sobald Petra aufhört zu arbeiten (frühestens nach der ersten Auszahlung)
+  let pBal=0;const pRows=[];{let ym=pStart;const z=(+f.zins||0)/100;const rate=+f.rate||0;let n=0;const trs=[...tr,{ym:abl,b:petraAbl}];
+    while(n<600){trs.filter(t=>t.ym===ym).forEach(t=>{pBal=r2(pBal+t.b);});if(n>0){const zi=r2(pBal*z/12);const nurZins=ym<rateStart;const tg=nurZins?0:Math.min(Math.max(0,rate-zi),pBal);pBal=r2(pBal-tg);pRows.push({ym,zi,tg,st:pBal,nurZins});}
       if(n>0&&ym>=abl&&pBal<=0.005)break;ym=ymAdd(ym,1);n++;}}
-  const pZins=pRows.reduce((s,r)=>s+r.zi,0);
-  {const vz=pRows.filter(r=>r.nurZins).reduce((a,r)=>a+r.zi,0);extraEk=ingTr?r2(Math.max(0,ingFreiMon*(+K().ing.rate||0)-vz)):0;bankRest=r2(rest-bs-petraAbl-ekSp-extraEk);if(bankRest<0){uebrig=-bankRest;bankRest=0;}}const rateStart=f.rateAb!=='sofort'||!tr.length?ymAdd(abl,1):ymAdd(pStart,1);const vorZins=pRows.filter(r=>r.nurZins).map(r=>r.zi);const pEnde=pRows.at(-1)?.ym;const pOk=(+f.rate||0)>(+f.darlehen||0)*(+f.zins||0)/100/12;
+  const pZins=pRows.reduce((s,r)=>s+r.zi,0);const vorZins=pRows.filter(r=>r.nurZins).map(r=>r.zi);const pEnde=pRows.at(-1)?.ym;const pOk=(+f.rate||0)>(+f.darlehen||0)*(+f.zins||0)/100/12;
+  // bis zur Ablösung an Petra gezahlt (Zinsen + Raten) – das fehlt euch als Eigenkapital; gesparte ING-Rate und gesparte Sondertilgungen kommen dazu
+  const vorAbl=r2(pRows.filter(r=>r.ym<=abl).reduce((s,r)=>s+r.zi+r.tg,0));
+  const extraEk=r2(ingFreiMon*(+K().ing.rate||0)+eigSpar-vorAbl);
+  let bankRest=r2(rest-bs-petraAbl-ekSp-extraEk),uebrig=0;if(bankRest<0){uebrig=-bankRest;bankRest=0;}
   // Bankrest: Pflichtrate und geplante Zahlung
   const start=ymAdd(abl,1);const bz=+f.bankZins||0;
   const bPf=bankRest>0?annuity(bankRest,bz,start,Math.max(+f.pflicht||0,bankRest*bz/100/12+1),[]):[];
   const bZa=bankRest>0?annuity(bankRest,bz,start,Math.max(+f.zahlung||0,bankRest*bz/100/12+1),[]):[];
   const zi=r=>r.reduce((s,x)=>s+x.zi,0);
-  // Vergleich: ohne Petra einfach weiter bei der Sparda (mit allen geplanten Sondertilgungen, Bauspar als Sondertilgung bei Zuteilung falls so eingestellt)
+  // Vergleich: ohne Petra einfach weiter bei der Sparda (mit allen geplanten Sondertilgungen)
   const ohne=(()=>{const d=structuredClone(K());d.sparda.szenario={aktiv:false};const keep=S.kredit;S.kredit=d;try{return sparda(true);}finally{S.kredit=keep;}})();
   const ohneEnde=ohne.at(-1)?.ym;const ohneZins=sumZi(ohne,abl);
   const mitZins=pZins+zi(bZa);
-  const sparZinsBis=sumZi(sparda(true),TODAY.slice(0,7),abl)-sumZi(rows,TODAY.slice(0,7),abl); // Zinsersparnis durch frühe Tranchen bis zur Ablösung
-  const rente=fRente(f);const stop=normYm(f.stop)||ymAdd(rente.ab,-1); // letzter Arbeitsmonat
-  const lueckeMon=Math.max(0,(+rente.ab.slice(0,4)-+stop.slice(0,4))*12+(+rente.ab.slice(5)-+stop.slice(5))-1);
-  const lueckeKosten=r2(Math.max(0,lueckeMon*((+f.gehalt||0)-(ymAdd(stop,1)>=rateStart?(+f.rate||0):0))));
+  const sparZinsBis=sumZi(ohne,TODAY.slice(0,7),abl)-sumZi(rows,TODAY.slice(0,7),abl); // Zinsersparnis durch frühe Tranchen bis zur Ablösung
+  // Petras Lücke: Monate ohne Gehalt und ohne Rente; Bedarf = heutiges Nettogehalt, abzüglich eurer Rate, sobald sie läuft
+  const reserve=Math.max(0,(+f.erloes||0)-(+f.darlehen||0));
+  let lueckeMon=0,lueckeKosten=0,lueckeOhne=0;for(let ym=ymAdd(stop,1);ym<rente.ab;ym=ymAdd(ym,1)){lueckeMon++;lueckeOhne+=(+f.gehalt||0);lueckeKosten+=Math.max(0,(+f.gehalt||0)-(ym>=rateStart?(+f.rate||0):0));}
+  lueckeKosten=r2(lueckeKosten);lueckeOhne=r2(lueckeOhne);
   // Belastung vorher / nachher
   const vorher=(+K().sparda.rate||0)+(+K().ing.rate||0)+(+K().bauspar.monat||0);
   const nachherPf=(+f.rate||0)+(bankRest>0?Math.max(+f.pflicht||0,0):0)+(ingBleibt>0?(+K().ing.rate||0):0);
   const nachherZa=(+f.rate||0)+(bankRest>0?+f.zahlung||0:0)+(ingBleibt>0?(+K().ing.rate||0):0);
-  return {abl,geld,tr,trSum,rows,rest0,rest,sonderBis,sonderOffen,bs,ingRest,ingBleibt,ek,ekIng,ekSp,extraEk,ingFreiMon,petraAbl,bankRest,uebrig,pRows,pZins,pEnde,pStart,rateStart,vorZins,pOk,bPf,bZa,bZiPf:zi(bPf),bZiZa:zi(bZa),ohne,ohneEnde,ohneZins,mitZins,sparZinsBis,rente,stop,lueckeMon,lueckeKosten,vorher,nachherPf,nachherZa};}
+  const zwischen=early?(+K().sparda.rate||0)+(+K().bauspar.monat||0)+(+f.rate||0):0; // Belastung zwischen Verkauf und Ablösung (ING weg, Petra-Rate dazu)
+  return {abl,geld,early,tr,trSum,rows,eig,eigUeb,eigSpar,eigJahr,rest0,rest,bs,ingRest,ingBleibt,ek,ekIng,ekSp,extraEk,ingFreiMon,vorAbl,petraAbl,bankRest,uebrig,pRows,pZins,pEnde,pStart,rateStart,vorZins,pOk,bPf,bZa,bZiPf:zi(bPf),bZiZa:zi(bZa),ohne,ohneEnde,ohneZins,mitZins,sparZinsBis,rente,stop,reserve,lueckeMon,lueckeKosten,lueckeOhne,vorher,nachherPf,nachherZa,zwischen};}
 
 function fSet(mut){const d={...F()};mut(d);S.familie=d;save('config/familie',d);render();}
 const fRow=(l,v,cls='')=>`<div class="row"><span>${l}</span><b class="num ${cls}">${v}</b></div>`;
@@ -88,22 +108,23 @@ function rFamilie(){
     ${f.geldArt!=='kuend'?`<div class="form" style="margin-top:10px"><label>Monat, in dem das Geld da ist ${fYmIn('f-geld',f.geld)}</label></div>`:''}
     <div class="form" style="margin-top:10px"><label>Petras Anteil am Verkaufserlös (geschätzt) ${fNum('f-erloes',f.erloes,'€')}</label><label>davon als Darlehen an euch ${fNum('f-darlehen',f.darlehen,'€')}</label></div>
     <div class="note">Bei Petra bleiben dann <b>${eur(Math.max(0,(+f.erloes||0)-(+f.darlehen||0)),0)}</b> als eigene Reserve (Notgroschen, Zahnarzt, Auto, Überbrückung bis zur Rente).</div>
-    ${c.geld<KUEND?`<div class="mu-box"><b>Geld kommt früher (${ymName(c.geld)}):</b> Eine komplette Ablösung vor ${ymName(KUEND)} kostet Vorfälligkeitsentschädigung (geschätzt 15–20 Tsd. €) – lohnt nicht. Stattdessen in Tranchen: ${c.tr.length?c.tr.map(t=>`${ymName(t.ym)}: ${eur(t.b,0)} (${t.was})`).join('; '):'–'}; der Rest (${eur(c.petraAbl,0)}) zur Ablösung ${ymName(c.abl)}. Zinsersparnis bei der Sparda bis dahin ca. <b>${eur(c.sparZinsBis,0)}</b>; dazu fällt die ING-Rate (${eur(K().ing.rate,0)}) weg – dieses Geld rechnet der Rechner zur Ablösung als zusätzliches Eigenkapital.</div>`:c.geld>KUEND?`<div class="mu-box">Geld erst ${ymName(c.geld)} → Kündigung dann aussprechen, Ablösung nach 6 Monaten Frist im <b>${ymName(c.abl)}</b>. Bis dahin läuft alles weiter wie bisher.</div>`:''}
+    ${c.geld<KUEND?`<div class="mu-box"><b>Geld kommt früher (${ymName(c.geld)}):</b> Eine komplette Ablösung vor ${ymName(KUEND)} kostet Vorfälligkeitsentschädigung (geschätzt 15–20 Tsd. €) – lohnt nicht. Stattdessen in Tranchen: ${c.tr.length?c.tr.map(t=>`${ymName(t.ym)}: ${eur(t.b,0)} (${t.was})`).join('; '):'–'}; der Rest (${eur(c.petraAbl,0)}) zur Ablösung ${ymName(c.abl)}. Zinsersparnis bei der Sparda bis dahin ca. <b>${eur(c.sparZinsBis,0)}</b>. Die ING-Rate (${eur(K().ing.rate,0)}) fällt weg und eure eigenen geplanten Sondertilgungen überweist ihr ab ${c.geld.slice(0,4)} nicht mehr, sondern spart sie – beides zählt zur Ablösung als Eigenkapital (Schritt 5).</div>`:c.geld>KUEND?`<div class="mu-box">Geld erst ${ymName(c.geld)} → Kündigung dann aussprechen, Ablösung nach 6 Monaten Frist im <b>${ymName(c.abl)}</b>. Bis dahin läuft alles weiter wie bisher.</div>`:''}
     </div>`+btns();}
   else if(step===1){h=`<div class="card"><h2>2 · Konditionen für Petra</h2>
     <p class="sub">Petra soll jeden Monat verlässlich ihren Betrag bekommen. Zins zwischen 2 und 2,5 % ist marktnah und glaubwürdig (Sozialamt/Finanzamt); unter 1 % wäre angreifbar als Teil-Schenkung.</p>
     <div class="form"><label>Zins pro Jahr ${fNum('f-zins',f.zins,'%',80)}</label><label>Rate an Petra pro Monat ${fNum('f-rate',f.rate,'€',90)}</label></div>
-    ${c.tr.length?`<h3>Wenn das Geld früher kommt</h3><div class="seg fseg"><button type="button" data-frateab="abl" ${f.rateAb!=='sofort'?'aria-pressed="true"':''}>Rate erst ab Ablösung, vorher nur Zinsen</button><button type="button" data-frateab="sofort" ${f.rateAb==='sofort'?'aria-pressed="true"':''}>Rate sofort ab der ersten Tranche</button></div><div class="note">${f.rateAb==='sofort'?'Petra bekommt die volle Rate schon ab '+ymName(ymAdd(c.pStart,1))+' – dafür ist zur Ablösung weniger von ihrem Geld übrig und der Bankrest wird größer.':'Bis zur Ablösung zahlt ihr Petra nur die Zinsen (ca. '+eur(c.vorZins[0]||0,0)+' bis '+eur(c.vorZins.at(-1)||0,0)+' im Monat); die 1.000 € laufen ab '+ymName(c.rateStart)+'. So bleibt Petras ganzes Geld für die Ablösung.'}</div>`:''}
+    <div class="note">Die Rate beginnt, sobald Petra aufhört zu arbeiten (Schritt 6) – frühestens einen Monat nach der ersten Auszahlung: ab <b>${ymName(c.rateStart)}</b>.${c.vorZins.length?` Davor (${ymName(ymAdd(c.pStart,1))} – ${ymName(ymAdd(c.rateStart,-1))}) zahlt ihr ihr nur die Zinsen (${eur(c.vorZins[0],0)} bis ${eur(c.vorZins.at(-1),0)} im Monat).`:''}</div>
     <div class="mu-box">${fRow('Darlehen gesamt',eur(f.darlehen,0))}${fRow('Zinsen über die Laufzeit',eur(c.pZins,0))}${fRow('Rate läuft',c.pEnde?`${ymName(c.rateStart)} – ${ymName(c.pEnde)} (${fMon(c.pRows.filter(r=>!r.nurZins).length)})`:'–')}${fRow('je Person (Till / Patrick)',eur((+f.rate||0)/2,0)+' / Monat')}
     ${c.pOk?'':'<div class="note neg">⚠️ Die Rate reicht nicht einmal für die Zinsen – bitte Rate erhöhen oder Zins senken.</div>'}</div>
-    <div class="note">Ab ${ymName(c.rateStart)} bekommt Petra zusätzlich zu Gehalt bzw. Rente ${eur(f.rate,0)} im Monat. Stirbt Petra vorher, erbt Till die Forderung – sie erlischt dann (Konfusion); für Pflegefall-Fragen siehe Hilfe.</div>
+    <div class="note">Stirbt Petra vorher, erbt Till die Forderung – sie erlischt dann (Konfusion); für Pflegefall-Fragen siehe Hilfe.</div>
     </div>`+btns(c.pOk);}
-  else if(step===2){const bisJ={};c.rows.filter(r=>r.ym<=c.abl&&r.so>0).forEach(r=>{bisJ[r.ym.slice(0,4)]=(bisJ[r.ym.slice(0,4)]||0)+r.so;});
+  else if(step===2){const eigL=c.eig.filter(x=>x.ym<=c.abl);
     h=`<div class="card"><h2>3 · Was wurde bis zur Ablösung getilgt?</h2>
-    <p class="sub">Die App rechnet mit dem Sparda-Tilgungsplan (Stand ${K().sparda.standAm?dDE(K().sparda.standAm):'–'}: ${eur(K().sparda.stand,0)}, ${num(K().sparda.zins)} %) und allen Sondertilgungen, die in den Monatsplänen und unter Kredite stehen. Was ihr tatsächlich sondertilgt, pflegt ihr dort ein – hier erscheint es automatisch.</p>
-    <table class="stab"><tr><th>Jahr</th><th class="num">Sondertilgung laut App</th></tr>${Object.entries(bisJ).map(([y,v])=>`<tr><td>${y}</td><td class="num">${eur(v,0)}</td></tr>`).join('')||'<tr><td colspan="2" class="muted">keine</td></tr>'}<tr><td><b>Summe</b></td><td class="num"><b>${eur(c.sonderBis,0)}</b></td></tr></table>
+    <p class="sub">Die App rechnet mit dem Sparda-Tilgungsplan (Stand ${K().sparda.standAm?dDE(K().sparda.standAm):'–'}: ${eur(K().sparda.stand,0)}, ${num(K().sparda.zins)} %) und allen Sondertilgungen aus den Monatsplänen („Rate Sondertilgung Haus“) und dem Reiter Kredite. Was ihr tatsächlich sondertilgt, pflegt ihr dort ein – hier erscheint es automatisch.</p>
+    <table class="stab"><tr><th>Jahr</th><th class="num">eigene Sondertilgung</th><th></th></tr>${eigL.map(x=>`<tr><td>${x.ym.slice(0,4)}</td><td class="num">${eur(x.b,0)}</td><td class="muted">${x.gespart?'gespart → Eigenkapital':'an die Sparda'}</td></tr>`).join('')}${c.eigJahr?`<tr><td>${c.abl.slice(0,4)} (Jan–${MS[+c.abl.slice(5)-1]})</td><td class="num">${eur(c.eigJahr,0)}</td><td class="muted">gespart → Eigenkapital</td></tr>`:''}${!eigL.length&&!c.eigJahr?'<tr><td colspan="3" class="muted">keine</td></tr>':''}${c.tr.filter(t=>/Sparda/.test(t.was)).map(t=>`<tr><td>${t.ym.slice(0,4)}</td><td class="num">${eur(t.b,0)}</td><td class="muted">von Petra (Tranche)</td></tr>`).join('')}</table>
+    ${c.early?`<div class="note">Kommt Petras Geld früher, füllt es die Sondertilgungs-Grenze der Sparda (${eur(K().sparda.sonderMax||17250,0)} im Jahr) allein aus. Eure eigenen ${eur(c.eigSpar,0)} Sondertilgungs-Raten legt ihr ab ${c.geld.slice(0,4)} aufs Tagesgeld und setzt sie ${ymName(c.abl)} als Eigenkapital ein – gleiche Wirkung, aber das Geld bleibt bis dahin für Notfälle greifbar. Wer will, kann die Raten natürlich auch ganz streichen; dann wird der Bankrest entsprechend größer.</div>`:''}
     <div class="form" style="margin-top:10px"><label>Korrektur: zusätzlich getilgt (+) oder weniger (−) ${fNum('f-sonderKorr',f.sonderKorr,'€')}</label></div>
-    <div class="mu-box">${fRow('Restschuld Sparda '+ymName(c.abl)+' laut Plan',eur(c.rest0,0))}${c.sonderOffen?fRow('− im '+c.abl.slice(0,4)+' schon angespartes Sondertilgungsgeld (Jan–'+MS[+c.abl.slice(5)-1]+')','− '+eur(c.sonderOffen,0)):''}${fRow('<b>Restschuld zur Ablösung</b>','<b>'+eur(c.rest,0)+'</b>')}</div>
+    <div class="mu-box">${fRow('Restschuld Sparda '+ymName(c.abl)+' laut Plan',eur(c.rest0,0))}${(+f.sonderKorr)?fRow('Korrektur','− '+eur(f.sonderKorr,0)):''}${fRow('<b>Restschuld zur Ablösung</b>','<b>'+eur(c.rest,0)+'</b>')}${c.eigSpar?fRow('gespartes Sondertilgungsgeld (zählt in Schritt 5 als Eigenkapital)',eur(c.eigSpar,0)):''}</div>
     <h3>Bausparvertrag</h3>
     <label class="chk"><input type="checkbox" id="f-bausparAuf" ${f.bausparAuf?'checked':''}> Bausparvertrag zur Ablösung auflösen und Guthaben in die Sparda stecken</label>
     <div class="note">Guthaben ${ymName(c.abl)}: ca. <b>${eur(fBauspar(c.abl),0)}</b> (${eur(K().bauspar.saldo,0)} + ${eur(K().bauspar.monat,0)} monatlich). Das Bauspardarlehen braucht ihr dann nicht; die ${eur(K().bauspar.monat,0)} im Monat fallen weg.</div>
@@ -116,19 +137,24 @@ function rFamilie(){
     </div>`+btns();}
   else if(step===4){h=`<div class="card"><h2>5 · Der Rest bei einer Bank</h2>
     <p class="sub">Was nach Petra, Bausparguthaben und Eigenkapital übrig bleibt, finanziert ihr neu – bei der Sparda mit gesenkter Rate oder (wahrscheinlicher) bei einer anderen Bank mit niedriger Pflichtrate und voller Sondertilgung (z. B. ING).</p>
-    <div class="mu-box">${fRow('Restschuld Sparda '+ymName(c.abl),eur(c.rest,0))}${fRow('− Bausparguthaben','− '+eur(c.bs,0))}${fRow('− Darlehen Petra (zur Ablösung)','− '+eur(c.petraAbl,0))}${c.trSum?fRow('− Petra-Tranchen vorher (in Restschuld enthalten)',eur(c.trSum,0),'muted'):''}${fRow('− Eigenkapital','− '+eur(c.ekSp,0))}${c.extraEk?fRow('− gesparte ING-Rate '+c.ingFreiMon+' Monate, abzüglich Zinsen an Petra','− '+eur(c.extraEk,0)):''}${fRow('<b>Rest bei der Bank</b>',`<b>${eur(c.bankRest,0)}</b>`)}${c.uebrig>0?fRow('bleibt sogar übrig',eur(c.uebrig,0),'pos'):''}</div>
+    <div class="mu-box">${fRow('Restschuld Sparda '+ymName(c.abl),eur(c.rest,0))}${fRow('− Bausparguthaben','− '+eur(c.bs,0))}${fRow('− Darlehen Petra (zur Ablösung)','− '+eur(c.petraAbl,0))}${c.trSum?fRow('− Petra-Tranchen vorher (in Restschuld enthalten)',eur(c.trSum,0),'muted'):''}${fRow('− Eigenkapital','− '+eur(c.ekSp,0))}${c.early?fRow('− gesparte ING-Rate ('+c.ingFreiMon+' Monate) + gespartes Sondertilgungsgeld − bis dahin an Petra gezahlt',(c.extraEk<0?'+ ':'− ')+eur(Math.abs(c.extraEk),0)):c.extraEk?fRow('− im '+c.abl.slice(0,4)+' angespartes Sondertilgungsgeld (Jan–'+MS[+c.abl.slice(5)-1]+')','− '+eur(c.extraEk,0)):''}${fRow('<b>Rest bei der Bank</b>',`<b>${eur(c.bankRest,0)}</b>`)}${c.uebrig>0?fRow('bleibt sogar übrig',eur(c.uebrig,0),'pos'):''}</div>
     <div class="form" style="margin-top:10px"><label>Zins neuer Kredit ${fNum('f-bankZins',f.bankZins,'%',80)}</label><label>Pflichtrate (Minimum) ${fNum('f-pflicht',f.pflicht,'€',90)}</label><label>was ihr wirklich zahlt (Rate + Sondertilgung) ${fNum('f-zahlung',f.zahlung,'€',90)}</label></div>
     <div class="note">Die Pflichtrate ist das, was ihr in schlechten Monaten mindestens zahlen müsst. Alles darüber ist freiwillig und beschleunigt das Ende. Bisher gehen ${eur(c.vorher,0)} an Sparda, ING und Bausparkasse.</div>
     </div>`+btns();}
-  else if(step===5){const r=c.rente;h=`<div class="card"><h2>6 · Petra: Arbeit und Rente</h2>
-    <div class="form"><label>Geburtsmonat ${fYmIn('f-geb',f.geb).replace('min="2026-01" max="2053-03"','min="1940-01" max="1980-12"')}</label><label>Gehalt netto heute ${fNum('f-gehalt',f.gehalt,'€',90)}</label><label>Rente brutto laut Rentenauskunft (mit 67) ${fNum('f-renteBrutto',f.renteBrutto,'€',90)}</label></div>
+  else if(step===5){const r=c.rente;const stopArt=f.stopArt||'geld';h=`<div class="card"><h2>6 · Petra: Arbeit und Rente</h2>
+    <p class="sub">Petra ist im April 1964 geboren. Regelaltersrente mit 67 → ab <b>${ymName(r.regel)}</b>. 45 Beitragsjahre erreicht sie laut Rentenauskunft nicht, eine abschlagsfreie Rente vor 67 gibt es deshalb nicht; früher nur ab 63 mit 0,3 % Abschlag je Monat.</p>
+    <div class="form"><label>Gehalt netto heute ${fNum('f-gehalt',f.gehalt,'€',90)}</label><label>Rente brutto laut Rentenauskunft (mit 67) ${fNum('f-renteBrutto',f.renteBrutto,'€',90)}</label></div>
     <h3>Wann in Rente?</h3>
     <div class="seg fseg">${[['regel','mit 67 (ohne Abschlag)'],['65','mit 65'],['64','mit 64'],['63','mit 63']].map(([k,l])=>`<button type="button" data-frente="${k}" ${f.renteArt===k?'aria-pressed="true"':''}>${l}</button>`).join('')}</div>
-    <div class="mu-box">${fRow('Rentenbeginn',ymName(r.ab))}${r.absch?fRow('Abschlag dauerhaft','− '+num(r.absch,1)+' %','neg'):''}${fRow('Rente brutto',eur(r.brutto,0))}${fRow('Rente netto (geschätzt, nach KV/PV)',eur(r.netto,0))}${fRow('+ Rate von euch ab '+ymName(c.rateStart),eur(f.rate,0))}${fRow('<b>Petra hat ab '+ymName(c.rateStart>r.ab?c.rateStart:r.ab)+' monatlich</b>',`<b>${eur(r.netto+(+f.rate||0),0)}</b>`)}</div>
-    <div class="note">45 Beitragsjahre erreicht Petra laut Rentenauskunft nicht – eine abschlagsfreie Rente vor 67 gibt es deshalb nicht. Frühere Rente nur als „langjährig Versicherte“ ab 63 mit 0,3 % Abschlag je Monat.</div>
-    <h3>Früher aufhören zu arbeiten?</h3>
-    <div class="form"><label>Letzter Arbeitsmonat (leer = bis zur Rente) ${fYmIn('f-stop',f.stop)}</label></div>
-    ${c.lueckeMon?`<div class="mu-box">${fRow('Monate ohne Gehalt und ohne Rente',c.lueckeMon)}${fRow('Überbrückung aus Petras Reserve',eur(c.lueckeKosten,0),c.lueckeKosten>Math.max(0,(+f.erloes||0)-(+f.darlehen||0))?'neg':'')}<div class="note">Gerechnet mit dem heutigen Nettogehalt als Bedarf${c.stop>c.abl?'':''}. Reserve laut Schritt 1: ${eur(Math.max(0,(+f.erloes||0)-(+f.darlehen||0)),0)}.</div></div>`:'<div class="note">Petra arbeitet bis zum Rentenbeginn.</div>'}
+    <div class="mu-box">${fRow('Rentenbeginn',ymName(r.ab))}${r.absch?fRow('Abschlag dauerhaft','− '+num(r.absch,1)+' %','neg'):''}${fRow('Rente brutto',eur(r.brutto,0))}${fRow('Rente netto (geschätzt, nach KV/PV)',eur(r.netto,0))}</div>
+    <h3>Wann hört Petra auf zu arbeiten?</h3>
+    <p class="sub">Das ist Petras Bedingung: Ohne euer Darlehen könnte sie mit dem Geld aus dem Hausverkauf sofort aufhören und bis zur Rente davon leben. Das darf sie durch das Darlehen nicht verlieren – deshalb beginnt eure Rate in dem Monat, in dem sie aufhört, und ihre Reserve deckt den Rest.</p>
+    <div class="seg fseg"><button type="button" data-fstop="geld" ${stopArt==='geld'?'aria-pressed="true"':''}>sobald das Geld da ist (${ymName(c.geld<r.ab?c.geld:ymAdd(r.ab,-1))})</button><button type="button" data-fstop="rente" ${stopArt==='rente'?'aria-pressed="true"':''}>bis zur Rente</button><button type="button" data-fstop="monat" ${stopArt==='monat'?'aria-pressed="true"':''}>anderer Monat</button></div>
+    ${stopArt==='monat'?`<div class="form" style="margin-top:10px"><label>Letzter Arbeitsmonat ${fYmIn('f-stop',f.stop)}</label></div>`:''}
+    <div class="mu-box">${fRow('letzter Arbeitsmonat',ymName(c.stop))}${fRow('eure Rate läuft ab',ymName(c.rateStart))}
+    ${c.lueckeMon?fRow('Monate ohne Gehalt und ohne Rente',c.lueckeMon)+fRow('Bedarf in dieser Zeit (heutiges Netto)',eur(c.lueckeOhne,0))+fRow('davon aus eurer Rate',eur(c.lueckeOhne-c.lueckeKosten,0))+fRow('aus Petras Reserve',eur(c.lueckeKosten,0),c.lueckeKosten>c.reserve?'neg':''):fRow('Lücke bis zur Rente','keine – Petra arbeitet bis zum Rentenbeginn')}
+    ${fRow('Reserve laut Schritt 1',eur(c.reserve,0))}${c.lueckeKosten>c.reserve?`<div class="note neg">⚠️ Die Reserve reicht nicht: ${eur(c.lueckeKosten-c.reserve,0)} fehlen. Darlehen kleiner machen (Schritt 1) oder die Rate erhöhen (Schritt 2).</div>`:c.lueckeMon?`<div class="note">Nach der Lücke bleiben Petra noch ${eur(c.reserve-c.lueckeKosten,0)} Reserve.</div>`:''}</div>
+    <div class="mu-box">${fRow('ab '+ymName(r.ab)+': Rente netto + eure Rate',`<b>${eur(r.netto+(+f.rate||0),0)}</b>`)}<div class="note">Zum Vergleich: heute verdient Petra ${eur(f.gehalt,0)} netto. Ohne das Darlehen hätte sie ab der Rente nur ${eur(r.netto,0)} – plus das, was vom Erlös nach der Überbrückung (${eur(c.lueckeOhne,0)}) noch übrig wäre.</div></div>
     </div>`+btns();}
   else {const r=c.rente;const pf=c.bPf,za=c.bZa;const endeZa=za.at(-1)?.ym,endePf=pf.at(-1)?.ym;const frei=endeZa&&c.pEnde?(endeZa>c.pEnde?endeZa:c.pEnde):(endeZa||c.pEnde);
     const spar=c.ohneZins-c.mitZins;
@@ -139,23 +165,23 @@ function rFamilie(){
     <div class="g2" style="margin-top:12px"><div class="card"><h2>So läuft es ab</h2>
       <ol class="flist">${c.tr.map(t=>`<li><b>${ymName(t.ym)}</b> – Petra gibt ${eur(t.b,0)}: ${t.was}.</li>`).join('')}
       <li><b>${ymName(ymAdd(c.abl,-6))}</b> – Sparda-Darlehen kündigen (schriftlich, § 489 BGB, Teilkündigung in Höhe der Ablösesumme).</li>
-      <li><b>${ymName(c.abl)}</b> – Ablösung: Restschuld ${eur(c.rest,0)} − Bausparguthaben ${eur(c.bs,0)} − Petra ${eur(c.petraAbl,0)} − Eigenkapital ${eur(c.ekSp,0)}${c.extraEk?` − gesparte ING-Rate ${eur(c.extraEk,0)}`:''}${c.ingRest>0?` (vorher ING mit ${eur(c.ekIng,0)} ablösen)`:''} → <b>${c.bankRest>0?eur(c.bankRest,0)+' neu finanzieren':'nichts mehr offen bei der Bank'}</b>.</li>
-      ${c.vorZins.length?`<li><b>${ymName(ymAdd(c.pStart,1))} – ${ymName(c.abl)}</b> – an Petra nur die Zinsen (${eur(c.vorZins[0],0)} bis ${eur(c.vorZins.at(-1),0)} im Monat).</li>`:''}<li><b>ab ${ymName(c.rateStart)}</b> – ${eur(f.rate,0)} monatlich an Petra (${num(f.zins)} %), bis <b>${c.pEnde?ymName(c.pEnde):'–'}</b>; Zinsen gesamt ${eur(c.pZins,0)}.</li>
+      <li><b>${ymName(c.abl)}</b> – Ablösung: Restschuld ${eur(c.rest,0)} − Bausparguthaben ${eur(c.bs,0)} − Petra ${eur(c.petraAbl,0)} − Eigenkapital ${eur(c.ekSp,0)}${c.early?` ${c.extraEk<0?'+':'−'} ${eur(Math.abs(c.extraEk),0)} (gesparte ING-Rate und Sondertilgungen abzüglich Zahlungen an Petra)`:c.extraEk?` − ${eur(c.extraEk,0)} angespartes Sondertilgungsgeld`:''}${c.ingRest>0?` (vorher ING mit ${eur(c.ekIng,0)} ablösen)`:''} → <b>${c.bankRest>0?eur(c.bankRest,0)+' neu finanzieren':'nichts mehr offen bei der Bank'}</b>.</li>
+      ${c.vorZins.length?`<li><b>${ymName(ymAdd(c.pStart,1))} – ${ymName(ymAdd(c.rateStart,-1))}</b> – an Petra nur die Zinsen (${eur(c.vorZins[0],0)} bis ${eur(c.vorZins.at(-1),0)} im Monat).</li>`:''}${c.stop<ymAdd(c.rente.ab,-1)?`<li><b>${ymName(ymAdd(c.stop,1))}</b> – Petra hört auf zu arbeiten${c.lueckeMon?`; bis ${ymName(ymAdd(c.rente.ab,-1))} lebt sie von eurer Rate und ${eur(c.lueckeKosten,0)} aus ihrer Reserve`:''}.</li>`:''}<li><b>ab ${ymName(c.rateStart)}</b> – ${eur(f.rate,0)} monatlich an Petra (${num(f.zins)} %), bis <b>${c.pEnde?ymName(c.pEnde):'–'}</b>; Zinsen gesamt ${eur(c.pZins,0)}.</li>
       ${c.bankRest>0?`<li><b>ab ${ymName(ymAdd(c.abl,1))}</b> – Bankkredit: Pflichtrate ${eur(f.pflicht,0)} (fertig ${endePf?ymName(endePf):'–'}, Zinsen ${eur(c.bZiPf,0)}); mit ${eur(f.zahlung,0)} im Monat fertig <b>${endeZa?ymName(endeZa):'–'}</b> (Zinsen ${eur(c.bZiZa,0)}).</li>`:''}
       ${c.ingBleibt>0?`<li>ING läuft mit ${eur(K().ing.rate,0)} weiter (Rest ${eur(c.ingBleibt,0)}).</li>`:''}
       <li><b>${frei?ymName(frei):'–'}</b> – alles abbezahlt, auch bei Petra.</li></ol></div>
     <div class="card"><h2>Monatliche Belastung</h2>
-      ${fRow('heute (Sparda + ING + Bausparen)',eur(c.vorher,0))}${fRow('nach der Ablösung – Pflicht',eur(c.nachherPf,0),'pos')}${fRow('nach der Ablösung – geplant',eur(c.nachherZa,0))}${fRow('davon fest an Petra',eur(f.rate,0))}
+      ${fRow('heute (Sparda + ING + Bausparen)',eur(c.vorher,0))}${c.early?fRow(ymName(c.rateStart)+' – '+ymName(c.abl)+' (Sparda + Bausparen + Petra, ING weg)',eur(c.zwischen,0),c.zwischen>c.vorher?'neg':'pos')+(c.zwischen>c.vorher?`<div class="note">Das sind ${eur(c.zwischen-c.vorher,0)} mehr als heute. Wird das zu eng, gibt es zwei Stellschrauben: die eigenen Sondertilgungs-Raten (ca. ${eur(c.eigSpar/Math.max(1,fMonDiff(c.rateStart,c.abl)+1),0)} im Monat) nicht sparen, sondern ganz streichen – dann wird der Bankrest ${c.abl.slice(0,4)} um ${eur(c.eigSpar,0)} größer; oder Petra behält mehr vom Erlös für sich (Schritt 1, Darlehen kleiner) und lebt davon bis zur Rente, dann beginnt eure Rate erst später.</div>`:''):''}${fRow('nach der Ablösung – Pflicht',eur(c.nachherPf,0),'pos')}${fRow('nach der Ablösung – geplant',eur(c.nachherZa,0))}${fRow('davon fest an Petra',eur(f.rate,0))}
       <div class="note">Pflicht = Petra + Mindestrate Bank. Alles darüber ist freiwillig; in einem schlechten Monat könnt ihr auf ${eur(c.nachherPf,0)} runtergehen.</div>
       <h3>Petras Einkommen</h3>
-      ${fRow('bis '+ymName(c.stop)+' (Gehalt netto)',eur(f.gehalt,0))}${c.lueckeMon?fRow(`${ymName(ymAdd(c.stop,1))} – ${ymName(ymAdd(r.ab,-1))}: aus der Reserve`,eur(c.lueckeKosten,0)+' gesamt','neg'):''}${fRow('ab '+ymName(r.ab)+' Rente netto'+(r.absch?` (−${num(r.absch,1)} %)`:''),eur(r.netto,0))}${fRow('ab '+ymName(c.rateStart)+' + Rate von euch',eur(f.rate,0))}${fRow('<b>zusammen (Rente + Rate)</b>',`<b>${eur(r.netto+(+f.rate||0),0)}</b>`)}
+      ${fRow('bis '+ymName(c.stop)+': Gehalt netto',eur(f.gehalt,0))}${c.lueckeMon?fRow(`${ymName(ymAdd(c.stop,1))} – ${ymName(ymAdd(r.ab,-1))}: eure Rate + Reserve`,eur(f.rate,0)+' + '+eur(c.lueckeKosten/c.lueckeMon,0),''):''}${fRow('ab '+ymName(r.ab)+': Rente netto'+(r.absch?` (−${num(r.absch,1)} %)`:'')+' + eure Rate',`<b>${eur(r.netto+(+f.rate||0),0)}</b>`)}${fRow('ab '+ymName(ymAdd(c.pEnde||r.ab,1))+' (Darlehen zurückgezahlt): nur Rente',eur(r.netto,0))}${c.lueckeMon?fRow('Reserve nach der Überbrückung',eur(c.reserve-c.lueckeKosten,0),c.reserve-c.lueckeKosten<0?'neg':''):''}
     </div></div>
     <div class="card" style="margin-top:12px"><h2>Restschuld im Vergleich</h2><div class="legend"><span><i style="background:var(--till)"></i>Sparda ohne Petra</span><span><i style="background:var(--gem)"></i>Bank neu (geplante Zahlung)</span><span><i style="background:var(--pat)"></i>Darlehen Petra</span></div><div id="f-chart" class="chart"></div></div>
     <div class="card" style="margin-top:12px"><h2>Unsere Empfehlung</h2><ul class="flist">
       <li>${c.bankRest>0?`Den Rest von ${eur(c.bankRest,0)} bei einer Bank mit niedriger Pflichtrate (${eur(f.pflicht,0)}) und freier Sondertilgung aufnehmen – so bleibt ihr flexibel und seid ${endeZa?'bis '+ymName(endeZa):''} bankfrei.`:'Ihr braucht keine Bank mehr – nur noch den Vertrag mit Petra.'}</li>
       <li>Vertrag mit Petra schriftlich, ${num(f.zins)} % Zins, ${eur(f.rate,0)} monatlich per Dauerauftrag, keine Grundschuld, Risikolebensversicherung habt ihr schon. Till und Patrick gemeinsam als Darlehensnehmer.</li>
-      <li>Bis ${ymName(c.abl)}: ING zuerst tilgen (teuerster Kredit), geplante Sondertilgungen bei der Sparda durchziehen, Notgroschen behalten.</li>
-      <li>Petra behält ${eur(Math.max(0,(+f.erloes||0)-(+f.darlehen||0)),0)} Reserve${c.lueckeMon?` – davon ${eur(c.lueckeKosten,0)} für die Zeit ohne Gehalt`:''}.</li>
+      <li>Bis ${ymName(c.abl)}: ING zuerst tilgen (teuerster Kredit), ${c.early?'eigene Sondertilgungs-Raten ab '+c.geld.slice(0,4)+' aufs Tagesgeld legen (Petras Tranchen füllen die Sparda-Grenze), ':'geplante Sondertilgungen bei der Sparda durchziehen, '}Notgroschen behalten.</li>
+      <li>Petra behält ${eur(c.reserve,0)} Reserve${c.lueckeMon?` – davon ${eur(c.lueckeKosten,0)} für die Zeit ohne Gehalt (${ymName(ymAdd(c.stop,1))} – ${ymName(ymAdd(c.rente.ab,-1))}); eure Rate läuft ab ${ymName(c.rateStart)}`:''}.</li>
       <li>Ein Jahr vor der Ablösung: Angebote für den Restkredit einholen und Sparda-Kündigung vorbereiten (6 Monate Frist).</li></ul>
       <div class="note">Alle Zahlen kommen live aus dem Haushaltsbuch (Kredite, Monatspläne, Tagesgeld, Gold). Ändert sich dort etwas, rechnet dieser Reiter automatisch neu. Nichts hier verändert Pläne oder Kredite.</div></div>`+btns();}
   el.innerHTML=nav+h;
@@ -164,11 +190,11 @@ function rFamilie(){
     lineChart(ch,labels,[{n:'Sparda ohne Petra',c:'var(--till)',v:fill('o',c.ohne)},{n:'Bank neu',c:'var(--gem)',v:fill('b',c.bZa)},{n:'Darlehen Petra',c:'var(--pat)',v:fill('p',c.pRows)}],{xl:l=>l.slice(0,4),xt:l=>'Ende '+l.slice(0,4)});}
 }
 /* Eingaben */
-document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [data-fstep],#p-familie [data-fgeld],#p-familie [data-frente],#p-familie [data-frateab],#p-familie [data-fekauto]');if(!el)return;el.blur();
+document.addEventListener('click',e=>{const el=e.target.closest('#p-familie [data-fstep],#p-familie [data-fgeld],#p-familie [data-frente],#p-familie [data-fstop],#p-familie [data-fekauto]');if(!el)return;el.blur();
   if(el.dataset.fstep!=null){fSet(d=>d.step=+el.dataset.fstep);window.scrollTo({top:0,behavior:'smooth'});}
   else if(el.dataset.fgeld){fSet(d=>{d.geldArt=el.dataset.fgeld;if(d.geldArt==='kuend')d.geld=KUEND;else if(d.geldArt==='frueh'&&!(normYm(d.geld)<KUEND))d.geld='2029-01';else if(d.geldArt==='spaet'&&!(normYm(d.geld)>KUEND))d.geld='2036-01';});}
   else if(el.dataset.frente){fSet(d=>d.renteArt=el.dataset.frente);}
-  else if(el.dataset.frateab){fSet(d=>d.rateAb=el.dataset.frateab);}
+  else if(el.dataset.fstop){fSet(d=>{d.stopArt=el.dataset.fstop;if(d.stopArt==='monat'&&!normYm(d.stop))d.stop='2030-12';});}
   else if(el.dataset.fekauto!=null){fSet(d=>d.ek=null);}});
 document.addEventListener('change',e=>{const t=e.target;if(!t.closest||!t.closest('#p-familie'))return;const id=(t.id||'').replace(/^f-/,'');if(!id)return;t.blur();
   fSet(d=>{if(t.type==='checkbox')d[id]=t.checked;else if(t.type==='month')d[id]=t.value||'';else{const v=parseNum(t.value);d[id]=v==null?(id==='ek'?null:0):v;}});});
